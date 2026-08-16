@@ -26,14 +26,14 @@
   }
 
   function createCanvas(weekStart, days) {
-    const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = 1350; const context = canvas.getContext('2d');
+    const cardHeights = days.map(day => Math.max(185, 92 + day.entries.length * 62)); const rowHeights = [Math.max(cardHeights[0], cardHeights[1]), Math.max(cardHeights[2], cardHeights[3]), Math.max(cardHeights[4], cardHeights[5]), cardHeights[6]]; const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = 245 + rowHeights.reduce((total, height) => total + height + 40, 0) + 145; const context = canvas.getContext('2d');
     const colors = ['#e5f5f3','#fff1df','#f1eafa','#eaf1fa','#ffe8e7','#f8e9f4','#eee6fa'];
     context.fillStyle = '#fffaf6'; context.fillRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = '#198e9f'; context.font = '900 22px Arial'; context.fillText("BECKY’S GARDEN", 70, 76);
     context.fillStyle = '#233448'; context.font = '700 52px Arial'; context.fillText('Programul săptămânii', 70, 145);
     context.fillStyle = '#fb7176'; context.font = '700 25px Arial'; context.fillText(formatRange(localDate(weekStart)), 73, 187);
-    days.forEach((day, index) => { const column = index % 2; const row = Math.floor(index / 2); const x = 65 + column * 490; const y = 245 + row * 225; context.fillStyle = colors[index]; context.beginPath(); context.roundRect(x, y, 440, 185, 24); context.fill(); context.fillStyle = '#198e9f'; context.font = '800 28px Arial'; context.fillText(dayNames[index], x + 25, y + 42); let line = y + 82; day.entries.forEach(entry => { context.fillStyle = entry.type === 'open' ? '#4f7281' : entry.type === 'private' ? '#c45d64' : '#7357a1'; context.font = '700 22px Arial'; context.fillText(`${entry.start_time}–${entry.end_time}`, x + 25, line); context.font = '600 19px Arial'; context.fillText(`${typeIcon(entry.type)} ${typeLabel(entry.type)}`, x + 25, line + 29); line += 62; }); });
-    context.fillStyle = '#198e9f'; context.font = '700 24px Arial'; context.fillText('Te așteptăm la joacă!', 70, 1190); context.fillStyle = '#74869e'; context.font = '500 19px Arial'; context.fillText('Programul se poate modifica pentru evenimente private.', 70, 1230); return canvas;
+    let rowY = 245; days.forEach((day, index) => { const column = index % 2; const row = Math.floor(index / 2); if (column === 0 && index > 0) rowY += rowHeights[row - 1] + 40; const x = 65 + column * 490; const y = rowY; const height = cardHeights[index]; context.fillStyle = colors[index]; context.beginPath(); context.roundRect(x, y, 440, height, 24); context.fill(); context.fillStyle = '#198e9f'; context.font = '800 28px Arial'; context.fillText(dayNames[index], x + 25, y + 42); let line = y + 82; day.entries.forEach(entry => { context.fillStyle = entry.type === 'open' ? '#4f7281' : entry.type === 'private' ? '#c45d64' : '#7357a1'; context.font = '700 22px Arial'; context.fillText(`${entry.start_time}–${entry.end_time}`, x + 25, line); context.font = '600 19px Arial'; context.fillText(`${typeIcon(entry.type)} ${typeLabel(entry.type)}`, x + 25, line + 29); line += 62; }); });
+    const footerY = rowY + rowHeights[3] + 65; context.fillStyle = '#198e9f'; context.font = '700 24px Arial'; context.fillText('Te așteptăm la joacă!', 70, footerY); context.fillStyle = '#74869e'; context.font = '500 19px Arial'; context.fillText('Programul se poate modifica pentru evenimente private.', 70, footerY + 40); return canvas;
   }
 
   async function renderCalendarAdmin() {
