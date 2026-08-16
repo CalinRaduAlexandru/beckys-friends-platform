@@ -148,6 +148,57 @@ async function handleAdminTasks(request, env) {
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PUT, PATCH, DELETE' });
 }
 
+const CALENDAR_COLUMNS = 'id,title,type,date,start_time,end_time,note,created_at,updated_at';
+const CALENDAR_TYPES = new Set(['open', 'party', 'event', 'reservation', 'private', 'closed']);
+
+function normalizeCalendarEntryInput(input, existing = {}) {
+  const entry = {
+    id: String(input?.id ?? existing.id ?? '').trim(),
+    title: String(input?.title ?? existing.title ?? '').trim(),
+    type: String(input?.type ?? existing.type ?? '').trim(),
+    date: String(input?.date ?? existing.date ?? '').trim(),
+    start_time: String(input?.start_time ?? existing.start_time ?? '').trim(),
+    end_time: String(input?.end_time ?? existing.end_time ?? '').trim(),
+    note: String(input?.note ?? existing.note ?? '').trim(),
+    ...(input?.created_at ? { created_at: input.created_at } : {}),
+    updated_at: new Date().toISOString()
+  };
+  if (!entry.id || !entry.title || !CALENDAR_TYPES.has(entry.type) || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date) || !/^\d{2}:\d{2}$/.test(entry.start_time) || !/^\d{2}:\d{2}$/.test(entry.end_time) || entry.start_time >= entry.end_time) throw Object.assign(new Error('Calendar entry invalid'), { status: 400 });
+  return entry;
+}
+
+async function handleAdminCalendar(request, env) {
+  await requireAdmin(request, env);
+  if (request.method === 'GET') {
+    const response = await supabaseRequest(env, `/rest/v1/calendar_becky_entries?select=${CALENDAR_COLUMNS}&order=date.asc,start_time.asc`);
+    return json({ entries: await response.json() });
+  }
+  assertSameOrigin(request);
+  if (request.method === 'POST') {
+    const entry = normalizeCalendarEntryInput(await readJson(request, 40_000), { id: crypto.randomUUID() });
+    const response = await supabaseRequest(env, '/rest/v1/calendar_becky_entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(entry) });
+    return json((await response.json())[0], 201);
+  }
+  const match = request.url.match(/\/api\/admin\/calendar\/([^/?]+)$/);
+  if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+  const id = decodeURIComponent(match[1]);
+  if (request.method === 'DELETE') {
+    await supabaseRequest(env, `/rest/v1/calendar_becky_entries?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  if (request.method === 'PATCH') {
+    const body = await readJson(request, 40_000);
+    const currentResponse = await supabaseRequest(env, `/rest/v1/calendar_becky_entries?id=eq.${encodeURIComponent(id)}&select=${CALENDAR_COLUMNS}`);
+    const current = (await currentResponse.json())[0];
+    if (!current) return json({ error: 'Calendar entry not found' }, 404);
+    const entry = normalizeCalendarEntryInput({ ...current, ...body, id }, current);
+    delete entry.created_at;
+    const response = await supabaseRequest(env, `/rest/v1/calendar_becky_entries?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(entry) });
+    return json((await response.json())[0]);
+  }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+
 async function getDocument(env, key) {
   const response = await supabaseRequest(env, `/rest/v1/app_documents?key=eq.${encodeURIComponent(key)}&select=payload&limit=1`);
   const rows = await response.json();
@@ -534,6 +585,7 @@ async function handleApi(request, env, pathname) {
   });
   if (pathname.startsWith('/api/auth/')) return handleAuth(request, env, pathname);
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
+  if (pathname === '/api/admin/calendar' || pathname.startsWith('/api/admin/calendar/')) return handleAdminCalendar(request, env);
   if (pathname === '/api/event-survey/results') return handleSurveyResults(request, env);
   if (pathname === '/api/event-survey/funnel') return handleSurveyFunnel(request, env);
   if (pathname === '/api/event-survey') return handleSurvey(request, env);

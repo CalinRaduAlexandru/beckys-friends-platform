@@ -14,6 +14,7 @@ const PLAYGROUND_SURVEY_FILE = path.join(ROOT, 'data', 'playground-survey-respon
 const PLAYGROUND_FUNNEL_FILE = path.join(ROOT, 'data', 'playground-survey-funnel-events.json');
 const PLAYGROUND_RAFFLE_FILE = path.join(ROOT, 'data', 'playground-survey-raffle.json');
 const ADMIN_TASKS_FILE = path.join(ROOT, 'data', 'admin-tasks.json');
+const ADMIN_CALENDAR_FILE = path.join(ROOT, 'data', 'admin-calendar.json');
 const PUBLIC = path.join(ROOT, 'public');
 
 function escapeHtml(value) {
@@ -126,6 +127,32 @@ function normalizeAdminTask(input, existing = {}) {
     created_at: existing.created_at || input?.created_at || now,
     updated_at: now
   };
+}
+
+function readCalendarEntries() {
+  try {
+    const entries = fs.existsSync(ADMIN_CALENDAR_FILE) ? JSON.parse(fs.readFileSync(ADMIN_CALENDAR_FILE, 'utf8')) : [];
+    return Array.isArray(entries) ? entries : [];
+  } catch { throw new Error('Invalid calendar store'); }
+}
+
+function writeCalendarEntries(entries) {
+  fs.mkdirSync(path.dirname(ADMIN_CALENDAR_FILE), { recursive: true });
+  fs.writeFileSync(ADMIN_CALENDAR_FILE, JSON.stringify(entries, null, 2));
+}
+
+function normalizeCalendarEntry(input, existing = {}) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
+  const title = String(input?.title ?? existing.title ?? '').trim();
+  const type = String(input?.type ?? existing.type ?? '').trim();
+  const date = String(input?.date ?? existing.date ?? '').trim();
+  const startTime = String(input?.start_time ?? existing.start_time ?? '').trim();
+  const endTime = String(input?.end_time ?? existing.end_time ?? '').trim();
+  const note = String(input?.note ?? existing.note ?? '').trim();
+  if (!id || !title || !type || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) throw new Error('Calendar entry invalid');
+  if (startTime >= endTime) throw new Error('Calendar entry time invalid');
+  const now = new Date().toISOString();
+  return { id, title, type, date, start_time: startTime, end_time: endTime, note, created_at: existing.created_at || input?.created_at || now, updated_at: now };
 }
 
 function readRequestJson(req, res, maxBytes, callback) {
@@ -308,6 +335,48 @@ const server = http.createServer((req, res) => {
         writeAdminTasks(tasks);
         send(res, 200, tasks[index]);
       } catch { send(res, 400, { error: 'Admin task invalid' }); }
+    });
+    return;
+  }
+  if (url.pathname === '/api/admin/calendar' && req.method === 'GET') {
+    try { return send(res, 200, { entries: readCalendarEntries() }); }
+    catch { return send(res, 500, { error: 'Calendar unavailable' }); }
+  }
+  if (url.pathname === '/api/admin/calendar' && req.method === 'POST') {
+    readRequestJson(req, res, 40_000, body => {
+      try {
+        const entries = readCalendarEntries();
+        const entry = normalizeCalendarEntry(body);
+        entries.push(entry);
+        entries.sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`));
+        writeCalendarEntries(entries);
+        send(res, 201, entry);
+      } catch { send(res, 400, { error: 'Calendar entry invalid' }); }
+    });
+    return;
+  }
+  if (url.pathname.startsWith('/api/admin/calendar/') && ['PATCH', 'DELETE'].includes(req.method)) {
+    const id = decodeURIComponent(url.pathname.slice('/api/admin/calendar/'.length));
+    if (!id) return send(res, 400, { error: 'Calendar entry id missing' });
+    if (req.method === 'DELETE') {
+      try {
+        const entries = readCalendarEntries();
+        const next = entries.filter(entry => entry.id !== id);
+        if (next.length === entries.length) return send(res, 404, { error: 'Calendar entry not found' });
+        writeCalendarEntries(next);
+        return send(res, 200, { ok: true });
+      } catch { return send(res, 500, { error: 'Calendar unavailable' }); }
+    }
+    readRequestJson(req, res, 40_000, body => {
+      try {
+        const entries = readCalendarEntries();
+        const index = entries.findIndex(entry => entry.id === id);
+        if (index < 0) return send(res, 404, { error: 'Calendar entry not found' });
+        entries[index] = normalizeCalendarEntry({ ...entries[index], ...body, id }, entries[index]);
+        entries.sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`));
+        writeCalendarEntries(entries);
+        send(res, 200, entries.find(entry => entry.id === id));
+      } catch { send(res, 400, { error: 'Calendar entry invalid' }); }
     });
     return;
   }
