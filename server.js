@@ -149,10 +149,17 @@ function normalizeCalendarEntry(input, existing = {}) {
   const startTime = String(input?.start_time ?? existing.start_time ?? '').trim();
   const endTime = String(input?.end_time ?? existing.end_time ?? '').trim();
   const note = String(input?.note ?? existing.note ?? '').trim();
-  if (!id || !title || !type || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) throw new Error('Calendar entry invalid');
+  if (!id || !title || !['open', 'event', 'private', 'closed'].includes(type) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) throw new Error('Calendar entry invalid');
   if (startTime >= endTime) throw new Error('Calendar entry time invalid');
   const now = new Date().toISOString();
   return { id, title, type, date, start_time: startTime, end_time: endTime, note, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+}
+
+function calendarWeekDates(weekStart) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) throw new Error('Calendar week invalid');
+  const start = new Date(`${weekStart}T12:00:00`);
+  if (start.getDay() !== 1) throw new Error('Calendar week must start on Monday');
+  return Array.from({ length: 7 }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date.toISOString().slice(0, 10); });
 }
 
 function readRequestJson(req, res, maxBytes, callback) {
@@ -352,6 +359,22 @@ const server = http.createServer((req, res) => {
         writeCalendarEntries(entries);
         send(res, 201, entry);
       } catch { send(res, 400, { error: 'Calendar entry invalid' }); }
+    });
+    return;
+  }
+  if (url.pathname === '/api/admin/calendar/week' && req.method === 'PUT') {
+    readRequestJson(req, res, 120_000, body => {
+      try {
+        const dates = calendarWeekDates(String(body?.week_start || ''));
+        if (!Array.isArray(body?.entries) || body.entries.length > 50) throw new Error('Calendar week invalid');
+        const existing = readCalendarEntries();
+        const weekEntries = body.entries.map(entry => normalizeCalendarEntry({ ...entry, date: String(entry.date || '') }));
+        if (weekEntries.some(entry => !dates.includes(entry.date))) throw new Error('Calendar entry outside week');
+        const next = [...existing.filter(entry => !dates.includes(entry.date)), ...weekEntries];
+        next.sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`));
+        writeCalendarEntries(next);
+        send(res, 200, { entries: weekEntries });
+      } catch { send(res, 400, { error: 'Calendar week invalid' }); }
     });
     return;
   }

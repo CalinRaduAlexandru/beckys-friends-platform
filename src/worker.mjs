@@ -149,7 +149,7 @@ async function handleAdminTasks(request, env) {
 }
 
 const CALENDAR_COLUMNS = 'id,title,type,date,start_time,end_time,note,created_at,updated_at';
-const CALENDAR_TYPES = new Set(['open', 'party', 'event', 'reservation', 'private', 'closed']);
+const CALENDAR_TYPES = new Set(['open', 'event', 'private', 'closed']);
 
 function normalizeCalendarEntryInput(input, existing = {}) {
   const entry = {
@@ -178,6 +178,23 @@ async function handleAdminCalendar(request, env) {
     const entry = normalizeCalendarEntryInput(await readJson(request, 40_000), { id: crypto.randomUUID() });
     const response = await supabaseRequest(env, '/rest/v1/calendar_becky_entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(entry) });
     return json((await response.json())[0], 201);
+  }
+  if (request.method === 'PUT' && new URL(request.url).pathname === '/api/admin/calendar/week') {
+    const body = await readJson(request, 120_000);
+    const weekStart = String(body?.week_start || '').trim();
+    const start = new Date(`${weekStart}T12:00:00`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart) || Number.isNaN(start.getTime()) || start.getDay() !== 1 || !Array.isArray(body?.entries) || body.entries.length > 50) return json({ error: 'Calendar week invalid' }, 400);
+    const dates = Array.from({ length: 7 }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date.toISOString().slice(0, 10); });
+    const entries = body.entries.map(entry => normalizeCalendarEntryInput(entry));
+    if (entries.some(entry => !dates.includes(entry.date))) return json({ error: 'Calendar entry outside week' }, 400);
+    const existingResponse = await supabaseRequest(env, `/rest/v1/calendar_becky_entries?select=id&date=gte.${dates[0]}&date=lte.${dates[6]}`);
+    const existing = await existingResponse.json();
+    if (existing.length) await supabaseRequest(env, `/rest/v1/calendar_becky_entries?id=in.(${existing.map(entry => encodeURIComponent(entry.id)).join(',')})`, { method: 'DELETE' });
+    if (!entries.length) return json({ entries: [] });
+    const response = await supabaseRequest(env, '/rest/v1/calendar_becky_entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(entries) });
+    const rows = await response.json();
+    rows.sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`));
+    return json({ entries: rows });
   }
   const match = request.url.match(/\/api\/admin\/calendar\/([^/?]+)$/);
   if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });

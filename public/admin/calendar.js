@@ -1,55 +1,54 @@
 (function () {
-  const TYPES = [
-    ['open', 'Program deschis'],
-    ['party', 'Petrecere'],
-    ['event', 'Eveniment'],
-    ['reservation', 'Rezervare / acces doar cu rezervare'],
-    ['private', 'Petrecere privată / spațiu indisponibil'],
-    ['closed', 'Închis']
-  ];
-  const safe = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
   const api = (path, options) => (window.adminApiFetch || fetch)(path, options);
-  const typeLabel = type => TYPES.find(item => item[0] === type)?.[1] || type;
-  const dateLabel = value => new Intl.DateTimeFormat('ro-RO', { weekday:'long', day:'numeric', month:'long', year:'numeric' }).format(new Date(`${value}T12:00:00`));
+  const safe = value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
+  const dayNames = ['Luni','Marți','Miercuri','Joi','Vineri','Sâmbătă','Duminică'];
+  const typeLabel = type => type === 'private' ? 'Eveniment privat' : type === 'event' ? 'Eveniment' : type === 'closed' ? 'Închis' : 'Liber la joacă';
+  const typeIcon = type => type === 'private' ? '🔒' : type === 'event' ? '🎈' : type === 'closed' ? '⛔' : '🟢';
+  const pad = value => String(value).padStart(2, '0');
+  const localDate = date => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+  const parseDate = value => new Date(`${value}T12:00:00`);
+  const mondayOf = date => { const result = new Date(date); const day = result.getDay() || 7; result.setDate(result.getDate() - day + 1); result.setHours(12, 0, 0, 0); return result; };
+  const addDays = (date, days) => { const result = new Date(date); result.setDate(result.getDate() + days); return result; };
+  const weekDates = start => Array.from({ length: 7 }, (_, index) => localDate(addDays(start, index)));
+  const baseHours = index => index >= 5 ? ['11:00', '21:00'] : ['15:00', '21:00'];
+  const formatRange = start => { const date = parseDate(start); return `${pad(date.getDate())}–${pad(addDays(date, 6).getDate())} ${new Intl.DateTimeFormat('ro-RO',{month:'long'}).format(addDays(date, 6))}`; };
+  const timeToMinutes = value => { const [hours, minutes] = value.split(':').map(Number); return hours * 60 + minutes; };
+  const minutesToTime = value => `${pad(Math.floor(value / 60))}:${pad(value % 60)}`;
+
+  function buildDayEntries(date, index, entries) {
+    const [openStart, openEnd] = baseHours(index);
+    const special = entries.filter(entry => entry.date === date && ['private','event'].includes(entry.type)).sort((a, b) => a.start_time.localeCompare(b.start_time));
+    if (!special.length) return [{ id:`default-${date}`, date, type:'open', title:'Liber la joacă', start_time:openStart, end_time:openEnd, note:'' }];
+    const result = []; let cursor = timeToMinutes(openStart); const end = timeToMinutes(openEnd);
+    special.forEach(entry => { const start = Math.max(cursor, timeToMinutes(entry.start_time)); const finish = Math.min(end, timeToMinutes(entry.end_time)); if (finish <= start) return; if (start > cursor) result.push({ id:`open-${date}-${cursor}`, date, type:'open', title:'Liber la joacă', start_time:minutesToTime(cursor), end_time:minutesToTime(start), note:'' }); result.push({ ...entry, start_time:minutesToTime(start), end_time:minutesToTime(finish), title:typeLabel(entry.type) }); cursor = finish; });
+    if (cursor < end) result.push({ id:`open-${date}-${cursor}`, date, type:'open', title:'Liber la joacă', start_time:minutesToTime(cursor), end_time:openEnd, note:'' });
+    return result;
+  }
+
+  function createCanvas(weekStart, days) {
+    const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = 1350; const context = canvas.getContext('2d');
+    const colors = ['#e5f5f3','#fff1df','#f1eafa','#eaf1fa','#ffe8e7','#f8e9f4','#eee6fa'];
+    context.fillStyle = '#fffaf6'; context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = '#198e9f'; context.font = '900 22px Arial'; context.fillText("BECKY’S GARDEN", 70, 76);
+    context.fillStyle = '#233448'; context.font = '700 52px Arial'; context.fillText('Programul săptămânii', 70, 145);
+    context.fillStyle = '#fb7176'; context.font = '700 25px Arial'; context.fillText(formatRange(localDate(weekStart)), 73, 187);
+    days.forEach((day, index) => { const column = index % 2; const row = Math.floor(index / 2); const x = 65 + column * 490; const y = 245 + row * 225; context.fillStyle = colors[index]; context.beginPath(); context.roundRect(x, y, 440, 185, 24); context.fill(); context.fillStyle = '#198e9f'; context.font = '800 28px Arial'; context.fillText(dayNames[index], x + 25, y + 42); let line = y + 82; day.entries.forEach(entry => { context.fillStyle = entry.type === 'open' ? '#4f7281' : entry.type === 'private' ? '#c45d64' : '#7357a1'; context.font = '700 22px Arial'; context.fillText(`${entry.start_time}–${entry.end_time}`, x + 25, line); context.font = '600 19px Arial'; context.fillText(`${typeIcon(entry.type)} ${typeLabel(entry.type)}`, x + 25, line + 29); line += 62; }); });
+    context.fillStyle = '#198e9f'; context.font = '700 24px Arial'; context.fillText('Te așteptăm la joacă!', 70, 1190); context.fillStyle = '#74869e'; context.font = '500 19px Arial'; context.fillText('Programul se poate modifica pentru evenimente private.', 70, 1230); return canvas;
+  }
 
   async function renderCalendarAdmin() {
-    const demo = document.getElementById('workspace-demo');
-    if (!demo) return;
-    document.body.dataset.workspace = 'calendar';
-    document.querySelector('.workspace')?.classList.add('hidden');
-    document.getElementById('css-workspace')?.classList.add('hidden');
-    document.getElementById('empty')?.classList.add('hidden');
-    document.getElementById('editor')?.classList.add('hidden');
-    document.querySelector('.top-actions')?.classList.add('overview-actions-hidden');
-    document.querySelectorAll('.sidebar .side-link').forEach(link => link.classList.toggle('active', link.href.includes('view=calendar')));
-    document.querySelector('.topbar h1').textContent = 'Calendar Becky';
-    document.querySelector('.topbar .subtitle').textContent = 'Programul important al spațiului, introdus manual.';
-    demo.className = 'workspace-demo calendar-admin-workspace';
-    demo.classList.remove('hidden');
-    demo.innerHTML = '<div class="calendar-admin-loading">Se încarcă calendarul…</div>';
-    let entries = [];
-    try {
-      const response = await api('/api/admin/calendar');
-      if (!response.ok) throw new Error('Calendar unavailable');
-      entries = (await response.json()).entries || [];
-    } catch {
-      demo.innerHTML = '<div class="calendar-admin-empty">Calendarul nu este disponibil momentan.</div>';
-      return;
-    }
-    const render = () => {
-      const sorted = [...entries].sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`));
-      demo.innerHTML = `<div class="calendar-admin-head"><div><span class="eyebrow">PROGRAM BECKY · V1</span><h2>Calendar Becky</h2><p>Adaugă manual momentele care schimbă programul și accesul spațiului.</p></div><button class="primary calendar-add" data-calendar-add>＋ Adaugă intrare</button></div><div class="calendar-admin-list">${sorted.map(entry => `<article class="calendar-admin-entry"><div class="calendar-entry-date"><strong>${safe(entry.date)}</strong><small>${safe(dateLabel(entry.date))}</small></div><div class="calendar-entry-main"><div><span class="calendar-type calendar-type-${safe(entry.type)}">${safe(typeLabel(entry.type))}</span><h3>${safe(entry.title)}</h3></div><p>${safe(entry.start_time)}–${safe(entry.end_time)}${entry.note ? ` · ${safe(entry.note)}` : ''}</p></div><div class="calendar-entry-actions"><button data-calendar-edit="${safe(entry.id)}">Editează</button><button class="danger-link" data-calendar-delete="${safe(entry.id)}">Șterge</button></div></article>`).join('') || '<div class="calendar-admin-empty">Nu există încă date.</div>'}</div><div class="calendar-modal hidden" id="calendar-modal"><form class="calendar-modal-card" id="calendar-form"><div class="calendar-modal-head"><div><span class="eyebrow">CALENDAR BECKY</span><h3 id="calendar-modal-title">Intrare nouă</h3></div><button type="button" class="overview-close" data-calendar-close>×</button></div><label>Titlu<input name="title" required maxlength="120"></label><label>Tip<select name="type">${TYPES.map(([value, label]) => `<option value="${value}">${safe(label)}</option>`).join('')}</select></label><div class="calendar-form-grid"><label>Data<input name="date" type="date" required></label><label>Ora început<input name="start_time" type="time" required></label><label>Ora sfârșit<input name="end_time" type="time" required></label></div><label>Notă opțională<textarea name="note" maxlength="280"></textarea></label><div class="calendar-modal-actions"><button type="button" class="secondary" data-calendar-close>Anulează</button><button class="primary" type="submit">Salvează</button></div></form></div>`;
-      let editing = null;
-      const modal = document.getElementById('calendar-modal');
-      const form = document.getElementById('calendar-form');
-      const open = entry => { editing = entry || null; modal.classList.remove('hidden'); form.title.value = entry?.title || ''; form.type.value = entry?.type || 'open'; form.date.value = entry?.date || new Date().toISOString().slice(0, 10); form.start_time.value = entry?.start_time || '10:00'; form.end_time.value = entry?.end_time || '18:00'; form.note.value = entry?.note || ''; document.getElementById('calendar-modal-title').textContent = entry ? 'Editează intrarea' : 'Intrare nouă'; form.title.focus(); };
-      document.querySelector('[data-calendar-add]')?.addEventListener('click', () => open());
-      document.querySelectorAll('[data-calendar-close]').forEach(button => button.addEventListener('click', () => modal.classList.add('hidden')));
-      document.querySelectorAll('[data-calendar-edit]').forEach(button => button.addEventListener('click', () => open(entries.find(entry => entry.id === button.dataset.calendarEdit))));
-      document.querySelectorAll('[data-calendar-delete]').forEach(button => button.addEventListener('click', async () => { const entry = entries.find(item => item.id === button.dataset.calendarDelete); if (!entry || !confirm(`Ștergi „${entry.title}”?`)) return; const response = await api(`/api/admin/calendar/${encodeURIComponent(entry.id)}`, { method:'DELETE' }); if (response.ok) { entries = entries.filter(item => item.id !== entry.id); render(); } }));
-      form.addEventListener('submit', async event => { event.preventDefault(); const body = Object.fromEntries(new FormData(form)); const response = await api(editing ? `/api/admin/calendar/${encodeURIComponent(editing.id)}` : '/api/admin/calendar', { method: editing ? 'PATCH' : 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) }); if (!response.ok) return; const saved = await response.json(); entries = editing ? entries.map(item => item.id === editing.id ? saved : item) : [...entries, saved]; render(); });
-    };
-    render();
+    const demo = document.getElementById('workspace-demo'); if (!demo) return;
+    document.body.dataset.workspace = 'calendar'; document.querySelector('.workspace')?.classList.add('hidden'); document.getElementById('css-workspace')?.classList.add('hidden'); document.getElementById('empty')?.classList.add('hidden'); document.getElementById('editor')?.classList.add('hidden'); document.querySelector('.top-actions')?.classList.add('overview-actions-hidden'); document.querySelectorAll('.sidebar .side-link').forEach(link => link.classList.toggle('active', link.href.includes('view=calendar'))); document.querySelector('.topbar h1').textContent = 'Calendar Becky'; document.querySelector('.topbar .subtitle').textContent = 'Construiește rapid programul public pentru săptămâna aleasă.'; demo.className = 'workspace-demo calendar-admin-workspace'; demo.classList.remove('hidden'); demo.innerHTML = '<div class="calendar-admin-loading">Se încarcă săptămâna…</div>';
+    let allEntries = []; try { const response = await api('/api/admin/calendar'); if (!response.ok) throw new Error(); allEntries = (await response.json()).entries || []; } catch { demo.innerHTML = '<div class="calendar-admin-empty">Calendarul nu este disponibil momentan.</div>'; return; }
+    const todayMonday = mondayOf(new Date()); const nextMonday = addDays(todayMonday, 7); let weekStart = nextMonday; let activeDays = [];
+    const saveWeek = async days => { const entries = days.flatMap(day => day.entries.filter(entry => entry.type !== 'open').map(entry => ({ ...entry, id:entry.id.startsWith('default-') || entry.id.startsWith('open-') ? crypto.randomUUID() : entry.id }))); const response = await api('/api/admin/calendar/week', { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({week_start:localDate(weekStart),entries}) }); if (!response.ok) throw new Error(); allEntries = [...allEntries.filter(entry => !weekDates(weekStart).includes(entry.date)), ...(await response.json()).entries || []]; };
+    const render = () => { const dates = weekDates(weekStart); activeDays = dates.map((date, index) => ({ date, index, entries:buildDayEntries(date, index, allEntries) })); const currentActive = localDate(weekStart) === localDate(todayMonday); const nextActive = localDate(weekStart) === localDate(nextMonday); demo.innerHTML = `<div class="calendar-planner-head"><div><span class="eyebrow">PROGRAM BECKY · V1</span><h2>Disponibilitatea săptămânii</h2><p>Modifici doar evenimentele; intervalele libere se calculează automat.</p></div><div class="calendar-planner-actions"><button class="calendar-nav ${currentActive?'is-active':''}" data-calendar-current>Săptămâna în curs</button><button class="calendar-nav ${nextActive?'is-active':''}" data-calendar-next>Săptămâna următoare</button><button class="primary" data-calendar-preview>Preview</button></div></div><div class="calendar-week-label"><button data-calendar-prev aria-label="Săptămâna anterioară">←</button><strong>${safe(formatRange(localDate(weekStart)))}</strong><button data-calendar-forward aria-label="Săptămâna următoare">→</button></div><div class="calendar-day-grid">${activeDays.map(day => `<article class="calendar-day-card"><header><div><small>${dayNames[day.index]}</small><strong>${safe(day.date)}</strong></div><span>${day.entries.length} intervale</span></header><div class="calendar-segments">${day.entries.map(entry => `<div class="calendar-segment calendar-segment-${entry.type}"><span>${typeIcon(entry.type)}</span><div><strong>${safe(entry.start_time)}–${safe(entry.end_time)}</strong><small>${safe(typeLabel(entry.type))}</small></div></div>`).join('')}</div><div class="calendar-day-actions"><button data-calendar-add="event" data-calendar-date="${day.date}">＋ Eveniment</button><button data-calendar-add="private" data-calendar-date="${day.date}">＋ Eveniment privat</button><button class="calendar-reset" data-calendar-reset="${day.date}">Resetează ziua</button></div></article>`).join('')}</div><div class="calendar-planner-footer"><span data-calendar-status>Modificările se salvează automat.</span><button class="primary" data-calendar-preview>Vezi preview-ul săptămânii</button></div><section class="calendar-preview-panel hidden" data-calendar-preview-panel><div class="calendar-preview-head"><div><span class="eyebrow">PREVIEW PENTRU POSTARE</span><h3>Programul săptămânii</h3></div><div><button class="calendar-nav" data-calendar-back>← Înapoi la editare</button><button class="primary" data-calendar-download>Descarcă imaginea</button></div></div><div class="calendar-preview-canvas" data-calendar-canvas></div></section>`;
+      const status = text => { const node = demo.querySelector('[data-calendar-status]'); if (node) node.textContent = text; };
+      const openModal = (type, date) => { const modal = document.createElement('div'); modal.className = 'calendar-interval-modal'; modal.innerHTML = `<form class="calendar-interval-card"><div><span class="eyebrow">${safe(dayNames[dates.indexOf(date)])}</span><h3>${safe(typeLabel(type))}</h3><p>Alege intervalul. Restul zilei rămâne automat „Liber la joacă”.</p></div><label>De la<input name="start_time" type="time" required value="${baseHours(dates.indexOf(date))[0]}"></label><label>Până la<input name="end_time" type="time" required value="${baseHours(dates.indexOf(date))[1]}"></label><div class="calendar-interval-actions"><button type="button" class="calendar-nav" data-modal-close>Anulează</button><button class="primary">Adaugă interval</button></div></form>`; document.body.appendChild(modal); modal.querySelector('[data-modal-close]').onclick = () => modal.remove(); modal.querySelector('form').onsubmit = async event => { event.preventDefault(); const form = new FormData(event.currentTarget); const start = form.get('start_time'); const end = form.get('end_time'); const [baseStart, baseEnd] = baseHours(dates.indexOf(date)); if (start < baseStart || end > baseEnd || start >= end) return; const current = activeDays.find(day => day.date === date); const specials = current.entries.filter(entry => ['private','event'].includes(entry.type)); if (specials.some(entry => start < entry.end_time && end > entry.start_time)) return; const newEntry = { id:crypto.randomUUID(), date, type, title:typeLabel(type), start_time:start, end_time:end, note:'' }; const dayIndex = dates.indexOf(date); activeDays[dayIndex].entries = buildDayEntries(date, dayIndex, [...specials, newEntry]); try { await saveWeek(activeDays); modal.remove(); render(); } catch { status('Nu am putut salva modificarea.'); } }; };
+      demo.querySelector('[data-calendar-current]').onclick = () => { weekStart = todayMonday; render(); }; demo.querySelector('[data-calendar-next]').onclick = () => { weekStart = nextMonday; render(); }; demo.querySelector('[data-calendar-prev]').onclick = () => { weekStart = addDays(weekStart, -7); render(); }; demo.querySelector('[data-calendar-forward]').onclick = () => { weekStart = addDays(weekStart, 7); render(); }; demo.querySelectorAll('[data-calendar-add]').forEach(button => button.onclick = () => openModal(button.dataset.calendarAdd, button.dataset.calendarDate)); demo.querySelectorAll('[data-calendar-reset]').forEach(button => button.onclick = async () => { const day = activeDays.find(item => item.date === button.dataset.calendarReset); if (!day) return; day.entries = buildDayEntries(day.date, day.index, []); try { await saveWeek(activeDays); render(); } catch { status('Nu am putut salva modificarea.'); } });
+      const showPreview = () => { const panel = demo.querySelector('[data-calendar-preview-panel]'); panel.classList.remove('hidden'); const canvas = createCanvas(weekStart, activeDays); demo.querySelector('[data-calendar-canvas]').replaceChildren(canvas); demo.querySelector('[data-calendar-download]').onclick = () => { const link = document.createElement('a'); link.download = `program-becky-${localDate(weekStart)}.png`; link.href = canvas.toDataURL('image/png'); link.click(); }; demo.querySelector('[data-calendar-back]').onclick = () => panel.classList.add('hidden'); panel.scrollIntoView({ behavior:'smooth', block:'start' }); };
+      demo.querySelectorAll('[data-calendar-preview]').forEach(button => button.onclick = showPreview);
+    }; render();
   }
   window.renderCalendarAdmin = renderCalendarAdmin;
 })();
