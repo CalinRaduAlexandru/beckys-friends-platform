@@ -1,0 +1,425 @@
+:root {
+  --shell-ink: #233448;
+  --shell-coral: #fb7176;
+  --shell-teal: #40a5a8;
+  --shell-paper: #fffcf8;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  background: var(--shell-paper);
+}
+
+body {
+  opacity: 1;
+  transition: opacity .32s ease;
+}
+
+body.is-loading {
+  opacity: 0;
+  visibility: hidden;
+}
+
+body.is-page-leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(180deg, #fffcf8 0%, #fcf6eb 45%, #f8efe2 75%, #f4e7d6 100%) !important;
+  color: var(--shell-ink);
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.site-header {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  max-width: none;
+  height: 92px;
+  min-height: 92px;
+  padding: 15px max(28px, calc((100vw - 1280px) / 2 + 28px));
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  transform: translateY(24px);
+  transition: transform .52s cubic-bezier(.22, 1.28, .36, 1), background .45s ease, border-color .45s ease, box-shadow .45s ease, backdrop-filter .45s ease;
+}
+
+.site-header:not(.is-scrolled) {
+  padding-top: 12px;
+}
+
+.site-header.is-scrolled {
+  border-bottom-color: rgba(180, 219, 222, .65);
+  background: rgba(255, 252, 248, .94);
+  box-shadow: 0 8px 24px rgba(35, 52, 72, .08);
+  transform: translateY(0);
+  backdrop-filter: blur(12px);
+}
+
+.site-header .brand-lockup {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: 240px;
+  min-width: 240px;
+  height: 72px;
+  min-height: 72px;
+  color: var(--shell-teal);
+  font: 600 20px/1 'Mali', sans-serif;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.site-header .nav-logo-full {
+  position: absolute;
+  top: -20px;
+  left: -60px !important;
+  display: block;
+  width: 390px;
+  height: 156px;
+  object-fit: contain;
+  opacity: 1;
+  transform: translateX(-6px) scale(1) !important;
+  transform-origin: left center;
+  transition: opacity .42s ease, transform .52s cubic-bezier(.22, 1.28, .36, 1);
+}
+
+.site-header:not(.is-scrolled) .nav-logo-full {
+  top: -26px !important;
+}
+
+.site-header.is-scrolled .nav-logo-full {
+  left: -60px !important;
+  opacity: 1;
+  transform: translate(14px, -26px) scale(.65) !important;
+}
+
+.site-header .nav-logo,
+.site-header .brand-heart,
+.site-header .brand-lockup > span {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.site-header .site-nav {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 2.5vw, 34px);
+  padding: 0 20px;
+}
+
+.site-header .site-nav a {
+  position: relative;
+  color: var(--shell-ink);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: color .2s ease, font-weight .2s ease;
+}
+
+.site-header .site-nav a[data-nav-page='overview'] { --nav-active-color: #fda837; }
+.site-header .site-nav a[data-nav-page='parties'] { --nav-active-color: #f16d71; }
+.site-header .site-nav a[data-nav-page='events'] { --nav-active-color: #48a5a9; }
+.site-header .site-nav a[data-nav-page='community'] { --nav-active-color: #a473c0; }
+
+.site-header .site-nav a.is-active {
+  color: var(--nav-active-color);
+  font-weight: 900;
+}
+
+.site-header .site-nav a.is-active::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -9px;
+  left: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0;
+  transform: scaleX(.35);
+  transform-origin: center;
+  transition: opacity .35s ease, transform .45s cubic-bezier(.37, 0, .63, 1);
+}
+
+.site-header.is-scrolled .site-nav a.is-active::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.site-header .site-nav a:hover {
+  color: #238b9a;
+}
+
+.site-header .whatsapp-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--shell-teal);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color .2s ease, transform .2s ease;
+}
+
+.site-header .whatsapp-link:hover {
+  color: #318b8e;
+  transform: translateY(-1px);
+}
+
+.site-header .whatsapp-icon {
+  display: block;
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+}
+
+.site-header .nav-cta {
+  padding: 13px 20px;
+  border-color: var(--shell-coral);
+  background: var(--shell-coral);
+  color: #fff;
+}
+
+.site-header .nav-flags {
+  position: absolute;
+  top: 64%;
+  left: calc(31% + 4px) !important;
+  width: 36% !important;
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  opacity: .92;
+  pointer-events: none;
+  transition: opacity .38s ease, transform .5s cubic-bezier(.22, 1.28, .36, 1);
+}
+
+.site-header.is-scrolled .nav-flags {
+  opacity: 0;
+  transform: translateY(-24px);
+}
+
+.calendar-icon {
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 15px;
+  height: 14px;
+  border: 1.8px solid currentColor;
+  border-radius: 3px;
+}
+
+.calendar-icon::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 1px;
+  left: 1px;
+  border-top: 1.8px solid currentColor;
+}
+
+.calendar-icon::after {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: 4px;
+  width: 3px;
+  height: 3px;
+  border-right: 1.8px solid currentColor;
+  border-left: 1.8px solid currentColor;
+}
+
+@media (max-width: 900px) {
+  .site-header {
+    height: 80px;
+    min-height: 80px;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .site-header .brand-lockup {
+    width: 210px;
+    min-width: 210px;
+    height: 62px;
+    min-height: 62px;
+  }
+
+  .site-header .nav-logo-full {
+    top: -16px;
+    left: -52px !important;
+    width: 312px;
+    height: 130px;
+  }
+
+  .site-header:not(.is-scrolled) .nav-logo-full {
+    top: -22px !important;
+  }
+
+  .site-header.is-scrolled .nav-logo-full {
+    left: -52px !important;
+    transform: translate(14px, -22px) scale(.68) !important;
+  }
+
+  .site-header .nav-flags {
+    left: calc(20% + 4px) !important;
+    width: 54% !important;
+  }
+
+  .site-header .site-nav {
+    gap: 15px;
+    padding: 0;
+  }
+
+  .site-header .site-nav a {
+    font-size: 12px;
+  }
+
+  .site-header .whatsapp-link {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 700px) {
+  .site-header {
+    gap: 12px;
+  }
+
+  .site-header .site-nav {
+    display: none;
+  }
+
+  .site-header .whatsapp-link {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .site-header .brand-lockup {
+    width: auto;
+    min-width: 0;
+    height: 54px;
+    min-height: 54px;
+  }
+
+  .site-header .nav-logo-full {
+    top: -12px;
+    left: -44px !important;
+    width: 264px;
+    height: 110px;
+  }
+
+  .site-header:not(.is-scrolled) .nav-logo-full {
+    top: -18px !important;
+  }
+
+  .site-header.is-scrolled .nav-logo-full {
+    left: -44px !important;
+    transform: translate(14px, -18px) scale(.7) !important;
+  }
+
+  .site-header .nav-flags {
+    left: calc(15% + 4px) !important;
+    width: 57.6% !important;
+  }
+
+  .site-header .whatsapp-link span {
+    display: none;
+  }
+
+  .site-header .nav-cta {
+    padding: 10px 13px;
+    font-size: 12px;
+  }
+}
+
+/* Shared page-entry motion: a soft, gaussian-like ease-in-out. The individual
+   translate property keeps the header's existing scroll transform intact. */
+@keyframes pageNavFadeInDown {
+  from {
+    opacity: 0;
+    translate: 0 -28px;
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+
+@keyframes pageHeroFadeInRight {
+  from {
+    opacity: 0;
+    translate: -34px 0;
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+
+@keyframes pageHeroFadeInLeft {
+  from {
+    opacity: 0;
+    translate: 34px 0;
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+    filter: blur(0);
+  }
+}
+
+body:not(.is-loading) .site-header {
+  animation: pageNavFadeInDown .65s cubic-bezier(.37, 0, .63, 1) both;
+}
+
+body:not(.is-loading) .hero-copy,
+body:not(.is-loading) .party-hero-copy,
+body:not(.is-loading) .events-hero-copy,
+body:not(.is-loading) .community-hero-copy {
+  animation: pageHeroFadeInRight .72s cubic-bezier(.37, 0, .63, 1) .1s both;
+}
+
+body:not(.is-loading) .hero-art,
+body:not(.is-loading) .party-visual,
+body:not(.is-loading) .events-hero-visual,
+body:not(.is-loading) .community-hero-visual {
+  animation: pageHeroFadeInLeft .72s cubic-bezier(.37, 0, .63, 1) .2s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:not(.is-loading) .site-header,
+  body:not(.is-loading) .hero-copy,
+  body:not(.is-loading) .party-hero-copy,
+  body:not(.is-loading) .events-hero-copy,
+  body:not(.is-loading) .community-hero-copy,
+  body:not(.is-loading) .hero-art,
+  body:not(.is-loading) .party-visual,
+  body:not(.is-loading) .events-hero-visual,
+  body:not(.is-loading) .community-hero-visual {
+    animation: none;
+    filter: none;
+    opacity: 1;
+    translate: none;
+  }
+}

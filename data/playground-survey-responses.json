@@ -1,0 +1,45 @@
+[
+  {
+    "id": "f87ca676-0f6c-4afd-b131-053a315eb16d",
+    "submitted_at": "2026-08-07T16:50:08.134Z",
+    "answers": {
+      "visitFrequency": "Venim frecvent",
+      "childAges": [
+        "0–2 ani",
+        "3–5 ani"
+      ],
+      "choiceReasons": [
+        "Mâncarea și băuturile completează ieșirea",
+        "Copilul cere să revenim",
+        "Adultul se poate relaxa"
+      ],
+      "favorites": [
+        "Faptul că putem veni cu alte familii",
+        "Spațiul de joacă",
+        "Echipa"
+      ],
+      "ratings": {
+        "staff": 4,
+        "cleanliness": 3,
+        "adultComfort": 3,
+        "foodService": 3
+      },
+      "missing": [
+        "Mai mult spațiu în momentele aglomerate",
+        "Mai multe activități ghidate",
+        "Mai multă claritate despre activitățile disponibile",
+        "Mai multe opțiuni de mâncare și băutură",
+        "Activități mai bine diferențiate pe vârste",
+        "Nu simțim că lipsește ceva important"
+      ],
+      "returnDrivers": [
+        "Găsim mereu ceva nou de făcut",
+        "Spațiul rămâne curat și sigur",
+        "Echipa ne face să ne simțim bineveniți"
+      ],
+      "favoritePlace": "sadasdas",
+      "favoritePlaceReason": "asdasddas"
+    },
+    "schema_version": 1
+  }
+]

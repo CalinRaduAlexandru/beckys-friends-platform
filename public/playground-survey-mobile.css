@@ -1,0 +1,194 @@
+.ps-card,
+.ps-cover,
+.ps-prize > div,
+.ps-info > span {
+  min-width: 0;
+}
+
+.ps-card {
+  width: 100%;
+  overflow: hidden;
+}
+
+.ps-prize {
+  width: 100%;
+}
+
+.ps-rating-row {
+  grid-template-columns: minmax(180px, 1fr) repeat(4, 54px);
+}
+
+.ps-rating-row button:last-child {
+  font-size: 24px;
+}
+
+.ps-custom-choice {
+  display: none;
+  margin-top: 12px;
+}
+
+.ps-custom-choice.visible {
+  display: block;
+}
+
+.ps-custom-choice .ps-field {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--teal-light);
+}
+
+.ps-custom-choice .ps-field input {
+  margin-top: 2px;
+  background: #fff;
+}
+
+.ps-stages > div.active span,
+.ps-stages > div.active strong {
+  color: var(--teal);
+  font-weight: 900;
+}
+
+.ps-duck-source {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ps-happy-duck-stage,
+.ps-success-duck-stage {
+  position: relative;
+  overflow: hidden;
+}
+
+.ps-happy-duck-canvas {
+  display: block;
+  width: 92%;
+  max-width: 310px;
+  height: auto;
+  opacity: 0;
+  filter: drop-shadow(0 13px 14px rgba(35, 52, 72, 0.1));
+}
+
+.ps-happy-duck-stage.is-animating .ps-happy-duck-canvas,
+.ps-success-duck-stage.is-animating .ps-success-duck-canvas {
+  opacity: 1;
+}
+
+.ps-success-duck-stage {
+  width: min(160px, 42vw);
+  aspect-ratio: 43 / 64;
+  margin: 0 auto 15px;
+}
+
+.ps-success-duck-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+}
+
+.ps-confetti-piece {
+  position: fixed;
+  z-index: 200;
+  top: -18px;
+  width: 10px;
+  height: 16px;
+  border-radius: 3px;
+  pointer-events: none;
+  animation: ps-confetti-fall var(--duration) linear forwards;
+}
+
+@keyframes ps-confetti-fall {
+  to {
+    transform: translate3d(var(--drift), 110vh, 0) rotate(900deg);
+    opacity: 0.85;
+  }
+}
+
+@media (max-width: 760px) {
+  .ps-page,
+  .ps-journey,
+  .ps-stage,
+  .ps-stages {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .ps-page {
+    width: calc(100% - 24px);
+  }
+
+  .ps-stages > div {
+    min-width: 0;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .ps-stages span {
+    display: flex;
+    align-items: center;
+    text-align: center;
+  }
+
+  .ps-stages strong {
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .ps-stages small {
+    display: none;
+  }
+
+  .ps-card h1,
+  .ps-card h2 {
+    max-width: 100%;
+    font-size: 36px;
+    overflow-wrap: break-word;
+  }
+
+  .ps-prize,
+  .ps-info {
+    max-width: 100%;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .ps-prize {
+    align-items: flex-start;
+  }
+
+  .ps-prize > span {
+    font-size: 24px;
+  }
+
+  .ps-happy-duck-canvas {
+    width: 82%;
+    max-width: 220px;
+  }
+
+  .ps-actions {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .ps-rating-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .ps-rating-row > strong {
+    grid-column: 1 / -1;
+  }
+
+  .ps-rating-row button {
+    font-size: 23px;
+  }
+
+  .ps-rating-row button:last-child {
+    font-size: 27px;
+  }
+}

@@ -1,0 +1,3539 @@
+<!doctype html>
+<html lang="ro">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/png" href="/assets/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Chestionarul evenimentelor · Becky’s Garden</title>
+    <meta
+      name="description"
+      content="Spune-ne cum arată o ieșire în familie reușită. Un quiz interactiv, anonim și distractiv pentru părinți."
+    />
+    <link
+      rel="canonical"
+      href="https://beckysgarden.ro/chestionar-evenimente"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Becky’s Garden" />
+    <meta
+      property="og:title"
+      content="Spune-ne cum arată o ieșire în familie reușită"
+    />
+    <meta
+      property="og:description"
+      content="Un quiz interactiv, anonim și distractiv pentru părinți."
+    />
+    <meta
+      property="og:image"
+      content="https://beckysgarden.ro/assets/cover-link-image-chestionar-v1.png"
+    />
+    <meta property="og:image:width" content="1444" />
+    <meta property="og:image:height" content="1089" />
+    <meta
+      property="og:url"
+      content="https://beckysgarden.ro/chestionar-evenimente"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Spune-ne cum arată o ieșire în familie reușită"
+    />
+    <meta
+      name="twitter:description"
+      content="Un quiz interactiv, anonim și distractiv pentru părinți."
+    />
+    <meta
+      name="twitter:image"
+      content="https://beckysgarden.ro/assets/cover-link-image-chestionar-v1.png"
+    />
+    <script>
+      document.documentElement.classList.add("fonts-pending");
+    </script>
+    <link
+      rel="preload"
+      href="/assets/fonts/mali-600-latin-ext.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/assets/fonts/mali-600-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/assets/fonts/nunito-latin-ext.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/assets/fonts/nunito-latin.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="stylesheet"
+      href="/assets/fonts/chestionar-fonts.css?v=20260806-1"
+    />
+    <link rel="stylesheet" href="/cta.css?v=20260803-1" />
+    <style>
+      :root {
+        --teal: #33a9ba;
+        --teal-dark: #198e9f;
+        --coral: #fb7176;
+        --navy: #233449;
+        --cream: #fffcf8;
+        --paper: #fffdfa;
+        --mint: #ddf2f3;
+        --pink: #faabb9;
+        --yellow: #fdcb4b;
+        --lav: #cbbad8;
+        --green: #6cae78;
+        --line: #b4dbde;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+        background: var(--cream);
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--cream);
+        color: var(--navy);
+        font-family: "Nunito", sans-serif;
+        font-synthesis: none;
+        line-height: 1.5;
+      }
+      button,
+      input,
+      textarea,
+      select {
+        font-family: inherit;
+      }
+      html.fonts-pending .quiz-shell {
+        visibility: hidden;
+      }
+      html.fonts-pending body::before {
+        content: "";
+        position: fixed;
+        z-index: 999;
+        inset: 50% auto auto 50%;
+        width: 70px;
+        height: 70px;
+        transform: translate(-50%, -50%);
+        background: url("/assets/logo-mark-sun.png") center/contain no-repeat;
+        animation: font-loader-pulse 1.15s ease-in-out infinite;
+      }
+      @keyframes font-loader-pulse {
+        50% {
+          transform: translate(-50%, -50%) scale(1.055);
+          opacity: 0.74;
+        }
+      }
+      html.fonts-ready .quiz-shell {
+        animation: fonts-ready-in 0.18s ease-out;
+      }
+      @keyframes fonts-ready-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .quiz-shell {
+        min-height: 100vh;
+        overflow: hidden;
+        background:
+          radial-gradient(
+            circle at 92% 4%,
+            rgba(253, 203, 75, 0.16),
+            transparent 20%
+          ),
+          var(--cream);
+      }
+      .quiz-header {
+        width: min(1160px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 18px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid rgba(180, 219, 222, 0.7);
+      }
+      .quiz-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+      }
+      .quiz-brand img {
+        width: 225px;
+        height: 68px;
+        object-fit: contain;
+        object-position: center;
+      }
+      .quiz-main {
+        width: min(820px, calc(100% - 36px));
+        margin: 0 auto;
+        padding: 34px 0 70px;
+      }
+      .quiz-progress {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 26px;
+      }
+      .progress-track {
+        height: 10px;
+        flex: 1;
+        border-radius: 99px;
+        background: #f4e8d8;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: linear-gradient(
+          90deg,
+          var(--coral),
+          var(--yellow),
+          var(--teal)
+        );
+        transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .progress-label {
+        min-width: 78px;
+        text-align: right;
+        color: #7e8fa1;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .quiz-stage {
+        position: relative;
+        min-height: 560px;
+      }
+      .quiz-card {
+        background: rgba(255, 253, 250, 0.94);
+        border: 1px solid rgba(180, 219, 222, 0.8);
+        border-radius: 32px;
+        padding: 42px 52px;
+        box-shadow: 0 20px 55px rgba(35, 52, 72, 0.09);
+        animation: card-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      @keyframes card-in {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .quiz-kicker {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--coral);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .quiz-kicker img {
+        width: 16px;
+        height: 16px;
+      }
+      .quiz-card h1,
+      .quiz-card h2 {
+        margin: 12px 0 0;
+        color: var(--teal-dark);
+        font:
+          600 clamp(34px, 5vw, 58px)/1.03 Mali,
+          sans-serif;
+        letter-spacing: normal;
+        text-wrap: balance;
+      }
+      .quiz-card h2 {
+        font-size: clamp(28px, 4vw, 44px);
+      }
+      .quiz-card h1 em,
+      .quiz-card h2 em {
+        color: var(--coral);
+        font-style: normal;
+      }
+      .quiz-lead {
+        max-width: 610px;
+        margin: 20px 0 0;
+        color: #52677d;
+        font-size: 18px;
+      }
+      .duck-note {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 22px 0 0;
+        padding: 12px 16px;
+        width: max-content;
+        max-width: 100%;
+        border-radius: 18px;
+        background: #fff4ca;
+        color: #6f5a22;
+        font-weight: 700;
+      }
+      .duck-note span {
+        font-size: 25px;
+      }
+      .duel-visual {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        margin-top: 20px;
+      }
+      .duel-visual img {
+        display: block;
+        width: min(360px, 82vw);
+        height: auto;
+        object-fit: contain;
+      }
+      .quiz-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        margin-top: 32px;
+      }
+      .primary-btn,
+      .secondary-btn {
+        border: 0;
+        border-radius: 999px;
+        padding: 14px 24px;
+        font:
+          800 15px Nunito,
+          sans-serif;
+        cursor: pointer;
+        transition:
+          transform 0.2s,
+          box-shadow 0.2s,
+          filter 0.2s;
+      }
+      .primary-btn {
+        color: #fff;
+        background: var(--teal);
+        box-shadow: 0 9px 18px rgba(51, 169, 186, 0.23);
+      }
+      .secondary-btn {
+        color: var(--navy);
+        background: #fff;
+        border: 1px solid var(--line);
+      }
+      .primary-btn:hover,
+      .secondary-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 22px rgba(35, 52, 72, 0.14);
+        filter: brightness(1.04);
+      }
+      .answer-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 26px;
+      }
+      .answer-grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+      .answer {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        min-height: 56px;
+        padding: 13px 15px;
+        border: 1px solid rgba(180, 219, 222, 0.8);
+        border-radius: 17px;
+        background: #fff;
+        cursor: pointer;
+        transition:
+          transform 0.18s,
+          box-shadow 0.18s,
+          border-color 0.18s,
+          background 0.18s;
+      }
+      .answer:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(35, 52, 72, 0.08);
+      }
+      .answer input {
+        position: absolute;
+        opacity: 0;
+      }
+      .answer-mark {
+        width: 22px;
+        height: 22px;
+        flex: 0 0 22px;
+        border: 2px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 14px;
+        line-height: 1;
+      }
+      .answer input:checked + .answer-mark {
+        border-color: var(--coral);
+        background: var(--coral);
+      }
+      .answer input:checked + .answer-mark:after {
+        content: "✓";
+      }
+      .answer:has(input[type="radio"]) .answer-mark {
+        border-radius: 50%;
+      }
+      .answer:has(input:checked) {
+        border-color: var(--coral);
+        background: #fff5f3;
+        box-shadow: 0 5px 13px rgba(251, 113, 118, 0.1);
+      }
+      .answer-text {
+        font-family: "Nunito", sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.35;
+      }
+      .answer:has(input:checked) .answer-text {
+        font-weight: 700;
+      }
+      .answer small {
+        display: block;
+        color: #7e8fa1;
+        font-size: 11px;
+      }
+      .limit-note {
+        margin-top: 14px;
+        color: #8090a1;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .rank-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 26px;
+      }
+      .rank-choice {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        min-height: 62px;
+        padding: 12px 15px;
+        border: 1px solid rgba(180, 219, 222, 0.8);
+        border-radius: 17px;
+        background: #fff;
+        color: var(--navy);
+        font-family: "Nunito", sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.35;
+        cursor: pointer;
+        transition:
+          transform 0.18s,
+          box-shadow 0.18s,
+          border-color 0.18s,
+          background 0.18s;
+      }
+      .rank-choice:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(35, 52, 72, 0.08);
+      }
+      .rank-choice.is-ranked {
+        border-color: var(--coral);
+        background: #fff5f3;
+        box-shadow: 0 5px 13px rgba(251, 113, 118, 0.1);
+      }
+      .rank-choice > span:last-child,
+      .rank-choice.is-ranked > span:last-child {
+        font-weight: 700;
+      }
+      .rank-choice .rank-number {
+        width: 29px;
+        height: 29px;
+        display: grid;
+        place-items: center;
+        flex: 0 0 29px;
+        border-radius: 7px;
+        border: 2px solid var(--line);
+        background: #fff;
+        color: #8ca1ad;
+        font:
+          900 14px/1 Nunito,
+          sans-serif;
+        font-variant-numeric: tabular-nums;
+        text-align: center;
+      }
+      .rank-choice.is-ranked .rank-number {
+        border-color: var(--coral);
+        background: var(--coral);
+        color: #fff;
+      }
+      .rank-choice.is-full:not(.is-ranked) {
+        opacity: 0.68;
+      }
+      .field-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-top: 24px;
+      }
+      .text-input,
+      .textarea {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 15px;
+        padding: 13px 15px;
+        background: #fff;
+        color: var(--navy);
+        font:
+          600 15px Nunito,
+          sans-serif;
+        outline: none;
+      }
+      .textarea {
+        min-height: 126px;
+        resize: vertical;
+      }
+      .text-input:focus,
+      .textarea:focus {
+        border-color: var(--teal);
+        box-shadow: 0 0 0 4px rgba(51, 169, 186, 0.12);
+      }
+      label.field-label {
+        display: block;
+        margin: 0 0 7px;
+        color: #5e7186;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .scale {
+        display: grid;
+        grid-template-columns: repeat(11, 1fr);
+        gap: 7px;
+        margin-top: 26px;
+      }
+      .scale-option {
+        position: relative;
+      }
+      .scale-option input {
+        position: absolute;
+        opacity: 0;
+      }
+      .scale-option label {
+        display: grid;
+        place-items: center;
+        aspect-ratio: 1;
+        border-radius: 50%;
+        background: #f4e8d8;
+        color: #7d6b51;
+        font-weight: 900;
+        cursor: pointer;
+        transition:
+          transform 0.2s,
+          background 0.2s,
+          color 0.2s;
+      }
+      .scale-option label:hover {
+        transform: translateY(-4px);
+      }
+      .scale-option input:checked + label {
+        background: var(--teal);
+        color: #fff;
+        transform: translateY(-5px) scale(1.12);
+        box-shadow: 0 8px 14px rgba(51, 169, 186, 0.24);
+      }
+      .scale-legend {
+        display: flex;
+        justify-content: space-between;
+        color: #8391a1;
+        font-size: 12px;
+        margin-top: 8px;
+      }
+      .mood-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-top: 20px;
+        padding: 13px 15px;
+        border-radius: 18px;
+        background: #fff4ca;
+        color: #6f5a22;
+        font-weight: 800;
+      }
+      .mood-duck {
+        font-size: 30px;
+        transition: transform 0.3s;
+      }
+      .duel-intro {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+      }
+      .duel-count {
+        color: #7e8fa1;
+        font-size: 13px;
+        font-weight: 900;
+      }
+      .duel-rounds {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 6px;
+        margin-top: 18px;
+      }
+      .duel-round {
+        height: 7px;
+        border-radius: 99px;
+        background: #dceae9;
+        transition:
+          background 0.3s,
+          transform 0.3s;
+      }
+      .duel-round.is-done {
+        background: var(--teal);
+      }
+      .duel-round.is-current {
+        background: var(--coral);
+        transform: scaleY(1.45);
+      }
+      .duel-arena {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: start;
+        gap: 15px;
+        margin-top: 28px;
+      }
+      .duel-option {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        align-items: center;
+        gap: 11px;
+      }
+      .duel-card {
+        position: relative;
+        width: 100%;
+        min-height: 238px;
+        padding: 25px 18px 20px;
+        border: 2px solid var(--line);
+        border-radius: 25px;
+        background: linear-gradient(145deg, #fff, #f1fbfb);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        transition:
+          transform 0.22s,
+          box-shadow 0.22s,
+          border-color 0.22s,
+          filter 0.22s,
+          opacity 0.22s;
+      }
+      .duel-option:nth-child(3) .duel-card {
+        background: linear-gradient(145deg, #fff, #fff3f1);
+        border-color: #f6c3c5;
+      }
+      .duel-card:hover {
+        transform: translateY(-7px) rotate(-1deg);
+        box-shadow: 0 16px 25px rgba(35, 52, 72, 0.13);
+        filter: brightness(1.04);
+      }
+      .duel-option:nth-child(3) .duel-card:hover {
+        transform: translateY(-7px) rotate(1deg);
+      }
+      .duel-card:disabled {
+        cursor: default;
+      }
+      .duel-card.is-replacing {
+        opacity: 0;
+        transform: scale(0.96);
+      }
+      .duel-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+      }
+      .duel-card h3 {
+        margin: 0;
+        color: var(--teal-dark);
+        font:
+          600 25px/1.05 Mali,
+          sans-serif;
+      }
+      .duel-option:nth-child(3) .duel-card h3 {
+        color: var(--coral);
+      }
+      .duel-card p {
+        margin: 8px 0 0;
+        color: #667a8d;
+        font-size: 12px;
+      }
+      .versus {
+        align-self: center;
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--navy);
+        color: #fff;
+        font:
+          900 11px Nunito,
+          sans-serif;
+        box-shadow: 0 5px 0 rgba(35, 52, 72, 0.12);
+      }
+      .duel-card.chosen {
+        animation: chosen 0.48s ease;
+        border-color: var(--teal);
+        box-shadow:
+          0 0 0 5px rgba(51, 169, 186, 0.12),
+          0 17px 25px rgba(51, 169, 186, 0.17);
+      }
+      @keyframes chosen {
+        50% {
+          transform: translateY(-12px) scale(1.04) rotate(-2deg);
+        }
+        to {
+          transform: translateY(0) scale(1);
+        }
+      }
+      .duel-card {
+        overflow: hidden;
+      }
+      .duel-pick {
+        border: 0;
+        color: inherit;
+      }
+      .duel-info {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 8px 13px;
+        background: #fff;
+        color: var(--teal-dark);
+        font:
+          800 11px Nunito,
+          sans-serif;
+        cursor: pointer;
+      }
+      .duel-info:hover {
+        border-color: var(--teal);
+        background: #eff9f8;
+      }
+      .concept-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: grid;
+        place-items: center;
+        padding: 22px;
+        background: rgba(35, 52, 73, 0.42);
+        backdrop-filter: blur(5px);
+      }
+      .concept-modal-card {
+        width: min(620px, 100%);
+        max-height: calc(100vh - 44px);
+        overflow: auto;
+        border: 1px solid var(--line);
+        border-radius: 26px;
+        padding: 27px;
+        background: var(--paper);
+        box-shadow: 0 28px 80px rgba(35, 52, 73, 0.25);
+        text-align: left;
+      }
+      .concept-modal-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+      }
+      .concept-modal-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .concept-modal-icon {
+        font-size: 38px;
+      }
+      .concept-modal-card h3 {
+        margin: 0;
+        color: var(--teal-dark);
+        font:
+          600 29px/1.1 Mali,
+          sans-serif;
+      }
+      .concept-modal-close {
+        border: 0;
+        background: transparent;
+        color: #718398;
+        font-size: 30px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .concept-modal-summary {
+        margin: 16px 0;
+        padding: 13px 15px;
+        border-radius: 15px;
+        background: #fff4ca;
+        color: #6f5a22;
+        font-weight: 800;
+      }
+      .concept-detail {
+        margin-top: 12px;
+        padding: 14px 15px;
+        border: 1px solid rgba(180, 219, 222, 0.7);
+        border-radius: 16px;
+        background: #fff;
+      }
+      .concept-detail strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--coral);
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .concept-detail p {
+        margin: 0;
+        color: #52677d;
+        font-size: 14px;
+        line-height: 1.55;
+      }
+      .info-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 16px 0 0;
+        padding: 12px 15px;
+        border: 1px solid #f0d67f;
+        border-radius: 16px;
+        background: #fff4ca;
+        color: #6f5a22;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .info-note-icon {
+        width: 22px;
+        height: 22px;
+        flex: 0 0 22px;
+        display: grid;
+        place-items: center;
+        border: 2px solid currentColor;
+        border-radius: 50%;
+        font:
+          900 13px/1 Nunito,
+          sans-serif;
+      }
+      .ranking.is-editable .rank-row {
+        cursor: grab;
+        grid-template-columns: 34px 38px minmax(0, 1fr);
+        touch-action: pan-y;
+        user-select: none;
+        will-change: transform;
+      }
+      .ranking.is-editable .rank-row.is-long-pressing {
+        border-color: rgba(51, 169, 186, 0.52);
+        box-shadow: 0 0 0 3px rgba(51, 169, 186, 0.1);
+      }
+      body.is-ranking-dragging {
+        overscroll-behavior: none;
+        user-select: none;
+      }
+      .ranking.is-editable .rank-row:active {
+        cursor: grabbing;
+      }
+      .ranking.is-editable .rank-row.is-dragging {
+        opacity: 0.42;
+      }
+      .ranking.is-editable .rank-row.is-over {
+        border-color: var(--coral);
+        box-shadow: 0 0 0 3px rgba(251, 113, 118, 0.12);
+      }
+      .ranking.is-editable .rank-row.is-push-up {
+        transform: translateY(-9px);
+      }
+      .ranking.is-editable .rank-row.is-push-down {
+        transform: translateY(9px);
+      }
+      .rank-drag-ghost {
+        position: fixed;
+        z-index: 1000;
+        pointer-events: none;
+        opacity: 0.88;
+        border-color: var(--teal) !important;
+        box-shadow:
+          0 18px 32px rgba(35, 52, 72, 0.2),
+          0 0 0 3px rgba(51, 169, 186, 0.14);
+        transform-origin: center center;
+        transition: none !important;
+      }
+      .ranking.is-editable .rank-row.is-settling {
+        animation: rank-settle 1.5s ease-out;
+      }
+      @keyframes rank-settle {
+        0% {
+          border-color: #51aeb7;
+          background-color: #eaf8f8;
+          box-shadow: 0 0 0 4px rgba(51, 169, 186, 0.16);
+        }
+        35% {
+          border-color: #7fc6cc;
+          background-color: #f3fbfb;
+          box-shadow: 0 0 0 2px rgba(51, 169, 186, 0.08);
+        }
+        100% {
+          border-color: rgba(180, 219, 222, 0.65);
+          background-color: #fff;
+          box-shadow: none;
+        }
+      }
+      .drag-handle {
+        display: grid;
+        place-items: center;
+        width: 32px;
+        height: 32px;
+        border: 1px solid rgba(22, 143, 159, 0.22);
+        border-radius: 10px;
+        background: #eff9f8;
+        color: var(--teal-dark);
+        font-size: 23px;
+        cursor: grab;
+        touch-action: pan-y;
+      }
+      .answer-subheading {
+        margin: 26px 0 10px;
+        color: var(--navy);
+        font: 900 16px/1.3 Nunito, sans-serif;
+      }
+      .answer-subheading:first-of-type {
+        margin-top: 18px;
+      }
+      .ranking-note {
+        margin-top: 18px;
+      }
+      .validation-error {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin: 15px 0 0;
+        padding: 11px 14px;
+        border: 1px solid #f4b5b1;
+        border-radius: 13px;
+        background: #fff1ef;
+        color: #a94e49;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .answer-grid.has-error .answer,
+      .rank-grid.has-error .rank-choice {
+        border-color: #e88d88;
+        box-shadow: 0 0 0 3px rgba(251, 113, 118, 0.1);
+      }
+      .has-error {
+        animation: validation-shake 0.32s ease;
+      }
+      @keyframes validation-shake {
+        25% {
+          transform: translateX(-5px);
+        }
+        50% {
+          transform: translateX(5px);
+        }
+        75% {
+          transform: translateX(-3px);
+        }
+      }
+      .field-error {
+        margin: 10px 0 0;
+        color: #c45d55;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .submit-status {
+        margin-top: 12px;
+        color: #687b8f;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      .success-card {
+        text-align: center;
+      }
+      .success-duck-stage {
+        position: relative;
+        width: min(160px, 42vw);
+        aspect-ratio: 43/64;
+        margin: 0 auto 14px;
+        overflow: hidden;
+      }
+      .success-duck-source {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .duck-poster,
+      .success-duck-canvas,
+      .promise-duck-canvas {
+        position: absolute;
+        inset: 0;
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        border-top-right-radius: 80px;
+        overflow: hidden;
+      }
+      .success-duck-canvas,
+      .promise-duck-canvas {
+        opacity: 0;
+      }
+      .success-duck-stage.is-animating .success-duck-canvas,
+      .promise-duck-stage.is-animating .promise-duck-canvas {
+        opacity: 1;
+      }
+      .confetti-piece {
+        position: fixed;
+        z-index: 200;
+        top: -18px;
+        width: 10px;
+        height: 16px;
+        border-radius: 3px;
+        pointer-events: none;
+        animation: confetti-fall var(--duration) linear forwards;
+      }
+      @keyframes confetti-fall {
+        to {
+          transform: translate3d(var(--drift), 110vh, 0) rotate(900deg);
+          opacity: 0.85;
+        }
+      }
+      .optional-badge {
+        display: inline-flex;
+        align-items: center;
+        margin: 10px 0 22px;
+        padding: 8px 13px;
+        border-radius: 999px;
+        background: #fff4ca;
+        color: #6f5a22;
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.03em;
+      }
+      .rank-choice > span:last-child {
+        text-align: left;
+      }
+      .result-hero {
+        text-align: center;
+      }
+      .result-hero h2 {
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .result-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 9px 15px;
+        border-radius: 99px;
+        background: #fff4ca;
+        color: #6f5a22;
+        font-weight: 900;
+      }
+      .ranking {
+        display: grid;
+        gap: 10px;
+        margin-top: 28px;
+      }
+      .rank-row {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr) 120px 72px;
+        align-items: center;
+        gap: 12px;
+        padding: 13px 15px;
+        border-radius: 17px;
+        background: #fff;
+        border: 1px solid rgba(180, 219, 222, 0.65);
+      }
+      .rank-row:first-child {
+        background: linear-gradient(90deg, #fff4ca, #fff);
+      }
+      .rank-number {
+        font:
+          700 24px Mali,
+          sans-serif;
+        color: var(--coral);
+      }
+      .rank-name {
+        font:
+          800 16px Nunito,
+          sans-serif;
+      }
+      .rank-meter {
+        height: 9px;
+        border-radius: 99px;
+        background: #f1e9de;
+        overflow: hidden;
+      }
+      .rank-meter span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(
+          90deg,
+          var(--coral),
+          var(--yellow),
+          var(--teal)
+        );
+      }
+      .rank-score {
+        color: #62778b;
+        font-size: 12px;
+        font-weight: 800;
+        text-align: right;
+      }
+      .result-explain {
+        margin: 22px 0 0;
+        padding: 15px 17px;
+        border-radius: 18px;
+        background: #eff9f8;
+        color: #52677d;
+        font-size: 13px;
+      }
+      .result-explain strong {
+        color: var(--teal-dark);
+      }
+      .hidden {
+        display: none !important;
+      }
+      .open-answer-lead {
+        margin-bottom: 12px;
+      }
+      .promise-note {
+        display: grid;
+        grid-template-columns: 150px minmax(0, 1fr);
+        align-items: center;
+        gap: 17px;
+        margin-top: 22px;
+        padding: 14px 18px;
+        border: 1px solid #f0d67f;
+        border-radius: 22px;
+        background: #fff4ca;
+        color: #6f5a22;
+        font-weight: 800;
+      }
+      .promise-duck-stage {
+        position: relative;
+        width: 150px;
+        aspect-ratio: 43/64;
+        overflow: hidden;
+      }
+      .promise-duck-source {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .promise-note p {
+        margin: 0;
+        font-size: 15px;
+        line-height: 1.45;
+      }
+      .quiz-spark {
+        position: fixed;
+        z-index: 0;
+        pointer-events: none;
+        opacity: 0.7;
+      }
+      .spark-one {
+        top: 20%;
+        left: 4%;
+        color: var(--pink);
+        font-size: 34px;
+      }
+      .spark-two {
+        right: 5%;
+        top: 36%;
+        color: var(--yellow);
+        font-size: 30px;
+      }
+      .spark-three {
+        left: 8%;
+        bottom: 14%;
+        color: var(--teal);
+        font-size: 25px;
+      }
+      .quiz-main,
+      .quiz-header {
+        position: relative;
+        z-index: 1;
+      }
+      .journey-steps {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr) 34px minmax(
+            0,
+            1fr
+          );
+        align-items: center;
+        margin: 0 0 20px;
+      }
+      .journey-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+        color: #8a98a7;
+        transition: color 0.25s ease;
+      }
+      .journey-step > span:last-child {
+        min-width: 0;
+      }
+      .journey-step strong,
+      .journey-step small {
+        display: block;
+      }
+      .journey-step strong {
+        font-size: 13px;
+        line-height: 1.2;
+      }
+      .journey-step small {
+        margin-top: 2px;
+        font-size: 10px;
+        line-height: 1.2;
+      }
+      .journey-number {
+        width: 32px;
+        height: 32px;
+        display: grid;
+        place-items: center;
+        flex: 0 0 32px;
+        border: 2px solid #d7e6e5;
+        border-radius: 50%;
+        background: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        transition:
+          background 0.25s,
+          border-color 0.25s,
+          color 0.25s,
+          transform 0.25s;
+      }
+      .journey-connector {
+        height: 2px;
+        border-radius: 9px;
+        background: #dfeceb;
+      }
+      .journey-step.is-active {
+        color: var(--teal-dark);
+      }
+      .journey-step.is-active .journey-number {
+        border-color: var(--teal);
+        background: #eaf8f8;
+        transform: scale(1.08);
+      }
+      .journey-step.is-done {
+        color: #527667;
+      }
+      .journey-step.is-done .journey-number {
+        border-color: var(--green);
+        background: var(--green);
+        color: #fff;
+        font-size: 0;
+      }
+      .journey-step.is-done .journey-number::before {
+        content: "✓";
+        font-size: 14px;
+      }
+      .journey-step.is-done + .journey-connector {
+        background: var(--green);
+      }
+      @media (min-width: 701px) {
+        .journey-steps {
+          position: relative;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .journey-step {
+          position: relative;
+          z-index: 1;
+          flex-direction: column;
+          justify-content: flex-start;
+          gap: 6px;
+          text-align: center;
+        }
+        .journey-connector {
+          position: absolute;
+          z-index: 0;
+          top: 15px;
+          width: 33.333%;
+          height: 2px;
+        }
+        .journey-steps > .journey-connector:nth-child(2) {
+          left: 16.667%;
+        }
+        .journey-steps > .journey-connector:nth-child(4) {
+          left: 50%;
+        }
+        .journey-step.is-done .journey-number::before {
+          transform: translateY(4px);
+        }
+      }
+      .quiz-progress {
+        display: block;
+        margin-bottom: 26px;
+      }
+      .progress-copy {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        margin-bottom: 8px;
+        color: #52677d;
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .progress-label {
+        min-width: auto;
+        color: #7e8fa1;
+        text-align: right;
+      }
+      .progress-track {
+        position: relative;
+        height: 36px;
+        flex: none;
+        border: 1px solid #dce8e4;
+        border-radius: 99px;
+        background: #edf3ef;
+        overflow: hidden;
+        box-shadow: inset 0 2px 4px rgba(35, 52, 72, 0.06);
+      }
+      .progress-fill {
+        position: relative;
+        height: 100%;
+        width: 0;
+        overflow: hidden;
+        border-radius: inherit;
+        background: var(--teal);
+        box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25);
+        transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .progress-star {
+        position: absolute;
+        left: var(--left);
+        top: var(--top);
+        color: #fff3b0;
+        font-size: var(--size);
+        line-height: 1;
+        opacity: 0;
+        text-shadow: 0 0 5px rgba(255, 243, 176, 0.45);
+        animation: progress-star-float var(--duration) ease-in-out var(--delay)
+          infinite alternate;
+      }
+      @keyframes progress-star-float {
+        0% {
+          opacity: 0.3;
+          transform: translate3d(var(--dx-neg), var(--dy), 0) scale(0.72)
+            rotate(var(--rotation-neg));
+        }
+        38% {
+          opacity: 1;
+          transform: translate3d(var(--dx), var(--dy-neg), 0) scale(1.15)
+            rotate(var(--rotation));
+        }
+        72% {
+          opacity: 0.58;
+          transform: translate3d(var(--dx-alt), var(--dy-alt), 0) scale(0.9)
+            rotate(var(--rotation-alt));
+        }
+        100% {
+          opacity: 0.92;
+          transform: translate3d(var(--dx-end), var(--dy-end), 0) scale(1.05)
+            rotate(var(--rotation-end));
+        }
+      }
+      .section-pager {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 20px;
+        color: #7d8d9d;
+      }
+      .section-pager-copy {
+        margin-right: 4px;
+        font-size: 11px;
+        font-weight: 900;
+      }
+      .section-dot {
+        width: 8px;
+        height: 8px;
+        border: 0;
+        border-radius: 50%;
+        background: #d8e6e5;
+        transition:
+          width 0.25s,
+          background 0.25s;
+      }
+      .section-dot.is-done {
+        background: #99cfbe;
+      }
+      .section-dot.is-current {
+        width: 24px;
+        border-radius: 99px;
+        background: var(--teal);
+      }
+      .section-pager.is-duel .section-dot.is-current {
+        background: var(--coral);
+      }
+      .milestone-card {
+        text-align: center;
+        overflow: hidden;
+      }
+      .milestone-visual {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        margin: 0 auto 5px;
+      }
+      .milestone-visual img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .milestone-duck-canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: transparent;
+      }
+      .milestone-duck-video {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .milestone-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: #eaf8f8;
+        color: var(--teal-dark);
+        font-size: 12px;
+        font-weight: 900;
+      }
+      .milestone-summary {
+        max-width: 600px;
+        margin: 18px auto 0;
+        color: #52677d;
+        font-size: 17px;
+      }
+      .milestone-next {
+        max-width: 610px;
+        margin: 20px auto 0;
+        padding: 15px 17px;
+        border: 1px solid #f0d67f;
+        border-radius: 18px;
+        background: #fff4ca;
+        color: #6f5a22;
+        text-align: left;
+        font-size: 14px;
+      }
+      .milestone-next strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #66511c;
+      }
+      .milestone-card .quiz-actions {
+        justify-content: center;
+      }
+      .milestone-star {
+        position: fixed;
+        z-index: 150;
+        pointer-events: none;
+        color: var(--yellow);
+        font-size: 18px;
+        animation: milestone-pop 1.1s ease-out forwards;
+      }
+      @keyframes milestone-pop {
+        0% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(0.2) rotate(0);
+        }
+        35% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0;
+          transform: translate(var(--x), var(--y)) scale(1.1) rotate(160deg);
+        }
+      }
+      @media (max-width: 700px) {
+        .quiz-header {
+          width: calc(100% - 28px);
+          justify-content: center;
+        }
+        .quiz-brand {
+          width: 100%;
+          justify-content: center;
+        }
+        .quiz-brand img {
+          width: 175px;
+          height: 56px;
+          object-position: center;
+        }
+        .quiz-back {
+          padding: 7px 11px;
+          font-size: 12px;
+        }
+        .quiz-main {
+          width: calc(100% - 24px);
+          padding-top: 23px;
+        }
+        .quiz-card {
+          padding: 29px 20px;
+          border-radius: 25px;
+        }
+        .answer-grid,
+        .answer-grid.three,
+        .rank-grid {
+          grid-template-columns: 1fr;
+        }
+        .field-row {
+          grid-template-columns: 1fr;
+        }
+        .scale {
+          gap: 3px;
+        }
+        .scale-option label {
+          font-size: 12px;
+        }
+        .duel-arena {
+          gap: 7px;
+        }
+        .duel-card {
+          min-height: 205px;
+          padding: 0;
+        }
+        .duel-pick {
+          min-height: 158px;
+          padding: 15px 7px 8px;
+        }
+        .duel-info {
+          padding: 7px 9px;
+          font-size: 9px;
+        }
+        .duel-icon {
+          font-size: 35px;
+        }
+        .duel-card h3 {
+          font-size: 21px;
+        }
+        .duel-card p {
+          font-size: 13px;
+        }
+        .versus {
+          width: 34px;
+          height: 34px;
+          font-size: 9px;
+        }
+        .rank-row {
+          grid-template-columns: 28px minmax(0, 1fr) 60px;
+        }
+        .ranking.is-editable .rank-row {
+          grid-template-columns: 24px 28px minmax(0, 1fr);
+        }
+        .ranking.is-editable .rank-score {
+          grid-column: 3;
+        }
+        .rank-meter {
+          grid-column: 2/4;
+          grid-row: 2;
+        }
+        .rank-score {
+          font-size: 11px;
+        }
+        .quiz-actions {
+          flex-wrap: wrap;
+        }
+        .primary-btn,
+        .secondary-btn {
+          width: 100%;
+        }
+        .concept-modal-card {
+          padding: 21px;
+        }
+        .concept-modal-card h3 {
+          font-size: 24px;
+        }
+        .promise-note {
+          grid-template-columns: 105px minmax(0, 1fr);
+          padding: 12px;
+        }
+        .promise-duck-stage {
+          width: 105px;
+        }
+        .promise-note p {
+          font-size: 13px;
+        }
+      }
+      @media (max-width: 700px) {
+        .journey-steps {
+          grid-template-columns: minmax(0, 1fr) 12px minmax(0, 1fr) 12px minmax(
+              0,
+              1fr
+            );
+          margin-bottom: 16px;
+        }
+        .journey-step {
+          flex-direction: column;
+          gap: 5px;
+          text-align: center;
+        }
+        .journey-number {
+          width: 27px;
+          height: 27px;
+          flex-basis: 27px;
+        }
+        .journey-step strong {
+          font-size: 10px;
+        }
+        .journey-step small {
+          display: none;
+        }
+        .journey-connector {
+          margin-top: -17px;
+        }
+        .progress-copy {
+          font-size: 11px;
+        }
+        .progress-track {
+          height: 32px;
+        }
+        .section-pager {
+          flex-wrap: wrap;
+        }
+        .section-pager-copy {
+          flex-basis: 100%;
+          margin: 0 0 2px;
+          text-align: center;
+        }
+        .milestone-visual {
+          width: 135px;
+          height: 135px;
+        }
+        .milestone-next {
+          text-align: left;
+        }
+      }
+      @media (max-width: 700px) {
+        .quiz-actions:has(.secondary-btn) {
+          flex-wrap: nowrap;
+          gap: 10px;
+        }
+        .quiz-actions:has(.secondary-btn) .secondary-btn {
+          width: auto;
+          flex: 0 0 auto;
+          white-space: nowrap;
+          padding-left: 14px;
+          padding-right: 14px;
+        }
+        .quiz-actions:has(.secondary-btn) .primary-btn {
+          width: auto;
+          min-width: 0;
+          flex: 1 1 auto;
+          white-space: nowrap;
+        }
+        .quiz-actions:not(:has(.secondary-btn)) .primary-btn {
+          width: auto;
+        }
+        .quiz-spark {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="quiz-shell">
+      <div class="quiz-spark spark-one">♥</div>
+      <div class="quiz-spark spark-two">✦</div>
+      <div class="quiz-spark spark-three">✧</div>
+      <header class="quiz-header">
+        <div class="quiz-brand">
+          <img src="/assets/logo_sun.png" alt="Becky’s Garden" />
+        </div>
+      </header>
+      <main class="quiz-main">
+        <nav class="journey-steps" aria-label="Etapele chestionarului">
+          <div class="journey-step" data-journey-section="1">
+            <span class="journey-number">1</span
+            ><span
+              ><strong>Familia voastră</strong
+              ><small>Context și motivații</small></span
+            >
+          </div>
+          <span class="journey-connector" aria-hidden="true"></span>
+          <div class="journey-step" data-journey-section="2">
+            <span class="journey-number">2</span
+            ><span
+              ><strong>Ieșirea posibilă</strong
+              ><small>Fricțiuni și program</small></span
+            >
+          </div>
+          <span class="journey-connector" aria-hidden="true"></span>
+          <div class="journey-step" data-journey-section="3">
+            <span class="journey-number">3</span
+            ><span
+              ><strong>Preferințele voastre</strong
+              ><small>Duel și idei finale</small></span
+            >
+          </div>
+        </nav>
+        <div class="quiz-progress">
+          <div class="progress-copy">
+            <span id="sectionLabel">Călătoria începe aici</span
+            ><span class="progress-label" id="progressLabel">3 etape</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+        </div>
+        <div class="quiz-stage" id="quizStage"></div>
+      </main>
+    </div>
+    <script>
+      const concepts = [
+        {
+          name: "Jocuri de masă",
+          icon: "🎲",
+          desc: "runde scurte, pe echipe de familie, cu jocuri potrivite vârstei și reguli explicate de facilitatori",
+          format:
+            "Mese cu jocuri alese pe niveluri de vârstă, runde scurte și facilitatori care explică regulile.",
+          child:
+            "Copilul cooperează, ia decizii, rezolvă probleme și descoperă jocuri noi.",
+          parent:
+            "Părintele poate juca alături de copil sau într-o echipă de familie. Nu este o zonă în care copilul este lăsat singur cu jocurile.",
+        },
+        {
+          name: "Seară de quiz",
+          icon: "🧠",
+          desc: "familiile joacă în aceeași echipă, cu întrebări vizuale, audio, logice și amuzante pentru copii și adulți",
+          format:
+            "Familiile formează echipe și trec prin runde cu întrebări vizuale, audio, logice și amuzante, adaptate copiilor.",
+          child:
+            "Copilul contribuie activ, ghicește, observă și colaborează; nu este testat ca la școală.",
+          parent:
+            "Părintele joacă în aceeași echipă și completează cunoștințele copilului. Nu este nevoie de cultură generală „de concurs”.",
+        },
+        {
+          name: "Laborator de știință",
+          icon: "🔬",
+          desc: "experimente practice și provocări ghidate, în care copiii observă, testează și pun întrebări",
+          format:
+            "O succesiune de experimente practice, demonstrații și mici provocări, ghidate de un facilitator.",
+          child:
+            "Copilul observă, pune întrebări, face predicții și participă direct la experimente potrivite vârstei.",
+          parent:
+            "Părintele explorează alături de copil și îl ajută să lege experimentul de lucruri din viața reală.",
+        },
+        {
+          name: "Olimpiada familiilor",
+          icon: "🏅",
+          desc: "probe de mișcare și cooperare pentru echipe de familie, cu accent pe joacă, nu pe performanță",
+          format:
+            "Familiile trec prin stații cu jocuri de mișcare, echilibru, coordonare și provocări de echipă.",
+          child:
+            "Copilul aleargă, încearcă probe și contribuie la rezultatul echipei.",
+          parent:
+            "Părintele participă la probe adaptate, încurajează și cooperează. Accentul este pe joacă, nu pe clasamente sportive.",
+        },
+        {
+          name: "Vânătoare de comori",
+          icon: "🗺️",
+          desc: "o aventură cu poveste, traseu, indicii și misiuni rezolvate împreună de copii și părinți",
+          format:
+            "Familiile urmează un traseu narativ, descifrează indicii și rezolvă misiuni pentru a ajunge la comoară.",
+          child:
+            "Copilul caută, observă, rezolvă și ia decizii împreună cu echipa.",
+          parent:
+            "Părintele participă la aventură și oferă sprijin când indiciile devin mai dificile; nu urmărește doar de pe margine.",
+        },
+        {
+          name: "Scena talentelor",
+          icon: "🎤",
+          desc: "copiii sau familiile pregătesc un moment scurt, într-un spațiu sigur, fără eliminări și presiune de concurs",
+          format:
+            "Copiii sau familiile pot pregăti un moment scurt: cântec, dans, magie, poveste, glumă, demonstrație sau creație.",
+          child:
+            "Copilul alege dacă și cum vrea să se exprime, fără eliminări și fără presiunea unui concurs dur.",
+          parent:
+            "Părintele poate susține pregătirea, participa într-un moment comun sau încuraja din public.",
+        },
+        {
+          name: "Târg de limonadă",
+          icon: "🍋",
+          desc: "un mini-târg relaxat cu standuri create de familii, jocuri și activități explorate în ritm propriu",
+          format:
+            "Un târg relaxat cu limonadă, mici standuri create de familii, jocuri și activități de explorat în ritm propriu.",
+          child:
+            "Copilul poate pregăti, prezenta, schimba idei și vizita standurile celorlalți.",
+          parent:
+            "Părintele construiește experiența împreună cu copilul și socializează natural cu alte familii.",
+        },
+        {
+          name: "Seară de film",
+          icon: "🎬",
+          desc: "un film ales pentru familii, văzut împreună, plus o activitate scurtă inspirată de poveste",
+          format:
+            "O proiecție aleasă pentru familii, într-un spațiu confortabil, completată de o activitate scurtă înainte sau după film.",
+          child:
+            "Copilul urmărește filmul și poate participa la jocul sau conversația inspirată de poveste.",
+          parent:
+            "Părintele vede filmul împreună cu copilul și are un punct de plecare pentru conversații după eveniment.",
+        },
+      ];
+      const motivation = [
+        "Copilul are nevoie de joacă",
+        "Vreau să socializez",
+        "Vreau să schimb atmosfera",
+        "Vreau să cunosc alți părinți cu valori educaționale apropiate de ale noastre",
+        "Copilul își vede prietenii",
+        "Să învățăm ceva nou",
+        "Pur și simplu să ne distrăm",
+      ];
+      const childCounts = [
+        "1 copil",
+        "2 copii",
+        "3 copii",
+        "4 sau mai mulți copii",
+      ];
+      const childAges = [
+        "0–2 ani",
+        "3–5 ani",
+        "6–8 ani",
+        "9–12 ani",
+        "13+ ani",
+      ];
+      const worth = [
+        "Este o experiență pe care o facem împreună, nu doar îl însoțesc",
+        "Copilul participă activ, nu doar privește",
+        "Evenimentul oferă ceva greu de recreat acasă",
+        "Grupul este restrâns și atmosfera pare liniștită",
+        "Există un facilitator care îi implică și îi ghidează pe copii",
+        "Participă familii cu interese și valori apropiate de ale noastre",
+      ];
+      const blockers = [
+        "Prețul total pentru familie este prea mare",
+        "Nu înțeleg suficient de clar ce vom face",
+        "Pare prea aglomerat sau zgomotos",
+        "Mi-ar fi inconfortabil să venim fără să cunoaștem pe nimeni",
+        "Pare că părintele doar așteaptă sau supraveghează",
+      ];
+      const weekdays = [
+        "Marți",
+        "Miercuri",
+        "Joi",
+        "Vineri",
+        "Depinde de săptămână",
+        "Niciuna dintre aceste zile",
+      ];
+      const startTimes = [
+        "14:00",
+        "15:00",
+        "16:00",
+        "17:00",
+        "Nicio oră dintre acestea",
+      ];
+      const eventDurations = [
+        "60–90 de minute",
+        "Aproximativ 2 ore",
+        "Aproximativ 3 ore",
+      ];
+      const desiredOutcomes = [
+        "Copilul s-a distrat și ar vrea să revină",
+        "Copilul a descoperit sau a învățat ceva nou",
+        "Copilul a prins mai multă încredere",
+        "Copilul a interacționat firesc cu alți copii",
+        "Am făcut ceva cu adevărat împreună",
+        "M-am simțit relaxat, nu doar responsabil de supraveghere",
+        "Am plecat cu idei sau conversații pe care le putem continua acasă",
+        "Am cunoscut familii cu valori educaționale apropiate",
+      ];
+      const journeySections = [
+        {
+          name: "Familia voastră",
+          detail: "Context și motivații",
+          steps: [1, 2, 3, 4],
+        },
+        {
+          name: "Ieșirea posibilă",
+          detail: "Fricțiuni și program",
+          steps: [5, 6, 7, 8],
+        },
+        {
+          name: "Preferințele voastre",
+          detail: "Duel și idei finale",
+          steps: [9, 10, 11, 12],
+        },
+      ];
+      const state = {
+        step: 0,
+        milestone: 0,
+        answers: {},
+        duels: [],
+        duelIndex: 0,
+        duelQueue: [],
+        duelChampion: null,
+        duelChallenger: null,
+        conceptRanking: [],
+        displayOrder: {},
+        stats: Object.fromEntries(
+          concepts.map((c) => [c.name, { shown: 0, wins: 0 }]),
+        ),
+      };
+      let funnelSessionId = null;
+      try {
+        funnelSessionId = sessionStorage.getItem("becky-event-funnel-session");
+        if (!funnelSessionId) {
+          funnelSessionId = crypto.randomUUID();
+          sessionStorage.setItem("becky-event-funnel-session", funnelSessionId);
+        }
+      } catch {
+        funnelSessionId = crypto.randomUUID();
+      }
+      function trackFunnel(eventType, step = state.step) {
+        fetch("/api/event-survey/funnel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          keepalive: true,
+          body: JSON.stringify({
+            sessionId: funnelSessionId,
+            eventType,
+            step,
+            section: activeSectionIndex(),
+            milestone: state.milestone,
+            duelIndex: state.duelIndex,
+          }),
+        }).catch(() => {});
+      }
+      let promiseDuckFrames = null;
+      const stage = document.getElementById("quizStage"),
+        fill = document.getElementById("progressFill"),
+        label = document.getElementById("progressLabel"),
+        sectionLabel = document.getElementById("sectionLabel");
+      function createProgressStars() {
+        for (let index = 0; index < 20; index++) {
+          const star = document.createElement("span"),
+            dx = Math.round(-13 + Math.random() * 26),
+            dy = Math.round(-8 + Math.random() * 16),
+            rotation = Math.round(-150 + Math.random() * 300),
+            duration = 2.4 + Math.random() * 4.8;
+          star.className = "progress-star";
+          star.textContent = Math.random() > 0.46 ? "✦" : "✧";
+          star.style.setProperty("--left", `${2 + Math.random() * 96}%`);
+          star.style.setProperty("--top", `${8 + Math.random() * 68}%`);
+          star.style.setProperty("--size", `${8 + Math.random() * 8}px`);
+          star.style.setProperty("--dx", `${dx}px`);
+          star.style.setProperty("--dx-neg", `${Math.round(dx * -0.45)}px`);
+          star.style.setProperty("--dx-alt", `${Math.round(dx * -0.7)}px`);
+          star.style.setProperty("--dx-end", `${Math.round(dx * 0.4)}px`);
+          star.style.setProperty("--dy", `${dy}px`);
+          star.style.setProperty("--dy-neg", `${Math.round(dy * -0.55)}px`);
+          star.style.setProperty("--dy-alt", `${Math.round(dy * 0.35)}px`);
+          star.style.setProperty("--dy-end", `${-dy}px`);
+          star.style.setProperty("--rotation", `${rotation}deg`);
+          star.style.setProperty(
+            "--rotation-neg",
+            `${Math.round(rotation * -0.4)}deg`,
+          );
+          star.style.setProperty(
+            "--rotation-alt",
+            `${Math.round(rotation * -0.65)}deg`,
+          );
+          star.style.setProperty(
+            "--rotation-end",
+            `${Math.round(rotation * 0.55)}deg`,
+          );
+          star.style.setProperty("--duration", `${duration}s`);
+          star.style.setProperty(
+            "--delay",
+            `${-(Math.random() * duration)}s`,
+          );
+          fill.appendChild(star);
+        }
+      }
+      createProgressStars();
+      const esc = (s) =>
+        String(s).replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#039;",
+            })[c],
+        );
+      const shuffle = (a) => {
+        const x = [...a];
+        for (let i = x.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [x[i], x[j]] = [x[j], x[i]];
+        }
+        return x;
+      };
+      function randomizedItems(items, name) {
+        if (!state.displayOrder[name])
+          state.displayOrder[name] = shuffle(items);
+        return state.displayOrder[name];
+      }
+      function progressValue() {
+        if (state.step === 0) return 0;
+        if (state.milestone === 1) return 4;
+        if (state.milestone === 2) return 8;
+        if (state.step <= 8) return state.step - 1;
+        if (state.step === 9) return 8;
+        if (state.step === 10)
+          return 8.5 + 3 * (state.duelIndex / Math.max(1, concepts.length - 1));
+        if (state.step === 11) return 11.5;
+        if (state.step === 12) return 12.5;
+        return 13.5;
+      }
+      function activeSectionIndex() {
+        if (state.step >= 13) return 3;
+        if (state.milestone) return state.milestone - 1;
+        const found = journeySections.findIndex((section) =>
+          section.steps.includes(state.step),
+        );
+        return found < 0 ? 0 : found;
+      }
+      function updateProgress() {
+        const sectionIndex = activeSectionIndex(),
+          section = journeySections[Math.min(sectionIndex, 2)],
+          value = Math.round((progressValue() / 13.5) * 100);
+        fill.style.width =
+          value === 0 ? "0%" : Math.max(3, Math.min(100, value)) + "%";
+        document
+          .querySelectorAll("[data-journey-section]")
+          .forEach((item, index) => {
+            item.classList.toggle(
+              "is-active",
+              !state.milestone && index === sectionIndex && state.step < 13,
+            );
+            item.classList.toggle(
+              "is-done",
+              (state.milestone && index < state.milestone) ||
+                (!state.milestone && index < sectionIndex) ||
+                state.step >= 13,
+            );
+          });
+        if (state.step === 0) {
+          sectionLabel.textContent = "Călătoria începe aici";
+          label.textContent = "3 etape";
+          return;
+        }
+        if (state.step >= 13) {
+          sectionLabel.textContent = "Călătorie completă";
+          label.textContent = "100%";
+          return;
+        }
+        if (state.milestone) {
+          sectionLabel.textContent = `Etapa ${state.milestone} completă`;
+          label.textContent = `${value}%`;
+          return;
+        }
+        const localIndex = section.steps.indexOf(state.step) + 1;
+        sectionLabel.textContent = `Etapa ${sectionIndex + 1} · ${section.name}`;
+        label.textContent = `Pasul ${localIndex}/${section.steps.length}`;
+      }
+      function shell(kicker, title, body, actions = "") {
+        return `<article class="quiz-card"><div class="quiz-kicker"><img src="/assets/heart_little.png" alt="">${kicker}</div>${title}${body}${actions}</article>`;
+      }
+      function answers(items, name, type = "checkbox", limit = "") {
+        const saved = Array.isArray(state.answers[name])
+          ? state.answers[name]
+          : [];
+        const orderedItems =
+          [
+            "childCount",
+            "childAges",
+            "weekdays",
+            "startTime",
+            "eventDuration",
+          ].includes(name)
+            ? items
+            : randomizedItems(items, name);
+        return `<div class="answer-grid" data-answer-group="${name}">${orderedItems.map((x) => `<label class="answer"><input type="${type}" name="${name}" value="${esc(x)}" ${saved.includes(x) ? "checked" : ""}><span class="answer-mark"></span><span class="answer-text">${esc(x)}</span></label>`).join("")}</div>${limit ? `<div class="limit-note">${limit}</div>` : ""}`;
+      }
+      function rankedAnswers(items, name, limit = null) {
+        const saved = Array.isArray(state.answers[name])
+          ? state.answers[name]
+          : [];
+        const orderedItems = randomizedItems(items, name);
+        const cap = limit ? `data-rank-limit="${limit}"` : "";
+        const instruction = limit
+          ? `Alege până la ${limit}, în ordinea importanței: 1 este cel mai important. Dacă apeși din nou, alegerea se scoate.`
+          : "Alege unul sau mai multe răspunsuri care vi se potrivesc. Selectează-l întâi pe cel mai relevant; nu trebuie să le alegi pe toate.";
+        return `<div class="rank-grid" data-rank-group="${name}" ${cap}>${orderedItems
+          .map((x) => {
+            const rank = saved.indexOf(x) + 1;
+            return `<button type="button" class="rank-choice ${rank ? "is-ranked" : ""}" aria-pressed="${rank ? "true" : "false"}" data-rank-value="${esc(x)}" ${rank ? `data-rank="${rank}"` : ""}><span class="rank-number" aria-hidden="true">${rank || ""}</span><span>${esc(x)}</span></button>`;
+          })
+          .join(
+            "",
+          )}</div><div class="info-note"><span class="info-note-icon" aria-hidden="true">i</span><span>${instruction}</span></div>`;
+      }
+      function navigationButtons(text = "Continuă", submit = false) {
+        const back =
+          state.step > 0
+            ? '<button class="secondary-btn" type="button" data-back><span aria-hidden="true">←</span> Înapoi</button>'
+            : "";
+        const forward = submit
+          ? '<button class="primary-btn" data-submit>Trimite răspunsurile <span aria-hidden="true">→</span></button>'
+          : `<button class="primary-btn" data-next>${text} <span aria-hidden="true">→</span></button>`;
+        return `<div class="quiz-actions">${back}${forward}</div>`;
+      }
+      function nextButton(text = "Continuă") {
+        return navigationButtons(text);
+      }
+      function appendSectionPager() {
+        if (
+          state.step === 0 ||
+          state.step >= 13 ||
+          state.milestone ||
+          stage.querySelector(".section-pager")
+        )
+          return;
+        const sectionIndex = activeSectionIndex(),
+          section = journeySections[sectionIndex],
+          current = Math.max(0, section.steps.indexOf(state.step));
+        if (!section) return;
+        const duelCopy =
+          state.step === 10
+            ? ` · duelul ${Math.min(state.duelIndex + 1, concepts.length - 1)}/${concepts.length - 1}`
+            : "";
+        const dots = section.steps
+          .map(
+            (_, index) =>
+              `<span class="section-dot ${index < current ? "is-done" : index === current ? "is-current" : ""}" aria-hidden="true"></span>`,
+          )
+          .join("");
+        stage
+          .querySelector(".quiz-card")
+          ?.insertAdjacentHTML(
+            "beforeend",
+            `<div class="section-pager ${state.step === 10 ? "is-duel" : ""}" aria-label="Pasul ${current + 1} din ${section.steps.length}, etapa ${sectionIndex + 1}"><span class="section-pager-copy">Etapa ${sectionIndex + 1} · pasul ${current + 1}/${section.steps.length}${duelCopy}</span>${dots}</div>`,
+          );
+      }
+      function launchMilestoneStars() {
+        const origin = stage
+          .querySelector(".milestone-visual")
+          ?.getBoundingClientRect();
+        if (!origin) return;
+        for (let index = 0; index < 18; index++) {
+          const star = document.createElement("span"),
+            angle = (Math.PI * 2 * index) / 18,
+            distance = 70 + Math.random() * 70;
+          star.className = "milestone-star";
+          star.textContent = index % 2 ? "✦" : "✧";
+          star.style.left = origin.left + origin.width / 2 + "px";
+          star.style.top = origin.top + origin.height / 2 + "px";
+          star.style.setProperty("--x", Math.cos(angle) * distance + "px");
+          star.style.setProperty("--y", Math.sin(angle) * distance + "px");
+          star.style.animationDelay = Math.random() * 0.18 + "s";
+          document.body.appendChild(star);
+          setTimeout(() => star.remove(), 1400);
+        }
+      }
+      function removeHappyDuckBackground(image) {
+        const { data, width, height } = image,
+          count = width * height,
+          background = new Uint8Array(count),
+          queue = new Int32Array(count);
+        let head = 0,
+          tail = 0;
+        const isDark = (index) => {
+          const offset = index * 4;
+          return Math.max(data[offset], data[offset + 1], data[offset + 2]) < 48;
+        };
+        const add = (index) => {
+          if (background[index] || !isDark(index)) return;
+          background[index] = 1;
+          queue[tail++] = index;
+        };
+        for (let x = 0; x < width; x++) {
+          add(x);
+          add((height - 1) * width + x);
+        }
+        for (let y = 1; y < height - 1; y++) {
+          add(y * width);
+          add(y * width + width - 1);
+        }
+        while (head < tail) {
+          const index = queue[head++],
+            x = index % width,
+            y = Math.floor(index / width);
+          if (x) add(index - 1);
+          if (x + 1 < width) add(index + 1);
+          if (y) add(index - width);
+          if (y + 1 < height) add(index + width);
+          if (x && y) add(index - width - 1);
+          if (x + 1 < width && y) add(index - width + 1);
+          if (x && y + 1 < height) add(index + width - 1);
+          if (x + 1 < width && y + 1 < height) add(index + width + 1);
+        }
+        // Expand the outside mask through compressed/anti-aliased dark edges.
+        // This reaches enclosed background gaps around the neck and wings,
+        // without crossing the bright body towards eyes or interior outlines.
+        const isSoftDark = (index) => {
+          const offset = index * 4,
+            red = data[offset],
+            green = data[offset + 1],
+            blue = data[offset + 2];
+          return Math.max(red, green, blue) < 148;
+        };
+        for (let pass = 0; pass < 4; pass++) {
+          const additions = [];
+          for (let y = 1; y < height - 1; y++) {
+            for (let x = 1; x < width - 1; x++) {
+              const index = y * width + x;
+              if (background[index] || !isSoftDark(index)) continue;
+              const touchesOutside =
+                background[index - 1] ||
+                background[index + 1] ||
+                background[index - width] ||
+                background[index + width] ||
+                background[index - width - 1] ||
+                background[index - width + 1] ||
+                background[index + width - 1] ||
+                background[index + width + 1];
+              if (touchesOutside) additions.push(index);
+            }
+          }
+          if (!additions.length) break;
+          additions.forEach((index) => {
+            background[index] = 1;
+          });
+        }
+        const watermarkLeft = Math.floor(width * 0.6),
+          watermarkBottom = Math.ceil(height * 0.15);
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            const index = y * width + x,
+              offset = index * 4;
+            if (
+              background[index] ||
+              (x >= watermarkLeft && y <= watermarkBottom)
+            ) {
+              data[offset + 3] = 0;
+              continue;
+            }
+            const touchesBackground =
+              (x > 0 && background[index - 1]) ||
+              (x + 1 < width && background[index + 1]) ||
+              (y > 0 && background[index - width]) ||
+              (y + 1 < height && background[index + width]);
+            if (touchesBackground) {
+              const lightness = Math.max(
+                data[offset],
+                data[offset + 1],
+                data[offset + 2],
+              );
+              if (lightness < 105)
+                data[offset + 3] = Math.min(
+                  data[offset + 3],
+                  Math.max(0, Math.round(((lightness - 24) / 81) * 255)),
+                );
+            }
+          }
+        }
+        return image;
+      }
+      function playMilestoneDuck() {
+        const video = stage.querySelector("#milestoneDuckVideo"),
+          canvas = stage.querySelector("#milestoneDuckCanvas");
+        if (!video || !canvas) return;
+        const context = canvas.getContext("2d", { willReadFrequently: true }),
+          processingCanvas = document.createElement("canvas"),
+          processingContext = processingCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+        let framePending = false;
+        const renderFrame = () => {
+          framePending = false;
+          if (video.readyState < 2 || !canvas.isConnected) return;
+          processingContext.clearRect(
+            0,
+            0,
+            processingCanvas.width,
+            processingCanvas.height,
+          );
+          processingContext.drawImage(
+            video,
+            0,
+            0,
+            processingCanvas.width,
+            processingCanvas.height,
+          );
+          context.putImageData(
+            removeHappyDuckBackground(
+              processingContext.getImageData(
+                0,
+                0,
+                processingCanvas.width,
+                processingCanvas.height,
+              ),
+            ),
+            0,
+            0,
+          );
+          canvas.classList.add("is-rendering");
+          if (!video.paused && !video.ended) scheduleFrame();
+        };
+        const scheduleFrame = () => {
+          if (framePending || video.paused || video.ended) return;
+          framePending = true;
+          if (video.requestVideoFrameCallback)
+            video.requestVideoFrameCallback(renderFrame);
+          else requestAnimationFrame(renderFrame);
+        };
+        video.addEventListener(
+          "loadedmetadata",
+          () => {
+            canvas.width = 360;
+            canvas.height = Math.round(
+              (360 * video.videoHeight) / video.videoWidth,
+            );
+            processingCanvas.width = canvas.width;
+            processingCanvas.height = canvas.height;
+          },
+          { once: true },
+        );
+        video.addEventListener("play", scheduleFrame);
+        video.addEventListener(
+          "loadeddata",
+          () => {
+            video.currentTime = 0;
+            video.play().catch(() => {});
+            setTimeout(() => {
+              if (video.isConnected) video.pause();
+            }, 4000);
+          },
+          { once: true },
+        );
+      }
+      function renderMilestone(number) {
+        const content =
+          number === 1
+            ? {
+                kicker: "ETAPA 1 COMPLETĂ",
+                title: "Avem conturul<br><em>familiei voastre.</em>",
+                summary:
+                  "Știm acum cine ar participa, ce vârste au copiii și ce caută familia voastră într-o ieșire reușită.",
+                next: "Urmează potrivirea cu viața reală",
+                detail:
+                  "Vedem ce poate bloca înscrierea, când este realist să participați și ce rezultat ar face timpul să merite.",
+                button: "Intră în etapa 2",
+              }
+            : {
+                kicker: "ETAPA 2 COMPLETĂ",
+                title:
+                  "Știm ce face o ieșire<br><em>posibilă în viața reală.</em>",
+                summary:
+                  "Ai clarificat fricțiunile, programul potrivit și rezultatele care contează pentru familia voastră.",
+                next: "Urmează partea-joc",
+                detail: `Vei compara ${concepts.length} idei în ${concepts.length - 1} alegeri rapide. Opțiunea preferată rămâne, iar la final poți rearanja clasamentul.`,
+                button: "Intră în duel",
+              };
+        const visual =
+          '<div class="milestone-visual"><canvas class="milestone-duck-canvas" id="milestoneDuckCanvas" role="img" aria-label="Rățușca dansează pentru etapa completată"></canvas><video class="milestone-duck-video" id="milestoneDuckVideo" src="/assets/duck-happy.mp4" muted playsinline preload="auto" aria-hidden="true"></video></div>';
+        show(
+          `<article class="quiz-card milestone-card">${visual}<div class="milestone-badge">✓ ${content.kicker}</div><h2>${content.title}</h2><p class="milestone-summary">${content.summary}</p><div class="milestone-next"><strong>${content.next}</strong>${content.detail}</div>${navigationButtons(content.button)}</article>`,
+        );
+        playMilestoneDuck();
+        launchMilestoneStars();
+      }
+      function show(html) {
+        stage.innerHTML = html;
+        stage.querySelector("[data-next]")?.addEventListener("click", advance);
+        stage.querySelector("[data-back]")?.addEventListener("click", goBack);
+        stage
+          .querySelector("[data-submit]")
+          ?.addEventListener("click", submitSurvey);
+        stage.querySelectorAll("input").forEach((input) =>
+          input.addEventListener("change", () => {
+            bindExclusiveChoice(input);
+            clearValidation();
+          }),
+        );
+        bindRanked();
+        appendSectionPager();
+        if (stage.querySelector("#promiseDuckVideo")) playReversePromiseDuck();
+        updateProgress();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      function bindExclusiveChoice(input) {
+        if (!input.checked || !["weekdays", "startTime"].includes(input.name))
+          return;
+        const group = [
+          ...stage.querySelectorAll(`input[name="${input.name}"]`),
+        ];
+        const isNone = input.value.startsWith("Niciuna") || input.value.startsWith("Nicio ");
+        group.forEach((candidate) => {
+          if (candidate === input) return;
+          if (isNone || candidate.value.startsWith("Niciuna") || candidate.value.startsWith("Nicio "))
+            candidate.checked = false;
+        });
+      }
+      function removeEdgeBlack(image) {
+        const { data, width, height } = image,
+          count = width * height,
+          seen = new Uint8Array(count),
+          queue = new Int32Array(count);
+        let head = 0,
+          tail = 0;
+        const isBackground = (index) => {
+          const offset = index * 4,
+            red = data[offset],
+            green = data[offset + 1],
+            blue = data[offset + 2],
+            bright = Math.max(red, green, blue),
+            dark = Math.min(red, green, blue);
+          return bright < 184 && bright - dark < 82;
+        };
+        const add = (index) => {
+          if (seen[index] || !isBackground(index)) return;
+          seen[index] = 1;
+          queue[tail++] = index;
+        };
+        for (let x = 0; x < width; x++) {
+          add(x);
+          add((height - 1) * width + x);
+        }
+        for (let y = 0; y < height; y++) {
+          add(y * width);
+          add(y * width + width - 1);
+        }
+        while (head < tail) {
+          const index = queue[head++],
+            x = index % width,
+            y = Math.floor(index / width);
+          if (x) add(index - 1);
+          if (x + 1 < width) add(index + 1);
+          if (y) add(index - width);
+          if (y + 1 < height) add(index + width);
+        }
+        // Some frames contain an isolated dark patch inside the otherwise
+        // light background (usually underneath the duck). Remove sizeable
+        // connected dark components too, while keeping small dark details
+        // such as eyes and outlines intact.
+        const componentSeen = new Uint8Array(count),
+          componentQueue = new Int32Array(count),
+          componentPixels = new Int32Array(count);
+        for (let start = 0; start < count; start++) {
+          if (componentSeen[start] || !isBackground(start)) continue;
+          let componentHead = 0,
+            componentTail = 0,
+            pixelCount = 0,
+            maxY = 0;
+          componentSeen[start] = 1;
+          componentQueue[componentTail++] = start;
+          while (componentHead < componentTail) {
+            const index = componentQueue[componentHead++],
+              x = index % width,
+              y = Math.floor(index / width);
+            componentPixels[pixelCount++] = index;
+            maxY = Math.max(maxY, y);
+            if (x && !componentSeen[index - 1] && isBackground(index - 1)) {
+              componentSeen[index - 1] = 1;
+              componentQueue[componentTail++] = index - 1;
+            }
+            if (
+              x + 1 < width &&
+              !componentSeen[index + 1] &&
+              isBackground(index + 1)
+            ) {
+              componentSeen[index + 1] = 1;
+              componentQueue[componentTail++] = index + 1;
+            }
+            if (
+              y &&
+              !componentSeen[index - width] &&
+              isBackground(index - width)
+            ) {
+              componentSeen[index - width] = 1;
+              componentQueue[componentTail++] = index - width;
+            }
+            if (
+              y + 1 < height &&
+              !componentSeen[index + width] &&
+              isBackground(index + width)
+            ) {
+              componentSeen[index + width] = 1;
+              componentQueue[componentTail++] = index + width;
+            }
+          }
+          if (pixelCount >= 120 && maxY >= height * 0.52)
+            for (let pixel = 0; pixel < pixelCount; pixel++)
+              data[componentPixels[pixel] * 4 + 3] = 0;
+        }
+        for (let index = 0; index < count; index++)
+          if (seen[index]) data[index * 4 + 3] = 0;
+        return image;
+      }
+      async function playReversePromiseDuck() {
+        const video = stage.querySelector("#promiseDuckVideo"),
+          canvas = stage.querySelector("#promiseDuckCanvas"),
+          holder = stage.querySelector(".promise-duck-stage");
+        if (!video || !canvas || !holder) return;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        const playPingPong = (frames, continueFromLastFrame = false) => {
+          if (!frames?.length || !canvas.isConnected) return;
+          canvas.width = frames[0].width;
+          canvas.height = frames[0].height;
+          holder.classList.add("is-animating");
+          const sequence = continueFromLastFrame
+            ? [...frames.slice(0, -1).reverse(), ...frames.slice(1)]
+            : [...frames, ...frames.slice(1, -1).reverse()];
+          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+            context.putImageData(sequence[0], 0, 0);
+            return;
+          }
+          const frameDuration = 1000 / 20;
+          let sequenceIndex = 0,
+            lastPaint = 0;
+          const paint = (time) => {
+            if (!canvas.isConnected) return;
+            if (!lastPaint || time - lastPaint >= frameDuration) {
+              context.putImageData(sequence[sequenceIndex], 0, 0);
+              sequenceIndex = (sequenceIndex + 1) % sequence.length;
+              lastPaint = time;
+            }
+            requestAnimationFrame(paint);
+          };
+          if (!continueFromLastFrame)
+            context.putImageData(sequence[0], 0, 0);
+          requestAnimationFrame(paint);
+        };
+        if (promiseDuckFrames?.length) {
+          playPingPong(promiseDuckFrames);
+          return;
+        }
+        const processingCanvas = document.createElement("canvas"),
+          processingContext = processingCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+        if (video.readyState < 2)
+          await new Promise((resolve, reject) => {
+            video.addEventListener("loadeddata", resolve, { once: true });
+            video.addEventListener("error", reject, { once: true });
+          }).catch(() => null);
+        if (!video.videoWidth || !canvas.isConnected) return;
+        canvas.width = 180;
+        canvas.height = Math.round(
+          (180 * video.videoHeight) / video.videoWidth,
+        );
+        processingCanvas.width = canvas.width;
+        processingCanvas.height = canvas.height;
+        const frames = [];
+        const captureFrame = () => {
+          if (!canvas.isConnected) return;
+          processingContext.clearRect(
+            0,
+            0,
+            processingCanvas.width,
+            processingCanvas.height,
+          );
+          processingContext.drawImage(
+            video,
+            0,
+            0,
+            processingCanvas.width,
+            processingCanvas.height,
+          );
+          const image = removeEdgeBlack(
+            processingContext.getImageData(
+              0,
+              0,
+              processingCanvas.width,
+              processingCanvas.height,
+            ),
+          );
+          frames.push(image);
+          context.putImageData(image, 0, 0);
+          holder.classList.add("is-animating");
+          return image;
+        };
+        video.currentTime = 0;
+        await new Promise((resolve) => {
+          let settled = false;
+          const finish = () => {
+            if (settled) return;
+            settled = true;
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+          };
+          video.addEventListener("seeked", finish, { once: true });
+          if (video.currentTime === 0) requestAnimationFrame(finish);
+          setTimeout(finish, 160);
+        });
+        const firstFrame = captureFrame();
+        if (firstFrame) {
+          context.putImageData(firstFrame, 0, 0);
+        }
+        holder.classList.add("is-animating");
+        await new Promise((resolve) => {
+          video.addEventListener(
+            "ended",
+            () => {
+              captureFrame();
+              resolve();
+            },
+            { once: true },
+          );
+          if (video.requestVideoFrameCallback) {
+            const captureNext = () => {
+              captureFrame();
+              if (!video.ended) video.requestVideoFrameCallback(captureNext);
+            };
+            video
+              .play()
+              .then(() => video.requestVideoFrameCallback(captureNext))
+              .catch(resolve);
+          } else {
+            video.addEventListener("timeupdate", captureFrame);
+            video.play().catch(resolve);
+          }
+        });
+        const visibleFrames = frames.filter((image) => {
+          let visible = 0;
+          for (let pixel = 3; pixel < image.data.length; pixel += 4)
+            if (image.data[pixel] > 24) visible++;
+          return visible > image.width * image.height * 0.04;
+        });
+        if (!visibleFrames.length || !canvas.isConnected) return;
+        promiseDuckFrames = visibleFrames;
+        playPingPong(promiseDuckFrames, true);
+      }
+      function clearValidation() {
+        stage.querySelector(".validation-error")?.remove();
+        stage
+          .querySelectorAll(".has-error")
+          .forEach((item) => item.classList.remove("has-error"));
+      }
+      function showValidation(target, message) {
+        clearValidation();
+        const group = stage.querySelector(target);
+        group?.classList.add("has-error");
+        const alert = document.createElement("p");
+        alert.className = "validation-error";
+        alert.setAttribute("role", "alert");
+        alert.innerHTML = `<span aria-hidden="true">!</span><span>${esc(message)}</span>`;
+        (stage.querySelector(".quiz-actions") || group)?.before(alert);
+        group?.querySelector("input,button")?.focus();
+      }
+      function collect(name, limit, silent = false) {
+        const selected = [
+          ...stage.querySelectorAll(`input[name="${name}"]:checked`),
+        ].map((x) => x.value);
+        if (!selected.length) {
+          if (!silent)
+            showValidation(
+              `[data-answer-group="${name}"]`,
+              "Alege cel puțin un răspuns pentru a putea continua.",
+            );
+          return false;
+        }
+        if (limit && selected.length > limit) {
+          if (!silent)
+            showValidation(
+              `[data-answer-group="${name}"]`,
+              `Alege cel mult ${limit} răspunsuri.`,
+            );
+          return false;
+        }
+        state.answers[name] = selected;
+        return true;
+      }
+      function collectRanked(name, silent = false) {
+        const selected = [
+          ...stage.querySelectorAll(
+            `[data-rank-group="${name}"] .rank-choice.is-ranked`,
+          ),
+        ]
+          .sort((a, b) => Number(a.dataset.rank) - Number(b.dataset.rank))
+          .map((x) => x.dataset.rankValue);
+        if (!selected.length) {
+          if (!silent)
+            showValidation(
+              `[data-rank-group="${name}"]`,
+              "Alege cel puțin un răspuns. Prima alegere va fi considerată cea mai importantă.",
+            );
+          return false;
+        }
+        state.answers[name] = selected;
+        return true;
+      }
+      function saveCurrentDraft() {
+        const map = {
+          1: "childCount",
+          2: "childAges",
+          3: "motivation",
+          6: "weekdays",
+          8: "desiredOutcomes",
+        };
+        const ranked = {
+          4: "worth",
+          5: "blockers",
+        };
+        if (map[state.step])
+          state.answers[map[state.step]] = [
+            ...stage.querySelectorAll(
+              `input[name="${map[state.step]}"]:checked`,
+            ),
+          ].map((input) => input.value);
+        if (ranked[state.step])
+          state.answers[ranked[state.step]] = [
+            ...stage.querySelectorAll(
+              `[data-rank-group="${ranked[state.step]}"] .rank-choice.is-ranked`,
+            ),
+          ]
+            .sort((a, b) => Number(a.dataset.rank) - Number(b.dataset.rank))
+            .map((choice) => choice.dataset.rankValue);
+        if (state.step === 7) {
+          state.answers.startTime = [
+            ...stage.querySelectorAll('input[name="startTime"]:checked'),
+          ].map((input) => input.value);
+          state.answers.eventDuration = [
+            ...stage.querySelectorAll('input[name="eventDuration"]:checked'),
+          ].map((input) => input.value);
+        }
+        if (state.step === 12)
+          state.answers.mainOpen =
+            stage.querySelector("[name=mainOpen]")?.value || "";
+      }
+      function goBack() {
+        saveCurrentDraft();
+        if (state.milestone) {
+          state.step = state.milestone === 1 ? 4 : 8;
+          state.milestone = 0;
+          return render();
+        }
+        if (state.step === 10 || state.step === 11) state.step = 9;
+        else state.step = Math.max(0, state.step - 1);
+        render();
+      }
+      function bindRanked() {
+        stage.querySelectorAll(".rank-grid").forEach((group) => {
+          const choices = [...group.querySelectorAll(".rank-choice")];
+          choices.forEach((choice) =>
+            choice.addEventListener("click", () => {
+              const selected = choices.filter((x) =>
+                x.classList.contains("is-ranked"),
+              );
+              if (choice.classList.contains("is-ranked")) {
+                choice.classList.remove("is-ranked");
+                choice.setAttribute("aria-pressed", "false");
+                delete choice.dataset.rank;
+              } else if (
+                !group.dataset.rankLimit ||
+                selected.length < Number(group.dataset.rankLimit)
+              ) {
+                choice.classList.add("is-ranked");
+                choice.setAttribute("aria-pressed", "true");
+                choice.dataset.rank = String(selected.length + 1);
+              } else {
+                group.animate(
+                  [
+                    { transform: "translateX(-4px)" },
+                    { transform: "translateX(4px)" },
+                    { transform: "translateX(0)" },
+                  ],
+                  { duration: 220 },
+                );
+              }
+              const active = choices
+                .filter((x) => x.classList.contains("is-ranked"))
+                .sort(
+                  (a, b) => Number(a.dataset.rank) - Number(b.dataset.rank),
+                );
+              active.forEach((x, i) => {
+                x.dataset.rank = String(i + 1);
+                x.querySelector(".rank-number").textContent = String(i + 1);
+              });
+              choices
+                .filter((x) => !x.classList.contains("is-ranked"))
+                .forEach((x) => {
+                  x.querySelector(".rank-number").textContent = "";
+                });
+              clearValidation();
+            }),
+          );
+        });
+      }
+      function advance() {
+        const s = state.step;
+        if (state.milestone === 1) {
+          state.milestone = 0;
+          state.step = 5;
+          return render();
+        }
+        if (state.milestone === 2) {
+          state.milestone = 0;
+          state.step = 9;
+          return render();
+        }
+        if (s === 0) {
+          state.step = 1;
+          return render();
+        }
+        if (s === 1) {
+          if (!collect("childCount")) return;
+          state.step = 2;
+        } else if (s === 2) {
+          if (!collect("childAges")) return;
+          state.step = 3;
+        } else if (s === 3) {
+          if (!collect("motivation")) return;
+          state.step = 4;
+        } else if (s === 4) {
+          if (!collectRanked("worth")) return;
+          state.milestone = 1;
+          return render();
+        } else if (s === 5) {
+          if (!collectRanked("blockers")) return;
+          state.step = 6;
+        } else if (s === 6) {
+          if (!collect("weekdays")) return;
+          state.step = 7;
+        } else if (s === 7) {
+          if (!collect("startTime")) return;
+          if (!collect("eventDuration")) return;
+          state.step = 8;
+        } else if (s === 8) {
+          if (!collect("desiredOutcomes")) return;
+          state.milestone = 2;
+          return render();
+        } else if (s === 9) {
+          if (!state.duelChampion) startDuels();
+          state.step = state.duelIndex >= concepts.length - 1 ? 11 : 10;
+        } else if (s === 11) {
+          state.answers.conceptRanking = [...state.conceptRanking];
+          state.step = 12;
+        }
+        render();
+      }
+      function render() {
+        trackFunnel("step");
+        if (state.milestone) return renderMilestone(state.milestone);
+        if (state.step === 0)
+          return show(
+            shell(
+              "CHESTIONAR PENTRU PĂRINȚI",
+              "<h1>Spune-ne cum arată<br><em>o ieșire în familie reușită.</em></h1>",
+              '<p class="quiz-lead">Nu căutăm răspunsuri perfecte. Ne dorim să înțelegem ce este important pentru familii și ce transformă timpul petrecut împreună într-o experiență reușită.</p><div class="promise-note"><div class="promise-duck-stage"><video class="promise-duck-source" id="promiseDuckVideo" src="/assets/animated_characters/duck_making_promise.mp4" muted playsinline preload="auto"></video><canvas class="promise-duck-canvas" id="promiseDuckCanvas" aria-hidden="true"></canvas></div><p>Rățușca Becky promite să păstreze răspunsurile anonime!</p></div>',
+              nextButton("Începem"),
+            ),
+          );
+        if (state.step === 1)
+          return show(
+            shell(
+              "1 · COPIII",
+              "<h2>Câți copii ar participa<br><em>împreună cu tine?</em></h2>",
+              '<p class="quiz-lead">Ne ajută să gândim dimensiunea grupurilor, materialele și felul în care facilităm activitățile.</p>' +
+                answers(childCounts, "childCount", "radio"),
+              nextButton(),
+            ),
+          );
+        if (state.step === 2)
+          return show(
+            shell(
+              "2 · VÂRSTELE",
+              "<h2>Ce vârste au copiii<br><em>care ar participa?</em></h2>",
+              '<p class="quiz-lead">Bifează toate intervalele potrivite. Așa putem construi activități care chiar se potrivesc etapelor lor de dezvoltare.</p>' +
+                answers(
+                  childAges,
+                  "childAges",
+                  "checkbox",
+                  "Poți selecta mai multe intervale de vârstă.",
+                ),
+              nextButton(),
+            ),
+          );
+        if (state.step === 3)
+          return show(
+            shell(
+              "3 · MOTIVAȚIA",
+              "<h2>Ce căutați într-o<br><em>ieșire în familie?</em></h2>",
+              '<p class="quiz-lead">Gândește-te la timpul liber petrecut împreună. Bifează toate motivele care vi se potrivesc — aici nu trebuie să le pui în ordine.</p>' +
+                answers(motivation, "motivation"),
+              nextButton(),
+            ),
+          );
+        if (state.step === 4)
+          return show(
+            shell(
+              "4 · DECIZIA „MERGEM”",
+              "<h2>Ce vă convinge să spuneți<br><em>„Da, mergem”?</em></h2>",
+              '<p class="quiz-lead">Lăsăm deoparte programul, locația și vârsta potrivită. Dintre lucrurile pe care organizatorul le poate construi diferit, alege maximum trei, în ordinea în care vă conving.</p>' +
+                rankedAnswers(worth, "worth", 3),
+              nextButton(),
+            ),
+          );
+        if (state.step === 5)
+          return show(
+            shell(
+              "5 · DECIZIA DE ÎNSCRIERE",
+              "<h2>Ce v-ar putea opri<br><em>să participați?</em></h2>",
+              '<p class="quiz-lead">Presupunem că ziua, ora, locația și vârsta sunt deja potrivite. Ce ar mai putea opri înscrierea? Alege maximum trei bariere, începând cu cea mai importantă.</p>' +
+                rankedAnswers(blockers, "blockers", 3),
+              nextButton(),
+            ),
+          );
+        if (state.step === 6)
+          return show(
+            shell(
+              "6 · ZIUA POTRIVITĂ",
+              "<h2>În ce zile v-ar fi realist<br><em>să participați după-amiaza?</em></h2>",
+              '<p class="quiz-lead">Ne interesează un eveniment suplimentar cu copiii, de marți până vineri. Bifează toate zilele care ar funcționa în mod obișnuit — fără să le ordonezi.</p>' +
+                answers(weekdays, "weekdays"),
+              nextButton(),
+            ),
+          );
+        if (state.step === 7)
+          return show(
+            shell(
+              "7 · PROGRAMUL REALIST",
+              "<h2>Când ar putea începe<br><em>și cât ar putea dura?</em></h2>",
+              '<p class="quiz-lead">Separăm ora de început de durată, ca răspunsul să poată fi transformat într-un program real.</p><h3 class="answer-subheading">Ore realiste de începere</h3>' +
+                answers(startTimes, "startTime") +
+                '<h3 class="answer-subheading">Durata potrivită</h3>' +
+                answers(eventDurations, "eventDuration", "radio"),
+              nextButton(),
+            ),
+          );
+        if (state.step === 8)
+          return show(
+            shell(
+              "8 · CE RĂMÂNE DUPĂ",
+              "<h2>Ce v-ar face să simțiți<br><em>că ieșirea a meritat?</em></h2>",
+              '<p class="quiz-lead">Bifează toate rezultatele care ar conta pentru familia voastră. Nu trebuie să le ordonezi.</p>' +
+                answers(desiredOutcomes, "desiredOutcomes"),
+              nextButton(),
+            ),
+          );
+        if (state.step === 9)
+          return show(
+            shell(
+              "9 · DUELUL PREFERINȚELOR",
+              "<h2>O singură ieșire luna asta.<br><em>Ce alegi?</em></h2>",
+              '<p class="quiz-lead">Alege între două experiențe concrete. Cea preferată rămâne, iar cealaltă este înlocuită cu o idee nouă.</p><div class="duel-visual"><img src="/assets/fighting-ducks.png" alt="Două rățuște se înfruntă într-un duel"></div>',
+              nextButton(state.duelChampion ? (state.duelIndex >= concepts.length - 1 ? "Revăd rezultatul" : "Continuă duelul") : "Începe duelul"),
+            ),
+          );
+        if (state.step === 10) return renderDuel();
+        if (state.step === 11) return renderPreferenceReview();
+        if (state.step === 12)
+          return show(
+            shell(
+              "10 · RĂSPUNS DESCHIS · OPȚIONAL",
+              "<h2>Ce ar face un eveniment în familie<br><em>să merite cu adevărat pentru voi?</em></h2>",
+              `<p class="quiz-lead open-answer-lead">Poate fi un detaliu, o nevoie, o problemă ignorată de organizatori sau orice altceva nu ai regăsit în întrebări.</p><div class="optional-badge">OPȚIONAL · poți trimite fără să completezi acest câmp</div><textarea class="textarea" name="mainOpen" placeholder="Pentru familia noastră, un eveniment reușit...">${esc(state.answers.mainOpen || "")}</textarea><p class="submit-status" aria-live="polite"></p>`,
+              navigationButtons("", true),
+            ),
+          );
+        if (state.step === 13) return renderSuccess();
+      }
+      function startDuels() {
+        const deck = shuffle(concepts);
+        state.duels = [];
+        state.duelIndex = 0;
+        state.duelChampion = deck.shift();
+        state.duelChallenger = deck.shift();
+        state.duelQueue = deck;
+        if (Math.random() > 0.5)
+          [state.duelChampion, state.duelChallenger] = [
+            state.duelChallenger,
+            state.duelChampion,
+          ];
+        concepts.forEach((c) => (state.stats[c.name] = { shown: 0, wins: 0 }));
+      }
+      function duelCardContent(concept) {
+        return `<span class="duel-icon">${concept.icon}</span><h3>${esc(concept.name)}</h3><p>${esc(concept.desc)}</p>`;
+      }
+      function duelCardTemplate(concept) {
+        return `<div class="duel-option"><button class="duel-card duel-pick" type="button" data-pick="${esc(concept.name)}">${duelCardContent(concept)}</button><button class="duel-info" type="button" data-info="${esc(concept.name)}">Mai multe informații</button></div>`;
+      }
+      function conceptModalMarkup() {
+        return '<div class="concept-modal hidden" id="conceptModal" role="dialog" aria-modal="true" aria-labelledby="conceptModalTitle"><div class="concept-modal-card" id="conceptModalCard"></div></div>';
+      }
+      function renderDuel() {
+        const left = state.duelChampion,
+          right = state.duelChallenger;
+        if (!left || !right) {
+          state.step = 11;
+          return render();
+        }
+        const rounds = Array.from(
+          { length: concepts.length - 1 },
+          (_, index) =>
+            `<span class="duel-round ${index < state.duelIndex ? "is-done" : index === state.duelIndex ? "is-current" : ""}"></span>`,
+        ).join("");
+        show(
+          `<article class="quiz-card"><div class="duel-intro"><div><div class="quiz-kicker"><img src="/assets/heart_little.png" alt=""> DUELUL PREFERINȚELOR</div><h2>Alege preferințele<br><em>pentru familia ta!</em></h2></div><span class="duel-count">${state.duelIndex + 1} / ${concepts.length - 1}</span></div><div class="duel-rounds" aria-label="Duelul ${state.duelIndex + 1} din ${concepts.length - 1}">${rounds}</div><div class="duel-arena">${duelCardTemplate(left)}<span class="versus">SAU</span>${duelCardTemplate(right)}</div><div class="info-note"><span class="info-note-icon" aria-hidden="true">i</span><span>Alege instinctiv. Opțiunea aleasă rămâne; doar cealaltă se schimbă.</span></div><div class="quiz-actions"><button class="secondary-btn" type="button" data-back><span aria-hidden="true">←</span> Înapoi</button></div></article>${conceptModalMarkup()}`,
+        );
+        stage
+          .querySelectorAll("[data-pick]")
+          .forEach((btn) =>
+            btn.addEventListener("click", () => advanceDuel(btn)),
+          );
+        stage
+          .querySelectorAll("[data-info]")
+          .forEach((btn) =>
+            btn.addEventListener("click", () =>
+              openConceptInfo(btn.dataset.info),
+            ),
+          );
+        updateProgress();
+      }
+      function openConceptInfo(name) {
+        const concept = concepts.find((item) => item.name === name),
+          modal = stage.querySelector("#conceptModal"),
+          card = stage.querySelector("#conceptModalCard");
+        if (!concept || !modal || !card) return;
+        card.innerHTML = `<div class="concept-modal-head"><div class="concept-modal-title"><span class="concept-modal-icon">${concept.icon}</span><h3 id="conceptModalTitle">${esc(concept.name)}</h3></div><button class="concept-modal-close" type="button" aria-label="Închide">×</button></div><div class="concept-modal-summary">${esc(concept.desc)}</div><div class="concept-detail"><strong>Cum arată evenimentul</strong><p>${esc(concept.format)}</p></div><div class="concept-detail"><strong>Ce face copilul</strong><p>${esc(concept.child)}</p></div><div class="concept-detail"><strong>Rolul părintelui</strong><p>${esc(concept.parent)}</p></div>`;
+        modal.classList.remove("hidden");
+        const close = () => modal.classList.add("hidden");
+        card
+          .querySelector(".concept-modal-close")
+          .addEventListener("click", close);
+        modal.onclick = (event) => {
+          if (event.target === modal) close();
+        };
+        card.querySelector(".concept-modal-close").focus();
+      }
+      function advanceDuel(selectedButton) {
+        const buttons = [...stage.querySelectorAll("[data-pick]")];
+        if (buttons.some((button) => button.disabled)) return;
+        const rejectedButton = buttons.find(
+            (button) => button !== selectedButton,
+          ),
+          selectedCard = selectedButton.closest(".duel-card"),
+          rejectedCard = rejectedButton.closest(".duel-card");
+        const winner = concepts.find(
+            (concept) => concept.name === selectedButton.dataset.pick,
+          ),
+          rejected = concepts.find(
+            (concept) => concept.name === rejectedButton.dataset.pick,
+          );
+        if (!winner || !rejected || !selectedCard || !rejectedCard) return;
+        buttons.forEach((button) => (button.disabled = true));
+        state.stats[winner.name].shown++;
+        state.stats[winner.name].wins++;
+        state.stats[rejected.name].shown++;
+        state.duels.push({ winner: winner.name, rejected: rejected.name });
+        state.duelIndex++;
+        state.duelChampion = winner;
+        selectedCard.classList.add("chosen");
+        rejectedCard.classList.add("is-replacing");
+        const next = state.duelQueue.shift();
+        if (!next) {
+          setTimeout(() => {
+            state.conceptRanking = [];
+            state.step = 11;
+            render();
+          }, 480);
+          return;
+        }
+        state.duelChallenger = next;
+        setTimeout(() => {
+          rejectedButton.dataset.pick = next.name;
+          rejectedButton.innerHTML = duelCardContent(next);
+          const infoButton =
+            rejectedCard.parentElement.querySelector("[data-info]");
+          infoButton.dataset.info = next.name;
+          rejectedCard.classList.remove("is-replacing");
+          selectedCard.classList.remove("chosen");
+          buttons.forEach((button) => (button.disabled = false));
+          const counter = stage.querySelector(".duel-count");
+          if (counter)
+            counter.textContent = `${state.duelIndex + 1} / ${concepts.length - 1}`;
+          const roundTrack = stage.querySelector(".duel-rounds");
+          if (roundTrack) {
+            roundTrack.setAttribute(
+              "aria-label",
+              `Duelul ${state.duelIndex + 1} din ${concepts.length - 1}`,
+            );
+            roundTrack
+              .querySelectorAll(".duel-round")
+              .forEach((round, index) => {
+                round.classList.toggle("is-done", index < state.duelIndex);
+                round.classList.toggle("is-current", index === state.duelIndex);
+              });
+          }
+          const pagerCopy = stage.querySelector(".section-pager-copy");
+          if (pagerCopy)
+            pagerCopy.textContent = `Etapa 3 · pasul 2/4 · duelul ${state.duelIndex + 1}/${concepts.length - 1}`;
+          updateProgress();
+        }, 360);
+      }
+      function initialConceptRanking() {
+        // Duelul nu compară toate ideile între ele: fiecare rundă creează
+        // o relație directă „winner > rejected”. Construim clasamentul din
+        // aceste relații, astfel încât nicio alegere explicită să nu fie
+        // inversată de ordinea în care au apărut ulterior cărțile.
+        const children = new Map(
+          concepts.map((concept) => [concept.name, []]),
+        );
+        const duelOrder = new Map();
+        state.duels.forEach((duel, index) => {
+          if (!children.has(duel.winner) || !children.has(duel.rejected))
+            return;
+          children.get(duel.winner).push(duel.rejected);
+          duelOrder.set(duel.rejected, index);
+        });
+
+        const root = state.duelChampion?.name;
+        if (!root) return [];
+        const ranking = [];
+        const visit = (name) => {
+          ranking.push(name);
+          children
+            .get(name)
+            .slice()
+            .sort((a, b) => (duelOrder.get(b) ?? -1) - (duelOrder.get(a) ?? -1))
+            .forEach(visit);
+        };
+        visit(root);
+
+        // Fallback defensiv pentru date vechi sau un duel întrerupt.
+        concepts.forEach((concept) => {
+          if (!ranking.includes(concept.name)) ranking.push(concept.name);
+        });
+        return ranking;
+      }
+      function renderPreferenceReview() {
+        if (!state.conceptRanking.length)
+          state.conceptRanking = initialConceptRanking();
+        const rows = state.conceptRanking
+          .map((name, index) => {
+            const concept = concepts.find((item) => item.name === name);
+            return `<div class="rank-row" draggable="true" data-concept-rank="${esc(name)}"><span class="drag-handle" aria-label="Trage pentru a muta">⠿</span><span class="rank-number">${index + 1}</span><span class="rank-name">${concept.icon} ${esc(concept.name)}</span></div>`;
+          })
+          .join("");
+        show(
+          `<article class="quiz-card"><div class="quiz-kicker"><img src="/assets/heart_little.png" alt=""> REZULTATUL DUELULUI</div><h2>Așa am interpretat<br><em>alegerile tale.</em></h2><p class="quiz-lead">Duelul a comparat perechi, nu toate ideile între ele. Aceasta este o ordine propusă pe baza alegerilor tale — verifică mai ales primele trei poziții și rearanjează dacă nu te reprezintă.</p><div class="info-note ranking-note"><span class="info-note-icon" aria-hidden="true">↕</span><span><strong>Poți rearanja clasamentul.</strong><br><strong>Pe telefon:</strong> ține apăsat aproximativ o jumătate de secundă, apoi trage cardul. O glisare normală va continua să deruleze pagina.</span></div><div class="ranking is-editable">${rows}</div>${nextButton("Primele trei mă reprezintă")}</article>`,
+        );
+        bindPreferenceRanking();
+      }
+      function moveConcept(from, to) {
+        if (
+          from < 0 ||
+          to < 0 ||
+          from === to ||
+          to >= state.conceptRanking.length
+        )
+          return;
+        const list = stage.querySelector(".ranking.is-editable");
+        if (!list) return;
+        const rows = [...list.querySelectorAll(".rank-row")],
+          before = new Map(
+            rows.map((row) => [
+              row.dataset.conceptRank,
+              row.getBoundingClientRect(),
+            ]),
+          ),
+          movedName = state.conceptRanking[from];
+        const [item] = state.conceptRanking.splice(from, 1);
+        state.conceptRanking.splice(to, 0, item);
+        state.conceptRanking.forEach((name) => {
+          const row = rows.find(
+            (candidate) => candidate.dataset.conceptRank === name,
+          );
+          if (row) list.appendChild(row);
+        });
+        [...list.querySelectorAll(".rank-row")].forEach((row, index) => {
+          row.querySelector(".rank-number").textContent = String(index + 1);
+          const previous = before.get(row.dataset.conceptRank),
+            next = row.getBoundingClientRect(),
+            deltaX = previous.left - next.left,
+            deltaY = previous.top - next.top;
+          if (deltaX || deltaY)
+            row.animate(
+              [
+                { transform: `translate(${deltaX}px,${deltaY}px)` },
+                { transform: "translate(0,0)" },
+              ],
+              { duration: 320, easing: "cubic-bezier(.2,.8,.2,1)" },
+            );
+        });
+        const moved = list.querySelector(
+          `[data-concept-rank="${CSS.escape(movedName)}"]`,
+        );
+        if (moved) {
+          moved.classList.remove("is-settling");
+          void moved.offsetWidth;
+          moved.classList.add("is-settling");
+          setTimeout(() => moved.classList.remove("is-settling"), 1500);
+        }
+      }
+      function bindPreferenceRanking() {
+        const list = stage.querySelector(".ranking.is-editable");
+        let draggedName = "",
+          dragScrollY = window.scrollY;
+        list.querySelectorAll(".rank-row").forEach((row) => {
+          if (window.matchMedia("(pointer: coarse)").matches)
+            row.draggable = false;
+          row.addEventListener("dragstart", (event) => {
+            if (window.matchMedia("(pointer: coarse)").matches) {
+              event.preventDefault();
+              return;
+            }
+            draggedName = row.dataset.conceptRank;
+            dragScrollY = window.scrollY;
+            row.classList.add("is-dragging");
+            event.dataTransfer.effectAllowed = "move";
+          });
+          row.addEventListener("dragover", (event) => {
+            event.preventDefault();
+            window.scrollTo({ top: dragScrollY, behavior: "auto" });
+            row.classList.add("is-over");
+          });
+          row.addEventListener("dragleave", () =>
+            row.classList.remove("is-over"),
+          );
+          row.addEventListener("drop", (event) => {
+            event.preventDefault();
+            window.scrollTo({ top: dragScrollY, behavior: "auto" });
+            const from = state.conceptRanking.indexOf(draggedName),
+              to = state.conceptRanking.indexOf(row.dataset.conceptRank);
+            moveConcept(from, to);
+          });
+          row.addEventListener("dragend", () => {
+            window.scrollTo({ top: dragScrollY, behavior: "auto" });
+            list
+              .querySelectorAll(".rank-row")
+              .forEach((item) =>
+                item.classList.remove("is-dragging", "is-over"),
+              );
+          });
+          let targetRow = null,
+            dragGhost = null,
+            pressTimer = null,
+            touchDragActive = false,
+            pointerId = null,
+            startX = 0,
+            startY = 0,
+            pointerOffsetY = 0;
+          const cancelPress = () => {
+            clearTimeout(pressTimer);
+            pressTimer = null;
+            row.classList.remove("is-long-pressing");
+          };
+          const clearTouchVisuals = () => {
+            cancelPress();
+            dragGhost?.remove();
+            dragGhost = null;
+            touchDragActive = false;
+            pointerId = null;
+            document.body.classList.remove("is-ranking-dragging");
+            list
+              .querySelectorAll(".rank-row")
+              .forEach((item) =>
+                item.classList.remove(
+                  "is-dragging",
+                  "is-over",
+                  "is-push-up",
+                  "is-push-down",
+                  "is-long-pressing",
+                ),
+              );
+          };
+          row.addEventListener("pointerdown", (event) => {
+            if (event.pointerType === "mouse") return;
+            startX = event.clientX;
+            startY = event.clientY;
+            pointerId = event.pointerId;
+            targetRow = row;
+            row.classList.add("is-long-pressing");
+            pressTimer = setTimeout(() => {
+              if (!row.isConnected || pointerId !== event.pointerId) return;
+              touchDragActive = true;
+              draggedName = row.dataset.conceptRank;
+              dragScrollY = window.scrollY;
+              document.body.classList.add("is-ranking-dragging");
+              row.classList.remove("is-long-pressing");
+              row.classList.add("is-dragging");
+              const bounds = row.getBoundingClientRect();
+              pointerOffsetY = startY - bounds.top;
+              dragGhost = row.cloneNode(true);
+              dragGhost.classList.remove("is-dragging", "is-over");
+              dragGhost.classList.add("rank-drag-ghost");
+              dragGhost.style.left = `${bounds.left}px`;
+              dragGhost.style.top = `${bounds.top}px`;
+              dragGhost.style.width = `${bounds.width}px`;
+              dragGhost.style.height = `${bounds.height}px`;
+              document.body.appendChild(dragGhost);
+              try {
+                row.setPointerCapture(event.pointerId);
+              } catch {
+                // Synthetic events and older mobile browsers may not expose capture.
+              }
+              navigator.vibrate?.(18);
+            }, 480);
+          });
+          row.addEventListener(
+            "touchmove",
+            (event) => {
+              if (touchDragActive) event.preventDefault();
+            },
+            { passive: false },
+          );
+          row.addEventListener("contextmenu", (event) =>
+            event.preventDefault(),
+          );
+          row.addEventListener("pointermove", (event) => {
+            if (event.pointerType === "mouse" || pointerId !== event.pointerId)
+              return;
+            if (!touchDragActive) {
+              if (
+                Math.hypot(event.clientX - startX, event.clientY - startY) > 9
+              )
+                cancelPress();
+              return;
+            }
+            event.preventDefault();
+            if (dragGhost) {
+              dragGhost.style.top = `${event.clientY - pointerOffsetY}px`;
+              dragGhost.style.transform = "scale(1.02)";
+            }
+            if (event.clientY < 72) window.scrollBy(0, -14);
+            else if (event.clientY > window.innerHeight - 72)
+              window.scrollBy(0, 14);
+            const candidate = document
+              .elementFromPoint(event.clientX, event.clientY)
+              ?.closest(".rank-row");
+            const draggedIndex = state.conceptRanking.indexOf(draggedName),
+              candidateIndex = candidate
+                ? state.conceptRanking.indexOf(candidate.dataset.conceptRank)
+                : -1;
+            list.querySelectorAll(".rank-row").forEach((item) => {
+              item.classList.toggle("is-over", item === candidate);
+              item.classList.toggle(
+                "is-push-up",
+                item === candidate && candidateIndex < draggedIndex,
+              );
+              item.classList.toggle(
+                "is-push-down",
+                item === candidate && candidateIndex > draggedIndex,
+              );
+            });
+            if (candidate) targetRow = candidate;
+          });
+          const finishTouchDrag = (event, cancelled = false) => {
+            if (event.pointerType === "mouse" || pointerId !== event.pointerId)
+              return;
+            if (!touchDragActive) {
+              cancelPress();
+              pointerId = null;
+              return;
+            }
+            event.preventDefault();
+            const from = state.conceptRanking.indexOf(draggedName),
+              to = state.conceptRanking.indexOf(targetRow?.dataset.conceptRank);
+            draggedName = "";
+            clearTouchVisuals();
+            window.scrollTo({ top: dragScrollY, behavior: "auto" });
+            if (!cancelled && from !== to) moveConcept(from, to);
+          };
+          row.addEventListener("pointerup", finishTouchDrag);
+          row.addEventListener("pointercancel", (event) =>
+            finishTouchDrag(event, true),
+          );
+        });
+      }
+      async function submitSurvey() {
+        const button = stage.querySelector("[data-submit]"),
+          status = stage.querySelector(".submit-status");
+        state.answers.mainOpen =
+          stage.querySelector("[name=mainOpen]")?.value.trim() || "";
+        state.answers.conceptRanking = [...state.conceptRanking];
+        button.disabled = true;
+        button.textContent = "Se trimit răspunsurile…";
+        status.textContent = "Rățușca pune răspunsurile în ordine.";
+        try {
+          const response = await fetch("/api/event-survey", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              answers: state.answers,
+              duels: state.duels,
+              conceptRanking: state.conceptRanking,
+            }),
+          });
+          if (!response.ok) throw new Error("Submit failed");
+          trackFunnel("complete", 13);
+          state.step = 13;
+          render();
+        } catch {
+          button.disabled = false;
+          button.textContent = "Încearcă din nou";
+          status.textContent =
+            "Răspunsurile nu au putut fi trimise. Mai încearcă o dată.";
+        }
+      }
+      function renderSuccess() {
+        show(
+          `<article class="quiz-card success-card"><div class="success-duck-stage"><video class="success-duck-source" id="successDuckVideo" src="/assets/animated_characters/duck_throwing_conffetti.mp4" muted playsinline preload="auto"></video><canvas class="success-duck-canvas" id="successDuckCanvas" aria-hidden="true"></canvas></div><div class="quiz-kicker" style="justify-content:center"><img src="/assets/heart_little.png" alt=""> CHESTIONAR COMPLETAT</div><h2>Mulțumim!<br><em>Răspunsurile au ajuns.</em></h2><p class="quiz-lead" style="margin-left:auto;margin-right:auto">Ne vor ajuta să construim evenimente mai relevante pentru familii și momente de conexiune care chiar merită timpul vostru.</p></article>`,
+        );
+        playSuccessAnimation();
+      }
+      function playSuccessAnimation() {
+        const video = stage.querySelector("#successDuckVideo"),
+          canvas = stage.querySelector("#successDuckCanvas"),
+          holder = stage.querySelector(".success-duck-stage");
+        if (!video || !canvas || !holder) return launchConfetti();
+        const context = canvas.getContext("2d", { willReadFrequently: true }),
+          processingCanvas = document.createElement("canvas"),
+          processingContext = processingCanvas.getContext("2d", {
+            willReadFrequently: true,
+          });
+        const confettiAt = 0.7;
+        let confettiStarted = false,
+          animationFinished = false;
+        const startConfetti = () => {
+          if (confettiStarted) return;
+          confettiStarted = true;
+          launchConfetti();
+        };
+        const scheduleFrame = () =>
+          video.requestVideoFrameCallback
+            ? video.requestVideoFrameCallback(draw)
+            : requestAnimationFrame(draw);
+        const draw = () => {
+          if (animationFinished) return;
+          if (!video.videoWidth || !video.videoHeight) return;
+          if (!canvas.dataset.sized) {
+            canvas.width = 240;
+            canvas.height = Math.round(
+              (240 * video.videoHeight) / video.videoWidth,
+            );
+            processingCanvas.width = canvas.width;
+            processingCanvas.height = canvas.height;
+            canvas.dataset.sized = "true";
+          }
+          processingContext.clearRect(
+            0,
+            0,
+            processingCanvas.width,
+            processingCanvas.height,
+          );
+          processingContext.drawImage(
+            video,
+            0,
+            0,
+            processingCanvas.width,
+            processingCanvas.height,
+          );
+          context.putImageData(
+            removeEdgeBlack(
+              processingContext.getImageData(
+                0,
+                0,
+                processingCanvas.width,
+                processingCanvas.height,
+              ),
+            ),
+            0,
+            0,
+          );
+          holder.classList.add("is-animating");
+          if (video.currentTime >= confettiAt) startConfetti();
+          if (!video.paused && !video.ended) scheduleFrame();
+        };
+        video.addEventListener(
+          "loadeddata",
+          () => {
+            draw();
+            video.play().then(scheduleFrame).catch(startConfetti);
+          },
+          { once: true },
+        );
+        video.addEventListener("timeupdate", () => {
+          if (video.currentTime >= confettiAt) startConfetti();
+        });
+        video.addEventListener(
+          "ended",
+          () => {
+            draw();
+            animationFinished = true;
+            startConfetti();
+            video.pause();
+            holder.classList.add("is-animating");
+          },
+          { once: true },
+        );
+      }
+      function launchConfetti() {
+        const colors = ["#FB7176", "#FDCB4B", "#33A9BA", "#CBBAD8", "#6CAE78"];
+        for (let i = 0; i < 90; i++) {
+          const piece = document.createElement("i");
+          piece.className = "confetti-piece";
+          piece.style.left = Math.random() * 100 + "vw";
+          piece.style.background = colors[i % colors.length];
+          piece.style.setProperty(
+            "--duration",
+            2.6 + Math.random() * 2.2 + "s",
+          );
+          piece.style.setProperty("--drift", -120 + Math.random() * 240 + "px");
+          piece.style.animationDelay = Math.random() * 0.7 + "s";
+          document.body.appendChild(piece);
+          setTimeout(() => piece.remove(), 5600);
+        }
+      }
+      async function startQuizWhenFontsAreReady() {
+        const fonts = [
+            "600 48px 'Mali'",
+            "400 16px 'Nunito'",
+            "800 16px 'Nunito'",
+          ],
+          sample = "Becky Țară își păstrează răspunsurile anonime";
+        await Promise.all(
+          fonts.map((font) => document.fonts.load(font, sample)),
+        );
+        await document.fonts.ready;
+        document.documentElement.classList.remove("fonts-pending");
+        document.documentElement.classList.add("fonts-ready");
+        trackFunnel("open", 0);
+        render();
+        document.fonts.load("700 24px 'Mali'", sample);
+      }
+      startQuizWhenFontsAreReady();
+    </script>
+  </body>
+</html>

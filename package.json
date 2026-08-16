@@ -1,0 +1,19 @@
+{
+  "name": "becky-friends-platform",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local content workspace for the Becky Friends platform",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "dev:cloudflare": "wrangler dev --port 3002",
+    "deploy": "wrangler deploy",
+    "cf:typegen": "wrangler types",
+    "supabase:seed:generate": "node scripts/generate-supabase-seed.js",
+    "supabase:seed:remote": "node scripts/seed-supabase-remote.js",
+    "check": "node --check server.js && node --check src/worker.mjs && node --check src/content-os/domain/model.mjs && node --check src/content-os/data/local-content-repository.mjs && node --check public/playground-survey.js && node --check public/admin/admin-app-20260807b.js && node --check public/admin/content-creator.js && node --check public/admin/events-dashboard.js && node --check public/admin/playground-dashboard.js && node scripts/test-content-os.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.28.1"
+  }
+}
