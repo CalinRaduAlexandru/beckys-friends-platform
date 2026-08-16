@@ -13,6 +13,7 @@ const EVENT_FUNNEL_FILE = path.join(ROOT, 'data', 'event-survey-funnel-events.js
 const PLAYGROUND_SURVEY_FILE = path.join(ROOT, 'data', 'playground-survey-responses.json');
 const PLAYGROUND_FUNNEL_FILE = path.join(ROOT, 'data', 'playground-survey-funnel-events.json');
 const PLAYGROUND_RAFFLE_FILE = path.join(ROOT, 'data', 'playground-survey-raffle.json');
+const ADMIN_TASKS_FILE = path.join(ROOT, 'data', 'admin-tasks.json');
 const PUBLIC = path.join(ROOT, 'public');
 
 function escapeHtml(value) {
@@ -96,6 +97,35 @@ function appendArrayFile(file, entry) {
   values.push(entry);
   fs.mkdirSync(path.dirname(file), { recursive: true });
   fs.writeFileSync(file, JSON.stringify(values, null, 2));
+}
+
+function readAdminTasks() {
+  try {
+    const tasks = fs.existsSync(ADMIN_TASKS_FILE) ? JSON.parse(fs.readFileSync(ADMIN_TASKS_FILE, 'utf8')) : [];
+    return Array.isArray(tasks) ? tasks : [];
+  } catch { throw new Error('Invalid admin task store'); }
+}
+
+function writeAdminTasks(tasks) {
+  fs.mkdirSync(path.dirname(ADMIN_TASKS_FILE), { recursive: true });
+  fs.writeFileSync(ADMIN_TASKS_FILE, JSON.stringify(tasks, null, 2));
+}
+
+function normalizeAdminTask(input, existing = {}) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
+  const area = String(input?.area ?? existing.area ?? '').trim();
+  const title = String(input?.title ?? existing.title ?? '').trim();
+  const detail = String(input?.detail ?? existing.detail ?? '').trim();
+  const owner = String(input?.owner ?? existing.owner ?? '').trim();
+  const priority = String(input?.priority ?? existing.priority ?? '').trim();
+  const sortOrder = Number(input?.sort_order ?? existing.sort_order ?? 0);
+  if (!id || !area || !title || !owner || !priority || !Number.isInteger(sortOrder)) throw new Error('Admin task invalid');
+  const now = new Date().toISOString();
+  return {
+    id, area, title, detail, owner, priority, sort_order: sortOrder,
+    created_at: existing.created_at || input?.created_at || now,
+    updated_at: now
+  };
 }
 
 function readRequestJson(req, res, maxBytes, callback) {
@@ -227,6 +257,60 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/manual') return send(res, 200, readDocument());
   if (req.method === 'GET' && url.pathname === '/api/styles') return send(res, 200, { css: fs.existsSync(CSS_FILE) ? fs.readFileSync(CSS_FILE, 'utf8') : '' });
   if (req.method === 'GET' && url.pathname === '/api/workspaces') return send(res, 200, readWorkspaces());
+  if (url.pathname === '/api/admin/tasks' && req.method === 'GET') {
+    try { return send(res, 200, { tasks: readAdminTasks() }); }
+    catch { return send(res, 500, { error: 'Admin tasks unavailable' }); }
+  }
+  if (url.pathname === '/api/admin/tasks' && req.method === 'POST') {
+    readRequestJson(req, res, 40_000, body => {
+      try {
+        const tasks = readAdminTasks();
+        const task = normalizeAdminTask(body);
+        if (tasks.some(item => item.id === task.id)) return send(res, 409, { error: 'Admin task already exists' });
+        tasks.push(task);
+        writeAdminTasks(tasks);
+        send(res, 201, task);
+      } catch { send(res, 400, { error: 'Admin task invalid' }); }
+    });
+    return;
+  }
+  if (url.pathname === '/api/admin/tasks' && req.method === 'PUT') {
+    readRequestJson(req, res, 200_000, body => {
+      try {
+        if (!Array.isArray(body?.tasks)) throw new Error('Admin tasks invalid');
+        const existing = new Map(readAdminTasks().map(task => [task.id, task]));
+        const tasks = body.tasks.map(task => normalizeAdminTask(task, existing.get(task.id)));
+        if (new Set(tasks.map(task => task.id)).size !== tasks.length) throw new Error('Duplicate admin task');
+        writeAdminTasks(tasks);
+        send(res, 200, { tasks });
+      } catch { send(res, 400, { error: 'Admin tasks invalid' }); }
+    });
+    return;
+  }
+  if (url.pathname.startsWith('/api/admin/tasks/') && ['PATCH', 'DELETE'].includes(req.method)) {
+    const id = decodeURIComponent(url.pathname.slice('/api/admin/tasks/'.length));
+    if (!id) return send(res, 400, { error: 'Admin task id missing' });
+    if (req.method === 'DELETE') {
+      try {
+        const tasks = readAdminTasks();
+        const next = tasks.filter(task => task.id !== id);
+        if (next.length === tasks.length) return send(res, 404, { error: 'Admin task not found' });
+        writeAdminTasks(next);
+        return send(res, 200, { ok: true });
+      } catch { return send(res, 500, { error: 'Admin task unavailable' }); }
+    }
+    readRequestJson(req, res, 40_000, body => {
+      try {
+        const tasks = readAdminTasks();
+        const index = tasks.findIndex(task => task.id === id);
+        if (index < 0) return send(res, 404, { error: 'Admin task not found' });
+        tasks[index] = normalizeAdminTask({ ...tasks[index], ...body, id }, tasks[index]);
+        writeAdminTasks(tasks);
+        send(res, 200, tasks[index]);
+      } catch { send(res, 400, { error: 'Admin task invalid' }); }
+    });
+    return;
+  }
   if (req.method === 'GET' && url.pathname === '/api/event-survey/results') {
     try {
       const stored = fs.existsSync(EVENT_SURVEY_FILE) ? JSON.parse(fs.readFileSync(EVENT_SURVEY_FILE, 'utf8')) : [];

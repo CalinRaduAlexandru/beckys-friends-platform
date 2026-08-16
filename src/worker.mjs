@@ -91,6 +91,63 @@ async function supabaseRequest(env, path, init = {}) {
   return response;
 }
 
+const ADMIN_TASK_COLUMNS = 'id,area,title,detail,owner,priority,sort_order,created_at,updated_at';
+
+async function handleAdminTasks(request, env) {
+  await requireAdmin(request, env);
+  if (request.method === 'GET') {
+    const response = await supabaseRequest(env, `/rest/v1/admin_tasks?select=${ADMIN_TASK_COLUMNS}&order=sort_order.asc,created_at.asc`);
+    return json({ tasks: await response.json() });
+  }
+  assertSameOrigin(request);
+  if (request.method === 'POST' || request.method === 'PUT') {
+    const body = await readJson(request, 200_000);
+    const tasks = request.method === 'PUT' ? body?.tasks : [body];
+    if (!Array.isArray(tasks) || tasks.length > 500) return json({ error: 'Admin tasks invalid' }, 400);
+    const valid = tasks.map(task => {
+      if (!task || typeof task.id !== 'string' || typeof task.area !== 'string' || typeof task.title !== 'string' || typeof task.detail !== 'string' || typeof task.owner !== 'string' || typeof task.priority !== 'string' || !Number.isInteger(Number(task.sort_order))) throw Object.assign(new Error('Admin task invalid'), { status: 400 });
+      return {
+        id: task.id.trim(), area: task.area.trim(), title: task.title.trim(), detail: task.detail.trim(), owner: task.owner.trim(), priority: task.priority.trim(), sort_order: Number(task.sort_order),
+        ...(task.created_at ? { created_at: task.created_at } : {}), updated_at: new Date().toISOString()
+      };
+    });
+    if (!valid.every(task => task.id && task.area && task.title && task.owner && task.priority) || new Set(valid.map(task => task.id)).size !== valid.length) return json({ error: 'Admin tasks invalid' }, 400);
+    if (request.method === 'PUT') {
+      const existingResponse = await supabaseRequest(env, `/rest/v1/admin_tasks?select=id${valid.length ? `&id=not.in.(${valid.map(task => encodeURIComponent(task.id)).join(',')})` : ''}`);
+      const stale = await existingResponse.json();
+      if (stale.length) await supabaseRequest(env, `/rest/v1/admin_tasks?id=in.(${stale.map(task => encodeURIComponent(task.id)).join(',')})`, { method: 'DELETE' });
+    }
+    if (!valid.length) return json({ tasks: [] }, request.method === 'POST' ? 201 : 200);
+    const response = await supabaseRequest(env, '/rest/v1/admin_tasks?on_conflict=id', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(valid)
+    });
+    const rows = await response.json();
+    rows.sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
+    return json(request.method === 'POST' ? rows[0] : { tasks: rows }, request.method === 'POST' ? 201 : 200);
+  }
+  const match = request.url.match(/\/api\/admin\/tasks\/([^/?]+)$/);
+  if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PUT, PATCH, DELETE' });
+  const id = decodeURIComponent(match[1]);
+  if (request.method === 'DELETE') {
+    await supabaseRequest(env, `/rest/v1/admin_tasks?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  if (request.method === 'PATCH') {
+    const body = await readJson(request, 40_000);
+    const allowed = ['area', 'title', 'detail', 'owner', 'priority', 'sort_order'];
+    const update = Object.fromEntries(allowed.filter(key => body?.[key] !== undefined).map(key => [key, key === 'sort_order' ? Number(body[key]) : String(body[key]).trim()]));
+    if (!Object.keys(update).length || (update.sort_order !== undefined && !Number.isInteger(update.sort_order))) return json({ error: 'Admin task invalid' }, 400);
+    update.updated_at = new Date().toISOString();
+    const response = await supabaseRequest(env, `/rest/v1/admin_tasks?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(update) });
+    const rows = await response.json();
+    if (!rows.length) return json({ error: 'Admin task not found' }, 404);
+    return json(rows[0]);
+  }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PUT, PATCH, DELETE' });
+}
+
 async function getDocument(env, key) {
   const response = await supabaseRequest(env, `/rest/v1/app_documents?key=eq.${encodeURIComponent(key)}&select=payload&limit=1`);
   const rows = await response.json();
@@ -476,6 +533,7 @@ async function handleApi(request, env, pathname) {
     testingMode: env.APP_ENV === 'testing'
   });
   if (pathname.startsWith('/api/auth/')) return handleAuth(request, env, pathname);
+  if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
   if (pathname === '/api/event-survey/results') return handleSurveyResults(request, env);
   if (pathname === '/api/event-survey/funnel') return handleSurveyFunnel(request, env);
   if (pathname === '/api/event-survey') return handleSurvey(request, env);
