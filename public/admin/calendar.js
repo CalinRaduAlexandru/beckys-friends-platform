@@ -28,6 +28,7 @@
   const loadCanvasImage = source => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = source; });
   let duckBulletIcon = null;
   let hideDuckIcon = null;
+  let happyDuckIcon = null;
 
   function drawContained(context, image, x, y, width, height) {
     if (!image) return;
@@ -73,7 +74,7 @@
     if (options.headerBand) { context.strokeStyle = `${accents[index]}3d`; context.lineWidth = 1.5; context.beginPath(); context.moveTo(x + 1, y + headerHeight); context.lineTo(x + width - 1, y + headerHeight); context.stroke(); }
     const fullDayOpen = day.entries.length === 1 && day.entries[0].type === 'open';
     if (fullDayOpen || fullDayClosed) {
-      const entry = day.entries[0]; const bodyTop = y + headerHeight; const bodyHeight = height - headerHeight; const iconSize = compact ? 72 : 82; const groupHeight = compact ? 151 : 166; const groupTop = bodyTop + Math.max(12, (bodyHeight - groupHeight) / 2); const stateIcon = fullDayClosed ? hideDuckIcon : duckBulletIcon; drawTintedContained(context, stateIcon, x + (width - iconSize) / 2, groupTop, iconSize, iconSize, accents[index]); context.fillStyle = accents[index]; context.textAlign = 'center'; context.font = `800 ${compact ? 23 : 26}px 'Quicksand', sans-serif`; context.fillText(fullDayClosed ? 'Închis' : 'Deschis', x + width / 2, groupTop + iconSize + 30); context.font = `800 ${compact ? 34 : 38}px 'Quicksand', sans-serif`; context.fillText(`${entry.start_time}–${entry.end_time}`, x + width / 2, groupTop + iconSize + 72); context.textAlign = 'left'; context.restore(); return;
+      const entry = day.entries[0]; const bodyTop = y + headerHeight; const bodyHeight = height - headerHeight; const iconSize = compact ? 72 : 82; const groupHeight = compact ? 151 : 166; const groupTop = bodyTop + Math.max(12, (bodyHeight - groupHeight) / 2); const stateIcon = fullDayClosed ? hideDuckIcon : happyDuckIcon; const stateIconX = x + (width - iconSize) / 2; if (fullDayClosed) drawTintedContained(context, stateIcon, stateIconX, groupTop, iconSize, iconSize, accents[index]); else drawContained(context, stateIcon, stateIconX, groupTop, iconSize, iconSize); context.fillStyle = accents[index]; context.textAlign = 'center'; context.font = `800 ${compact ? 23 : 26}px 'Quicksand', sans-serif`; context.fillText(fullDayClosed ? 'Închis' : 'Deschis', x + width / 2, groupTop + iconSize + 30); context.font = `800 ${compact ? 34 : 38}px 'Quicksand', sans-serif`; context.fillText(`${entry.start_time}–${entry.end_time}`, x + width / 2, groupTop + iconSize + 72); context.textAlign = 'left'; context.restore(); return;
     }
     const entriesHeight = day.entries.length * entryHeight + Math.max(0, day.entries.length - 1) * entryGap; const availableHeight = height - headerHeight - 17; let entryTop = y + headerHeight + (options.centerEntries ? Math.max(0, (availableHeight - entriesHeight) / 2) : 0); day.entries.forEach(entry => { const entryAccent = entry.type === 'open' ? accents[index] : '#10264B'; const entryFill = '#ffffffb8'; context.fillStyle = entryFill; context.beginPath(); context.roundRect(x + 18, entryTop, width - 36, entryHeight, 15); context.fill(); context.strokeStyle = `${accents[index]}30`; context.lineWidth = 1.5; context.stroke(); context.fillStyle = entryAccent; context.beginPath(); context.roundRect(x + 18, entryTop + 11, 4, entryHeight - 22, 2); context.fill(); context.fillStyle = '#10264B'; context.font = `800 ${compact ? 27 : 30}px 'Quicksand', sans-serif`; context.fillText(`${entry.start_time}–${entry.end_time}`, x + 32, entryTop + 33); drawEntryIcon(context, entry.type, x + 29, entryTop + 43, accents[index], duckBulletIcon); context.fillStyle = '#10264B'; context.font = `700 ${compact ? 25 : 28}px 'Quicksand', sans-serif`; context.fillText(typeLabel(entry.type), x + 64, entryTop + 70); entryTop += entryHeight + entryGap; }); context.restore();
   }
@@ -83,7 +84,7 @@
       document.fonts.load("700 59px 'DynaPuff'", 'Programul săptămânii').catch(() => []),
       document.fonts.load("800 35px 'Quicksand'", 'Luni Marți Miercuri Joi Vineri Sâmbătă Duminică').catch(() => [])
     ]);
-    const [logo, invitation, clouds, oneHourIcon, twoHourIcon, threeHourIcon, allDayIcon, contactIcon, duckIcon, hiddenDuckIcon] = await Promise.all([
+    const [logo, invitation, clouds, oneHourIcon, twoHourIcon, threeHourIcon, allDayIcon, contactIcon, duckIcon, hiddenDuckIcon, openedDuckIcon] = await Promise.all([
       loadCanvasImage('/assets/logo/new_logo_horizontal.png').catch(() => null),
       loadCanvasImage('/assets/te%20asteptam%20cu%20drag_Becky.png').catch(() => null),
       loadCanvasImage('/assets/content_assets/header_clouds.png').catch(() => null),
@@ -93,10 +94,12 @@
       loadCanvasImage('/assets/all_day_sun.png').catch(() => null),
       loadCanvasImage('/assets/contact_circled_symbol.png').catch(() => null),
       loadCanvasImage('/assets/duck_bullet.svg').catch(() => null),
-      loadCanvasImage('/assets/hide_duck.svg').catch(() => null)
+      loadCanvasImage('/assets/hide_duck.svg').catch(() => null),
+      loadCanvasImage('/assets/happy_duck.svg').catch(() => null)
     ]);
     duckBulletIcon = duckIcon;
     hideDuckIcon = hiddenDuckIcon;
+    happyDuckIcon = openedDuckIcon;
     const naturalHeights = days.map(day => dayCardHeight(day, true)); const rowGap = 18; const firstRowHeight = Math.max(260, ...naturalHeights.slice(0, 3)); const secondRowHeight = Math.max(296, naturalHeights[3], naturalHeights[4]); const thirdRowHeight = Math.max(296, naturalHeights[5], naturalHeights[6]); const gridHeight = firstRowHeight + secondRowHeight + thirdRowHeight + rowGap * 2; const contentBottom = 287 + gridHeight;
     const footerHeight = 350; const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = Math.max(1536, contentBottom + footerHeight); const context = canvas.getContext('2d');
     const pageGradient = context.createLinearGradient(0, 0, 0, canvas.height); pageGradient.addColorStop(0, '#fffdf9'); pageGradient.addColorStop(.48, '#fffaf6'); pageGradient.addColorStop(1, '#fffdf9'); context.fillStyle = pageGradient; context.fillRect(0, 0, canvas.width, canvas.height);
