@@ -68,9 +68,9 @@
   }
 
   function drawDayCard(context, day, index, x, y, width, height, options = {}) {
-    const fills = [['#fffdf5','#fff3cf'],['#fffaf5','#ffe5cd'],['#fff8f8','#ffdee1'],['#fff8fc','#f7dbea'],['#fbf8ff','#e9e0f8'],['#f7faff','#dae7fa'],['#f5fffd','#d8f0ed']];
-    const headerFills = ['#fbe7ad','#f8d2b1','#f7cbd0','#f0c8de','#dccdf2','#ccdcf4','#c9e7e3'];
-    const accents = ['#d99d16','#e77521','#ed5d69','#cf4385','#8256d0','#477bcf','#2aa5a4'];
+    const fills = [['#f5fffd','#d8f0ed'],['#f7faff','#dae7fa'],['#fbf8ff','#e9e0f8'],['#fff8fc','#f7dbea'],['#fff8f8','#ffdee1'],['#fffaf5','#ffe5cd'],['#fffdf5','#fff3cf']];
+    const headerFills = ['#c9e7e3','#ccdcf4','#dccdf2','#f0c8de','#f7cbd0','#f8d2b1','#fbe7ad'];
+    const accents = ['#2aa5a4','#477bcf','#8256d0','#cf4385','#ed5d69','#e77521','#d99d16'];
     const compact = Boolean(options.compact); const entryHeight = compact ? 86 : 92; const entryGap = 12; const headerHeight = compact ? 66 : 72; const fullDayClosed = day.entries.length === 1 && day.entries[0].type === 'closed';
     const cardFills = fullDayClosed ? ['#faf9f7','#eff1f2'] : fills[index]; const headerFill = fullDayClosed ? '#e6e9eb' : headerFills[index]; const accent = fullDayClosed ? '#82909c' : accents[index];
     context.save(); if (fullDayClosed) context.globalAlpha = .78; context.shadowColor = '#2334492e'; context.shadowBlur = 21; context.shadowOffsetY = 9; const gradient = context.createLinearGradient(x, y, x + width, y + height); gradient.addColorStop(0, cardFills[0]); gradient.addColorStop(1, cardFills[1]); context.fillStyle = gradient; context.beginPath(); context.roundRect(x, y, width, height, 24); context.fill(); context.shadowColor = 'transparent'; context.strokeStyle = `${accent}24`; context.lineWidth = 2; context.stroke(); if (!options.noStitch) { context.setLineDash([7, 6]); context.lineWidth = 2; context.strokeStyle = `${accent}58`; context.beginPath(); context.roundRect(x + 8, y + 8, width - 16, height - 16, 18); context.stroke(); context.setLineDash([]); }
