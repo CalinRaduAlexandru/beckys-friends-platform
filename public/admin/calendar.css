@@ -117,6 +117,9 @@
 .calendar-segment-event {
   background: #eee8f6;
 }
+.calendar-segment-closed {
+  background: #eef0f3;
+}
 .calendar-segment span {
   font-size: 15px;
 }
