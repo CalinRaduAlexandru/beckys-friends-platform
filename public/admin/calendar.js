@@ -27,6 +27,7 @@
 
   const loadCanvasImage = source => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = source; });
   let duckBulletIcon = null;
+  let hideDuckIcon = null;
 
   function drawContained(context, image, x, y, width, height) {
     if (!image) return;
@@ -64,15 +65,15 @@
     const fills = [['#fffdf5','#fff3cf'],['#fffaf5','#ffe5cd'],['#fff8f8','#ffdee1'],['#fff8fc','#f7dbea'],['#fbf8ff','#e9e0f8'],['#f7faff','#dae7fa'],['#f5fffd','#d8f0ed']];
     const headerFills = ['#fbe7ad','#f8d2b1','#f7cbd0','#f0c8de','#dccdf2','#ccdcf4','#c9e7e3'];
     const accents = ['#d99d16','#e77521','#ed5d69','#cf4385','#8256d0','#477bcf','#2aa5a4'];
-    const compact = Boolean(options.compact); const entryHeight = compact ? 86 : 92; const entryGap = 12; const headerHeight = compact ? 66 : 72;
-    context.save(); context.shadowColor = '#2334492e'; context.shadowBlur = 21; context.shadowOffsetY = 9; const gradient = context.createLinearGradient(x, y, x + width, y + height); gradient.addColorStop(0, fills[index][0]); gradient.addColorStop(1, fills[index][1]); context.fillStyle = gradient; context.beginPath(); context.roundRect(x, y, width, height, 24); context.fill(); context.shadowColor = 'transparent'; context.strokeStyle = `${accents[index]}24`; context.lineWidth = 2; context.stroke(); if (!options.noStitch) { context.setLineDash([7, 6]); context.lineWidth = 2; context.strokeStyle = `${accents[index]}58`; context.beginPath(); context.roundRect(x + 8, y + 8, width - 16, height - 16, 18); context.stroke(); context.setLineDash([]); }
+    const compact = Boolean(options.compact); const entryHeight = compact ? 86 : 92; const entryGap = 12; const headerHeight = compact ? 66 : 72; const fullDayClosed = day.entries.length === 1 && day.entries[0].type === 'closed';
+    context.save(); if (fullDayClosed) context.globalAlpha = .7; context.shadowColor = '#2334492e'; context.shadowBlur = 21; context.shadowOffsetY = 9; const gradient = context.createLinearGradient(x, y, x + width, y + height); gradient.addColorStop(0, fills[index][0]); gradient.addColorStop(1, fills[index][1]); context.fillStyle = gradient; context.beginPath(); context.roundRect(x, y, width, height, 24); context.fill(); context.shadowColor = 'transparent'; context.strokeStyle = `${accents[index]}24`; context.lineWidth = 2; context.stroke(); if (!options.noStitch) { context.setLineDash([7, 6]); context.lineWidth = 2; context.strokeStyle = `${accents[index]}58`; context.beginPath(); context.roundRect(x + 8, y + 8, width - 16, height - 16, 18); context.stroke(); context.setLineDash([]); }
     context.fillStyle = headerFills[index]; context.beginPath(); context.roundRect(x + 2, y + 2, width - 4, headerHeight - 2, [22,22,0,0]); context.fill();
-    const glow = context.createRadialGradient(x + width * .2, y + 10, 4, x + width * .2, y + 10, width * .72); glow.addColorStop(0, '#ffffffb8'); glow.addColorStop(1, '#ffffff00'); context.fillStyle = glow; context.beginPath(); context.roundRect(x + 2, y + 2, width - 4, Math.min(92, height - 4), 22); context.fill();
+    const glow = context.createRadialGradient(x + width * .2, y + 10, 4, x + width * .2, y + 10, width * .72); glow.addColorStop(0, '#ffffffb8'); glow.addColorStop(1, '#ffffff00'); context.fillStyle = glow; context.beginPath(); context.roundRect(x + 2, y + 2, width - 4, headerHeight - 2, [22,22,0,0]); context.fill();
     context.fillStyle = accents[index]; context.textAlign = 'center'; context.font = `800 ${compact ? 29 : 35}px 'Quicksand', sans-serif`; context.fillText(dayNames[index], x + width / 2, y + 45); context.textAlign = 'left'; if (index < 5) { drawHeart(context, x + 22, y + 19, 24, accents[index]); drawHeart(context, x + width - 46, y + 19, 24, accents[index]); } else { drawStar(context, x + 34, y + 34, 13, accents[index]); drawStar(context, x + width - 34, y + 34, 13, accents[index]); }
     if (options.headerBand) { context.strokeStyle = `${accents[index]}3d`; context.lineWidth = 1.5; context.beginPath(); context.moveTo(x + 1, y + headerHeight); context.lineTo(x + width - 1, y + headerHeight); context.stroke(); }
     const fullDayOpen = day.entries.length === 1 && day.entries[0].type === 'open';
-    if (fullDayOpen) {
-      const entry = day.entries[0]; const bodyTop = y + headerHeight; const bodyHeight = height - headerHeight; const iconSize = compact ? 82 : 94; const iconY = bodyTop + Math.max(22, bodyHeight * .18); drawTintedContained(context, duckBulletIcon, x + (width - iconSize) / 2, iconY, iconSize, iconSize, accents[index]); context.fillStyle = accents[index]; context.textAlign = 'center'; context.font = `800 ${compact ? 34 : 38}px 'Quicksand', sans-serif`; context.fillText(`${entry.start_time}–${entry.end_time}`, x + width / 2, iconY + iconSize + 43); context.textAlign = 'left'; context.restore(); return;
+    if (fullDayOpen || fullDayClosed) {
+      const entry = day.entries[0]; const bodyTop = y + headerHeight; const bodyHeight = height - headerHeight; const iconSize = compact ? 72 : 82; const groupHeight = compact ? 151 : 166; const groupTop = bodyTop + Math.max(12, (bodyHeight - groupHeight) / 2); const stateIcon = fullDayClosed ? hideDuckIcon : duckBulletIcon; drawTintedContained(context, stateIcon, x + (width - iconSize) / 2, groupTop, iconSize, iconSize, accents[index]); context.fillStyle = accents[index]; context.textAlign = 'center'; context.font = `800 ${compact ? 23 : 26}px 'Quicksand', sans-serif`; context.fillText(fullDayClosed ? 'Închis' : 'Deschis', x + width / 2, groupTop + iconSize + 30); context.font = `800 ${compact ? 34 : 38}px 'Quicksand', sans-serif`; context.fillText(`${entry.start_time}–${entry.end_time}`, x + width / 2, groupTop + iconSize + 72); context.textAlign = 'left'; context.restore(); return;
     }
     const entriesHeight = day.entries.length * entryHeight + Math.max(0, day.entries.length - 1) * entryGap; const availableHeight = height - headerHeight - 17; let entryTop = y + headerHeight + (options.centerEntries ? Math.max(0, (availableHeight - entriesHeight) / 2) : 0); day.entries.forEach(entry => { const entryAccent = entry.type === 'open' ? accents[index] : '#10264B'; const entryFill = '#ffffffb8'; context.fillStyle = entryFill; context.beginPath(); context.roundRect(x + 18, entryTop, width - 36, entryHeight, 15); context.fill(); context.strokeStyle = `${accents[index]}30`; context.lineWidth = 1.5; context.stroke(); context.fillStyle = entryAccent; context.beginPath(); context.roundRect(x + 18, entryTop + 11, 4, entryHeight - 22, 2); context.fill(); context.fillStyle = '#10264B'; context.font = `800 ${compact ? 27 : 30}px 'Quicksand', sans-serif`; context.fillText(`${entry.start_time}–${entry.end_time}`, x + 32, entryTop + 33); drawEntryIcon(context, entry.type, x + 29, entryTop + 43, accents[index], duckBulletIcon); context.fillStyle = '#10264B'; context.font = `700 ${compact ? 25 : 28}px 'Quicksand', sans-serif`; context.fillText(typeLabel(entry.type), x + 64, entryTop + 70); entryTop += entryHeight + entryGap; }); context.restore();
   }
@@ -82,7 +83,7 @@
       document.fonts.load("700 59px 'DynaPuff'", 'Programul săptămânii').catch(() => []),
       document.fonts.load("800 35px 'Quicksand'", 'Luni Marți Miercuri Joi Vineri Sâmbătă Duminică').catch(() => [])
     ]);
-    const [logo, invitation, clouds, oneHourIcon, twoHourIcon, threeHourIcon, allDayIcon, contactIcon, duckIcon] = await Promise.all([
+    const [logo, invitation, clouds, oneHourIcon, twoHourIcon, threeHourIcon, allDayIcon, contactIcon, duckIcon, hiddenDuckIcon] = await Promise.all([
       loadCanvasImage('/assets/logo/new_logo_horizontal.png').catch(() => null),
       loadCanvasImage('/assets/te%20asteptam%20cu%20drag_Becky.png').catch(() => null),
       loadCanvasImage('/assets/content_assets/header_clouds.png').catch(() => null),
@@ -91,9 +92,11 @@
       loadCanvasImage('/assets/3h_circle.png').catch(() => null),
       loadCanvasImage('/assets/all_day_sun.png').catch(() => null),
       loadCanvasImage('/assets/contact_circled_symbol.png').catch(() => null),
-      loadCanvasImage('/assets/duck_bullet.svg').catch(() => null)
+      loadCanvasImage('/assets/duck_bullet.svg').catch(() => null),
+      loadCanvasImage('/assets/hide_duck.svg').catch(() => null)
     ]);
     duckBulletIcon = duckIcon;
+    hideDuckIcon = hiddenDuckIcon;
     const naturalHeights = days.map(day => dayCardHeight(day, true)); const rowGap = 18; const firstRowHeight = Math.max(260, ...naturalHeights.slice(0, 3)); const secondRowHeight = Math.max(296, naturalHeights[3], naturalHeights[4]); const thirdRowHeight = Math.max(296, naturalHeights[5], naturalHeights[6]); const gridHeight = firstRowHeight + secondRowHeight + thirdRowHeight + rowGap * 2; const contentBottom = 287 + gridHeight;
     const footerHeight = 350; const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = Math.max(1536, contentBottom + footerHeight); const context = canvas.getContext('2d');
     const pageGradient = context.createLinearGradient(0, 0, 0, canvas.height); pageGradient.addColorStop(0, '#fffdf9'); pageGradient.addColorStop(.48, '#fffaf6'); pageGradient.addColorStop(1, '#fffdf9'); context.fillStyle = pageGradient; context.fillRect(0, 0, canvas.width, canvas.height);
