@@ -26,12 +26,18 @@
   }
 
   const loadCanvasImage = source => new Promise((resolve, reject) => { const image = new Image(); image.onload = () => resolve(image); image.onerror = reject; image.src = source; });
+  let duckBulletIcon = null;
 
   function drawContained(context, image, x, y, width, height) {
     if (!image) return;
     const scale = Math.min(width / image.width, height / image.height);
     const drawWidth = image.width * scale; const drawHeight = image.height * scale;
     context.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+  }
+
+  function drawTintedContained(context, image, x, y, width, height, color) {
+    if (!image) return;
+    const scale = 2; const buffer = document.createElement('canvas'); buffer.width = Math.ceil(width * scale); buffer.height = Math.ceil(height * scale); const bufferContext = buffer.getContext('2d'); drawContained(bufferContext, image, 0, 0, buffer.width, buffer.height); bufferContext.globalCompositeOperation = 'source-in'; bufferContext.fillStyle = color; bufferContext.fillRect(0, 0, buffer.width, buffer.height); context.drawImage(buffer, x, y, width, height);
   }
 
   function drawHeart(context, x, y, size, color) {
@@ -42,9 +48,9 @@
     context.save(); context.translate(x, y); context.beginPath(); for (let point = 0; point < 10; point += 1) { const angle = -Math.PI / 2 + point * Math.PI / 5; const distance = point % 2 ? radius * .45 : radius; const px = Math.cos(angle) * distance; const py = Math.sin(angle) * distance; if (!point) context.moveTo(px, py); else context.lineTo(px, py); } context.closePath(); context.fillStyle = color; context.fill(); context.lineWidth = 2; context.strokeStyle = '#fff8'; context.stroke(); context.restore();
   }
 
-  function drawEntryIcon(context, type, x, y, accent) {
+  function drawEntryIcon(context, type, x, y, accent, duckIcon) {
     context.save(); context.translate(x, y); context.lineCap = 'round'; context.lineJoin = 'round';
-    if (type === 'open') { context.strokeStyle = accent; context.lineWidth = 3.4; context.beginPath(); context.arc(13, 13, 11, 0, Math.PI * 2); context.stroke(); context.beginPath(); context.moveTo(7, 13); context.lineTo(11.5, 17.5); context.lineTo(19.5, 8.5); context.stroke(); context.restore(); return; }
+    if (type === 'open') { if (duckIcon) drawTintedContained(context, duckIcon, -1, -1, 28, 28, accent); else { context.strokeStyle = accent; context.lineWidth = 3.4; context.beginPath(); context.arc(13, 13, 11, 0, Math.PI * 2); context.stroke(); context.beginPath(); context.moveTo(7, 13); context.lineTo(11.5, 17.5); context.lineTo(19.5, 8.5); context.stroke(); } context.restore(); return; }
     if (type === 'closed') { context.strokeStyle = '#10264B'; context.lineWidth = 3; context.beginPath(); context.arc(13, 13, 11, 0, Math.PI * 2); context.stroke(); context.beginPath(); context.moveTo(8, 8); context.lineTo(18, 18); context.moveTo(18, 8); context.lineTo(8, 18); context.stroke(); context.restore(); return; }
     context.strokeStyle = '#10264B'; context.fillStyle = '#10264B'; context.lineWidth = 3; context.beginPath(); context.arc(13, 11, 7, Math.PI, 0); context.stroke(); context.beginPath(); context.roundRect(4, 11, 18, 14, 4); context.fill(); context.fillStyle = '#fff'; context.beginPath(); context.arc(13, 17, 2, 0, Math.PI * 2); context.fill(); context.fillRect(12, 18, 2, 4); context.restore();
   }
@@ -64,7 +70,7 @@
     const glow = context.createRadialGradient(x + width * .2, y + 10, 4, x + width * .2, y + 10, width * .72); glow.addColorStop(0, '#ffffffb8'); glow.addColorStop(1, '#ffffff00'); context.fillStyle = glow; context.beginPath(); context.roundRect(x + 2, y + 2, width - 4, Math.min(92, height - 4), 22); context.fill();
     context.fillStyle = accents[index]; context.textAlign = 'center'; context.font = `800 ${compact ? 29 : 35}px 'Quicksand', sans-serif`; context.fillText(dayNames[index], x + width / 2, y + 47); context.textAlign = 'left'; if (index < 5) { drawHeart(context, x + 22, y + 19, 24, accents[index]); drawHeart(context, x + width - 46, y + 19, 24, accents[index]); } else { drawStar(context, x + 34, y + 34, 13, accents[index]); drawStar(context, x + width - 34, y + 34, 13, accents[index]); }
     if (options.headerBand) { context.strokeStyle = `${accents[index]}3d`; context.lineWidth = 1.5; context.beginPath(); context.moveTo(x + 1, y + headerHeight); context.lineTo(x + width - 1, y + headerHeight); context.stroke(); }
-    const entriesHeight = day.entries.length * entryHeight + Math.max(0, day.entries.length - 1) * entryGap; const availableHeight = height - headerHeight - 17; let entryTop = y + headerHeight + (options.centerEntries ? Math.max(0, (availableHeight - entriesHeight) / 2) : 0); day.entries.forEach(entry => { const entryAccent = entry.type === 'open' ? accents[index] : '#10264B'; const entryFill = '#ffffffb8'; context.fillStyle = entryFill; context.beginPath(); context.roundRect(x + 18, entryTop, width - 36, entryHeight, 15); context.fill(); context.strokeStyle = `${accents[index]}30`; context.lineWidth = 1.5; context.stroke(); context.fillStyle = entryAccent; context.beginPath(); context.roundRect(x + 18, entryTop + 11, 4, entryHeight - 22, 2); context.fill(); context.fillStyle = '#10264B'; context.font = `800 ${compact ? 27 : 30}px 'Quicksand', sans-serif`; context.fillText(`${entry.start_time}–${entry.end_time}`, x + 32, entryTop + 33); drawEntryIcon(context, entry.type, x + 29, entryTop + 43, accents[index]); context.fillStyle = '#10264B'; context.font = `700 ${compact ? 25 : 28}px 'Quicksand', sans-serif`; context.fillText(typeLabel(entry.type), x + 64, entryTop + 70); entryTop += entryHeight + entryGap; }); context.restore();
+    const entriesHeight = day.entries.length * entryHeight + Math.max(0, day.entries.length - 1) * entryGap; const availableHeight = height - headerHeight - 17; let entryTop = y + headerHeight + (options.centerEntries ? Math.max(0, (availableHeight - entriesHeight) / 2) : 0); day.entries.forEach(entry => { const entryAccent = entry.type === 'open' ? accents[index] : '#10264B'; const entryFill = '#ffffffb8'; context.fillStyle = entryFill; context.beginPath(); context.roundRect(x + 18, entryTop, width - 36, entryHeight, 15); context.fill(); context.strokeStyle = `${accents[index]}30`; context.lineWidth = 1.5; context.stroke(); context.fillStyle = entryAccent; context.beginPath(); context.roundRect(x + 18, entryTop + 11, 4, entryHeight - 22, 2); context.fill(); context.fillStyle = '#10264B'; context.font = `800 ${compact ? 27 : 30}px 'Quicksand', sans-serif`; context.fillText(`${entry.start_time}–${entry.end_time}`, x + 32, entryTop + 33); drawEntryIcon(context, entry.type, x + 29, entryTop + 43, accents[index], duckBulletIcon); context.fillStyle = '#10264B'; context.font = `700 ${compact ? 25 : 28}px 'Quicksand', sans-serif`; context.fillText(typeLabel(entry.type), x + 64, entryTop + 70); entryTop += entryHeight + entryGap; }); context.restore();
   }
 
   async function createCanvas(weekStart, days) {
@@ -72,7 +78,7 @@
       document.fonts.load("700 59px 'DynaPuff'", 'Programul săptămânii').catch(() => []),
       document.fonts.load("800 35px 'Quicksand'", 'Luni Marți Miercuri Joi Vineri Sâmbătă Duminică').catch(() => [])
     ]);
-    const [logo, invitation, clouds, oneHourIcon, twoHourIcon, threeHourIcon, allDayIcon, contactIcon] = await Promise.all([
+    const [logo, invitation, clouds, oneHourIcon, twoHourIcon, threeHourIcon, allDayIcon, contactIcon, duckIcon] = await Promise.all([
       loadCanvasImage('/assets/logo/new_logo_horizontal.png').catch(() => null),
       loadCanvasImage('/assets/te%20asteptam%20cu%20drag_Becky.png').catch(() => null),
       loadCanvasImage('/assets/content_assets/header_clouds.png').catch(() => null),
@@ -80,8 +86,10 @@
       loadCanvasImage('/assets/2h_circle.png').catch(() => null),
       loadCanvasImage('/assets/3h_circle.png').catch(() => null),
       loadCanvasImage('/assets/all_day_sun.png').catch(() => null),
-      loadCanvasImage('/assets/contact_circled_symbol.png').catch(() => null)
+      loadCanvasImage('/assets/contact_circled_symbol.png').catch(() => null),
+      loadCanvasImage('/assets/duck_bullet.svg').catch(() => null)
     ]);
+    duckBulletIcon = duckIcon;
     const naturalHeights = days.map(day => dayCardHeight(day, true)); const rowGap = 18; const firstRowHeight = Math.max(260, ...naturalHeights.slice(0, 3)); const secondRowHeight = Math.max(296, naturalHeights[3], naturalHeights[4]); const thirdRowHeight = Math.max(296, naturalHeights[5], naturalHeights[6]); const gridHeight = firstRowHeight + secondRowHeight + thirdRowHeight + rowGap * 2; const contentBottom = 287 + gridHeight;
     const footerHeight = 350; const canvas = document.createElement('canvas'); canvas.width = 1080; canvas.height = Math.max(1536, contentBottom + footerHeight); const context = canvas.getContext('2d');
     const pageGradient = context.createLinearGradient(0, 0, 0, canvas.height); pageGradient.addColorStop(0, '#fffdf9'); pageGradient.addColorStop(.48, '#fffaf6'); pageGradient.addColorStop(1, '#fffdf9'); context.fillStyle = pageGradient; context.fillRect(0, 0, canvas.width, canvas.height);
