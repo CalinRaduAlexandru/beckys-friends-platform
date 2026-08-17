@@ -54,9 +54,9 @@
   }
 
   function drawDayCard(context, day, index, x, y, width, height, options = {}) {
-    const fills = [['#f7fffd','#dff4f1'],['#f5fbff','#dfeff8'],['#faf8ff','#ebe7f8'],['#fff9ff','#f2e4f3'],['#fff9f5','#ffe6dc'],['#fffbf2','#ffedce'],['#fbfff5','#e9f3d8']];
-    const headerFills = ['#d8efec','#d9ebf5','#e5dff3','#ecd9ee','#f9ddd5','#f9e4bd','#dfeacb'];
-    const accents = ['#1197a0','#4a98c8','#6b64ad','#9a61a3','#ec7463','#e29a18','#76a33d'];
+    const fills = [['#fffdf5','#fff3cf'],['#fffaf5','#ffe5cd'],['#fff8f8','#ffdee1'],['#fff8fc','#f7dbea'],['#fbf8ff','#e9e0f8'],['#f7faff','#dae7fa'],['#f5fffd','#d8f0ed']];
+    const headerFills = ['#fbe7ad','#f8d2b1','#f7cbd0','#f0c8de','#dccdf2','#ccdcf4','#c9e7e3'];
+    const accents = ['#d99d16','#e77521','#ed5d69','#cf4385','#8256d0','#477bcf','#2aa5a4'];
     const compact = Boolean(options.compact); const entryHeight = compact ? 86 : 92; const entryGap = 12; const headerHeight = compact ? 66 : 72;
     context.save(); context.shadowColor = '#2334492e'; context.shadowBlur = 21; context.shadowOffsetY = 9; const gradient = context.createLinearGradient(x, y, x + width, y + height); gradient.addColorStop(0, fills[index][0]); gradient.addColorStop(1, fills[index][1]); context.fillStyle = gradient; context.beginPath(); context.roundRect(x, y, width, height, 24); context.fill(); context.shadowColor = 'transparent'; context.strokeStyle = `${accents[index]}24`; context.lineWidth = 2; context.stroke(); if (!options.noStitch) { context.setLineDash([7, 6]); context.lineWidth = 2; context.strokeStyle = `${accents[index]}58`; context.beginPath(); context.roundRect(x + 8, y + 8, width - 16, height - 16, 18); context.stroke(); context.setLineDash([]); }
     context.fillStyle = headerFills[index]; context.beginPath(); context.roundRect(x + 2, y + 2, width - 4, headerHeight - 2, [22,22,0,0]); context.fill();
