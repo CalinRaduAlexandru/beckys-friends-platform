@@ -15,7 +15,32 @@ const PLAYGROUND_FUNNEL_FILE = path.join(ROOT, 'data', 'playground-survey-funnel
 const PLAYGROUND_RAFFLE_FILE = path.join(ROOT, 'data', 'playground-survey-raffle.json');
 const ADMIN_TASKS_FILE = path.join(ROOT, 'data', 'admin-tasks.json');
 const ADMIN_CALENDAR_FILE = path.join(ROOT, 'data', 'admin-calendar.json');
+const ADMIN_CRM_FILE = path.join(ROOT, 'data', 'admin-crm.json');
+const ADMIN_MONTHLY_REPORT_FILE = path.join(ROOT, 'data', 'admin-monthly-report.json');
 const PUBLIC = path.join(ROOT, 'public');
+
+const MONTHLY_REPORT_ROLES = [
+  ['experienta-copilului', 'Experiența copilului'], ['relatia-cu-parintii', 'Relația cu părinții'],
+  ['design-pedagogic', 'Design pedagogic'], ['cultura-experienta-becky', 'Cultura & experiența Becky'],
+  ['marketing-comunicare', 'Marketing & comunicare'], ['sisteme-tehnologie', 'Sisteme & tehnologie'],
+  ['operatiuni-logistica', 'Operațiuni & logistică'], ['strategie-dezvoltare', 'Strategie & dezvoltare']
+];
+const MONTHLY_REPORT_SECTION_KEYS = ['scope', 'objectives', 'metrics', 'done', 'evidence', 'learned', 'next_step'];
+const MONTHLY_REPORT_STATUSES = ['În parametri', 'Necesită atenție', 'În urmă', 'Fără suficiente date'];
+
+function defaultMonthlyReport() {
+  const now = new Date().toISOString();
+  return { month_key: '2026-08', due_date: '2026-09-02', roles: MONTHLY_REPORT_ROLES.map(([id, label], sort_order) => ({ id, label, status: 'Fără suficiente date', sections: Object.fromEntries(MONTHLY_REPORT_SECTION_KEYS.map(key => [key, ''])), sort_order, created_at: now, updated_at: now })) };
+}
+function readMonthlyReport() {
+  try {
+    const raw = fs.existsSync(ADMIN_MONTHLY_REPORT_FILE) ? JSON.parse(fs.readFileSync(ADMIN_MONTHLY_REPORT_FILE, 'utf8')) : null;
+    const base = defaultMonthlyReport();
+    const roles = base.roles.map(item => ({ ...item, ...(raw?.roles || []).find(role => role.id === item.id), sections: { ...item.sections, ...((raw?.roles || []).find(role => role.id === item.id)?.sections || {}) } }));
+  return { ...base, ...raw, roles: roles.map(role => ({ ...role, notes: role.notes && typeof role.notes === 'object' ? role.notes : {} })) };
+  } catch { throw new Error('Invalid monthly report store'); }
+}
+function writeMonthlyReport(report) { fs.mkdirSync(path.dirname(ADMIN_MONTHLY_REPORT_FILE), { recursive: true }); fs.writeFileSync(ADMIN_MONTHLY_REPORT_FILE, JSON.stringify(report, null, 2)); }
 
 function escapeHtml(value) {
   return value.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[c]));
@@ -160,6 +185,43 @@ function calendarWeekDates(weekStart) {
   const start = new Date(`${weekStart}T12:00:00`);
   if (start.getDay() !== 1) throw new Error('Calendar week must start on Monday');
   return Array.from({ length: 7 }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date.toISOString().slice(0, 10); });
+}
+
+function readCrmStore() {
+  try {
+    const store = fs.existsSync(ADMIN_CRM_FILE) ? JSON.parse(fs.readFileSync(ADMIN_CRM_FILE, 'utf8')) : {};
+    return { children: Array.isArray(store.children) ? store.children : [], visits: Array.isArray(store.visits) ? store.visits : [] };
+  } catch { throw new Error('Invalid CRM store'); }
+}
+
+function writeCrmStore(store) {
+  fs.mkdirSync(path.dirname(ADMIN_CRM_FILE), { recursive: true });
+  fs.writeFileSync(ADMIN_CRM_FILE, JSON.stringify(store, null, 2));
+}
+
+function normalizeCrmChild(input, existing = {}) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
+  const firstName = String(input?.first_name ?? existing.first_name ?? '').trim();
+  const age = Number(input?.age ?? existing.age);
+  const interests = String(input?.interests ?? existing.interests ?? '').trim();
+  const continuity = String(input?.continuity ?? existing.continuity ?? '').trim();
+  if (!id || !firstName || !Number.isInteger(age) || age < 0 || age > 18 || interests.length > 240 || continuity.length > 500) throw new Error('CRM child invalid');
+  const now = new Date().toISOString();
+  return { id, first_name: firstName, age, interests, continuity, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+}
+
+function normalizeCrmVisit(input, existing = {}, childIds = new Set()) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
+  const childId = String(input?.child_id ?? existing.child_id ?? '').trim();
+  const visitDate = String(input?.visit_date ?? existing.visit_date ?? '').trim();
+  const note = String(input?.note ?? existing.note ?? '').trim();
+  if (!id || !childIds.has(childId) || !/^\d{4}-\d{2}-\d{2}$/.test(visitDate) || note.length > 500) throw new Error('CRM visit invalid');
+  return { id, child_id: childId, visit_date: visitDate, note, created_at: existing.created_at || input?.created_at || new Date().toISOString() };
+}
+
+function crmChildSummary(child, visits) {
+  const childVisits = visits.filter(visit => visit.child_id === child.id).sort((a, b) => b.visit_date.localeCompare(a.visit_date) || b.created_at.localeCompare(a.created_at));
+  return { ...child, visit_count: childVisits.length, last_visit: childVisits[0]?.visit_date || null };
 }
 
 function readRequestJson(req, res, maxBytes, callback) {
@@ -344,6 +406,107 @@ const server = http.createServer((req, res) => {
       } catch { send(res, 400, { error: 'Admin task invalid' }); }
     });
     return;
+  }
+  if (url.pathname === '/api/admin/crm' && req.method === 'GET') {
+    try {
+      const store = readCrmStore();
+      return send(res, 200, { children: store.children.map(child => crmChildSummary(child, store.visits)).sort((a, b) => (b.last_visit || '').localeCompare(a.last_visit || '') || a.first_name.localeCompare(b.first_name, 'ro')) });
+    } catch { return send(res, 500, { error: 'CRM unavailable' }); }
+  }
+  if (url.pathname === '/api/admin/monthly-report' && req.method === 'GET') {
+    try { return send(res, 200, { report: readMonthlyReport() }); } catch { return send(res, 500, { error: 'Raport lunar indisponibil' }); }
+  }
+  if (url.pathname === '/api/admin/monthly-report/notes' && req.method === 'PATCH') {
+    readRequestJson(req, res, 20_000, body => {
+      try { const report = readMonthlyReport(); const date = String(body?.date || ''); const text = String(body?.text || '').trim(); if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || text.length > 5000) throw new Error(); report.notes = report.notes && typeof report.notes === 'object' ? report.notes : {}; if (text) report.notes[date] = text; else delete report.notes[date]; writeMonthlyReport(report); send(res, 200, { notes: report.notes }); } catch { send(res, 400, { error: 'Notă invalidă' }); }
+    });
+    return;
+  }
+  const monthlyRoleMatch = url.pathname.match(/^\/api\/admin\/monthly-report\/roles\/([^/?]+)$/);
+  if (monthlyRoleMatch && req.method === 'PATCH') {
+    readRequestJson(req, res, 40_000, body => {
+      try {
+        const report = readMonthlyReport();
+        const role = report.roles.find(item => item.id === decodeURIComponent(monthlyRoleMatch[1]));
+        if (!role) return send(res, 404, { error: 'Rolul nu a fost găsit' });
+        if (body?.note && typeof body.note === 'object') {
+          const date = String(body.note.date || '');
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Data invalidă');
+          const text = String(body.note.text || '').trim();
+          if (text.length > 5000) throw new Error('Notă prea lungă');
+          role.notes = role.notes && typeof role.notes === 'object' ? role.notes : {};
+          if (text) role.notes[date] = text; else delete role.notes[date];
+        }
+        const status = body?.status === undefined ? role.status : String(body.status);
+        if (!MONTHLY_REPORT_STATUSES.includes(status)) throw new Error('Status invalid');
+        const incoming = body?.sections && typeof body.sections === 'object' ? body.sections : {};
+        role.status = status;
+        for (const key of MONTHLY_REPORT_SECTION_KEYS) if (incoming[key] !== undefined) { const value = String(incoming[key] || '').trim(); if (value.length > 5000) throw new Error('Secțiune prea lungă'); role.sections[key] = value; }
+        role.updated_at = new Date().toISOString();
+        writeMonthlyReport(report);
+        send(res, 200, { role });
+      } catch { send(res, 400, { error: 'Raport lunar invalid' }); }
+    });
+    return;
+  }
+  if (url.pathname === '/api/admin/crm/children' && req.method === 'POST') {
+    readRequestJson(req, res, 20_000, body => {
+      try {
+        const store = readCrmStore();
+        const child = normalizeCrmChild(body);
+        store.children.push(child);
+        writeCrmStore(store);
+        send(res, 201, crmChildSummary(child, store.visits));
+      } catch { send(res, 400, { error: 'Copil invalid' }); }
+    });
+    return;
+  }
+  if (url.pathname === '/api/admin/crm/visits' && req.method === 'POST') {
+    readRequestJson(req, res, 20_000, body => {
+      try {
+        const store = readCrmStore();
+        const visit = normalizeCrmVisit(body, {}, new Set(store.children.map(child => child.id)));
+        store.visits.push(visit);
+        writeCrmStore(store);
+        send(res, 201, visit);
+      } catch { send(res, 400, { error: 'Vizită invalidă' }); }
+    });
+    return;
+  }
+  const crmChildMatch = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)$/);
+  if (crmChildMatch && req.method === 'DELETE') {
+    try {
+      const store = readCrmStore();
+      const id = decodeURIComponent(crmChildMatch[1]);
+      const nextChildren = store.children.filter(item => item.id !== id);
+      if (nextChildren.length === store.children.length) return send(res, 404, { error: 'Copilul nu a fost găsit' });
+      store.children = nextChildren;
+      store.visits = store.visits.filter(visit => visit.child_id !== id);
+      writeCrmStore(store);
+      return send(res, 200, { ok: true });
+    } catch { return send(res, 500, { error: 'Profil indisponibil' }); }
+  }
+  if (crmChildMatch && req.method === 'PATCH') {
+    readRequestJson(req, res, 20_000, body => {
+      try {
+        const store = readCrmStore();
+        const index = store.children.findIndex(item => item.id === decodeURIComponent(crmChildMatch[1]));
+        if (index < 0) return send(res, 404, { error: 'Copilul nu a fost găsit' });
+        store.children[index] = normalizeCrmChild({ ...body, id:store.children[index].id }, store.children[index]);
+        writeCrmStore(store);
+        send(res, 200, crmChildSummary(store.children[index], store.visits));
+      } catch { send(res, 400, { error: 'Profil invalid' }); }
+    });
+    return;
+  }
+  if (crmChildMatch && req.method === 'GET') {
+    try {
+      const store = readCrmStore();
+      const child = store.children.find(item => item.id === decodeURIComponent(crmChildMatch[1]));
+      if (!child) return send(res, 404, { error: 'Copilul nu a fost găsit' });
+      const visits = store.visits.filter(visit => visit.child_id === child.id).sort((a, b) => b.visit_date.localeCompare(a.visit_date) || b.created_at.localeCompare(a.created_at));
+      return send(res, 200, { child: crmChildSummary(child, store.visits), visits });
+    } catch { return send(res, 500, { error: 'CRM unavailable' }); }
   }
   if (url.pathname === '/api/admin/calendar' && req.method === 'GET') {
     try { return send(res, 200, { entries: readCalendarEntries() }); }

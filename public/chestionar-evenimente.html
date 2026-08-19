@@ -4,6 +4,9 @@
     <meta charset="utf-8" />
     <link rel="icon" type="image/png" href="/assets/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@400;500;600;700&family=Quicksand:wght@400;500;600;700&display=swap" />
+    <style>body,.quiz-card,.quiz-card input,.quiz-card textarea,.quiz-card button{font-family:'Quicksand',sans-serif!important}</style>
     <title>Chestionarul evenimentelor · Becky’s Garden</title>
     <meta
       name="description"
@@ -260,7 +263,7 @@
         margin: 12px 0 0;
         color: var(--teal-dark);
         font:
-          600 clamp(34px, 5vw, 58px)/1.03 Mali,
+          600 clamp(34px, 5vw, 58px)/1.03 DynaPuff,
           sans-serif;
         letter-spacing: normal;
         text-wrap: balance;
@@ -678,7 +681,7 @@
         margin: 0;
         color: var(--teal-dark);
         font:
-          600 25px/1.05 Mali,
+          600 25px/1.05 DynaPuff,
           sans-serif;
       }
       .duel-option:nth-child(3) .duel-card h3 {
@@ -779,7 +782,7 @@
         margin: 0;
         color: var(--teal-dark);
         font:
-          600 29px/1.1 Mali,
+          600 29px/1.1 DynaPuff,
           sans-serif;
       }
       .concept-modal-close {
@@ -1081,7 +1084,7 @@
       }
       .rank-number {
         font:
-          700 24px Mali,
+          700 24px DynaPuff,
           sans-serif;
         color: var(--coral);
       }
@@ -3518,7 +3521,7 @@
       }
       async function startQuizWhenFontsAreReady() {
         const fonts = [
-            "600 48px 'Mali'",
+            "600 48px 'DynaPuff'",
             "400 16px 'Nunito'",
             "800 16px 'Nunito'",
           ],
@@ -3531,7 +3534,7 @@
         document.documentElement.classList.add("fonts-ready");
         trackFunnel("open", 0);
         render();
-        document.fonts.load("700 24px 'Mali'", sample);
+        document.fonts.load("700 24px 'DynaPuff'", sample);
       }
       startQuizWhenFontsAreReady();
     </script>

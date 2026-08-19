@@ -92,6 +92,50 @@ async function supabaseRequest(env, path, init = {}) {
 }
 
 const ADMIN_TASK_COLUMNS = 'id,area,title,detail,owner,priority,sort_order,created_at,updated_at';
+const MONTHLY_REPORT_ROLES = [
+  ['experienta-copilului', 'Experiența copilului'], ['relatia-cu-parintii', 'Relația cu părinții'], ['design-pedagogic', 'Design pedagogic'], ['cultura-experienta-becky', 'Cultura & experiența Becky'], ['marketing-comunicare', 'Marketing & comunicare'], ['sisteme-tehnologie', 'Sisteme & tehnologie'], ['operatiuni-logistica', 'Operațiuni & logistică'], ['strategie-dezvoltare', 'Strategie & dezvoltare']
+];
+const MONTHLY_REPORT_SECTION_KEYS = ['scope', 'objectives', 'metrics', 'done', 'evidence', 'learned', 'next_step'];
+const MONTHLY_REPORT_STATUSES = ['În parametri', 'Necesită atenție', 'În urmă', 'Fără suficiente date'];
+const MONTHLY_REPORT_COLUMNS = 'id,month_key,label,status,scope,objectives,metrics,done,evidence,learned,next_step,notes,created_at,updated_at';
+function monthlyReportDefaults() {
+  const now = new Date().toISOString();
+  return MONTHLY_REPORT_ROLES.map(([id, label], sort_order) => ({ id, month_key: '2026-08', label, status: 'Fără suficiente date', scope: '', objectives: '', metrics: '', done: '', evidence: '', learned: '', next_step: '', sort_order, created_at: now, updated_at: now }));
+}
+function monthlyRoleView(row) { return { id: row.id, label: row.label, status: row.status, sort_order: row.sort_order, created_at: row.created_at, updated_at: row.updated_at, notes: row.notes && typeof row.notes === 'object' ? row.notes : {}, sections: Object.fromEntries(MONTHLY_REPORT_SECTION_KEYS.map(key => [key, row[key] || ''])) }; }
+async function handleAdminMonthlyReport(request, env) {
+  await requireAdmin(request, env);
+  const url = new URL(request.url);
+  if (request.method === 'GET' && url.pathname === '/api/admin/monthly-report') {
+    const [response, notesResponse] = await Promise.all([supabaseRequest(env, `/rest/v1/admin_monthly_report_roles?select=${MONTHLY_REPORT_COLUMNS}&order=sort_order.asc`), supabaseRequest(env, '/rest/v1/admin_monthly_report_notes?select=note_date,note&order=note_date.desc')]);
+    const rows = await response.json(); const noteRows = await notesResponse.json();
+    const byId = new Map(rows.map(row => [row.id, row]));
+    return json({ report: { month_key: '2026-08', due_date: '2026-09-02', notes: Object.fromEntries(noteRows.map(row => [row.note_date, row.note])), roles: monthlyReportDefaults().map(def => monthlyRoleView(byId.get(def.id) || def)) } });
+  }
+  if (request.method === 'PATCH' && url.pathname === '/api/admin/monthly-report/notes') {
+    const body = await readJson(request, 20_000); const date = String(body?.date || '').trim(); const text = String(body?.text || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || text.length > 5000) return json({ error: 'Notă invalidă' }, 400);
+    if (text) await supabaseRequest(env, '/rest/v1/admin_monthly_report_notes?on_conflict=note_date', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify({ note_date: date, note: text, updated_at: new Date().toISOString() }) });
+    else await supabaseRequest(env, `/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(date)}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  assertSameOrigin(request);
+  const match = url.pathname.match(/^\/api\/admin\/monthly-report\/roles\/([^/?]+)$/);
+  if (request.method === 'PATCH' && match) {
+    const id = decodeURIComponent(match[1]);
+    const body = await readJson(request, 40_000);
+    const allowed = new Set(MONTHLY_REPORT_SECTION_KEYS);
+    const update = { updated_at: new Date().toISOString() };
+    if (body?.status !== undefined) { const status = String(body.status); if (!MONTHLY_REPORT_STATUSES.includes(status)) return json({ error: 'Status invalid' }, 400); update.status = status; }
+    for (const key of MONTHLY_REPORT_SECTION_KEYS) if (body?.sections?.[key] !== undefined) { const value = String(body.sections[key] || '').trim(); if (value.length > 5000) return json({ error: 'Secțiune prea lungă' }, 400); update[key] = value; }
+    if (Object.keys(update).length === 1) return json({ error: 'Nicio modificare' }, 400);
+    const response = await supabaseRequest(env, `/rest/v1/admin_monthly_report_roles?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(update) });
+    const rows = await response.json();
+    if (!rows.length) return json({ error: 'Rolul nu a fost găsit' }, 404);
+    return json({ role: monthlyRoleView(rows[0]) });
+  }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, PATCH' });
+}
 
 async function handleAdminTasks(request, env) {
   await requireAdmin(request, env);
@@ -146,6 +190,89 @@ async function handleAdminTasks(request, env) {
     return json(rows[0]);
   }
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PUT, PATCH, DELETE' });
+}
+
+const CRM_CHILD_COLUMNS = 'id,first_name,age,interests,continuity,created_at,updated_at';
+const CRM_VISIT_COLUMNS = 'id,child_id,visit_date,note,created_at';
+
+async function handleAdminCrm(request, env) {
+  await requireAdmin(request, env);
+  const url = new URL(request.url);
+  if (request.method === 'GET' && url.pathname === '/api/admin/crm') {
+    const [childrenResponse, visitsResponse] = await Promise.all([
+      supabaseRequest(env, `/rest/v1/crm_children?select=${CRM_CHILD_COLUMNS}&order=first_name.asc`),
+      supabaseRequest(env, `/rest/v1/crm_visits?select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`)
+    ]);
+    const children = await childrenResponse.json();
+    const visits = await visitsResponse.json();
+    return json({ children: children.map(child => crmChildSummary(child, visits)).sort((a, b) => (b.last_visit || '').localeCompare(a.last_visit || '') || a.first_name.localeCompare(b.first_name, 'ro')) });
+  }
+  assertSameOrigin(request);
+  if (request.method === 'POST' && url.pathname === '/api/admin/crm/children') {
+    const body = await readJson(request, 20_000);
+    const child = normalizeCrmChildInput(body);
+    const response = await supabaseRequest(env, '/rest/v1/crm_children?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(child) });
+    return json((await response.json())[0], 201);
+  }
+  if (request.method === 'POST' && url.pathname === '/api/admin/crm/visits') {
+    const body = await readJson(request, 20_000);
+    const childId = String(body?.child_id || '').trim();
+    const childResponse = await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(childId)}&select=id`);
+    if (!(await childResponse.json()).length) return json({ error: 'Copilul nu a fost găsit' }, 404);
+    const visit = normalizeCrmVisitInput(body, childId);
+    const response = await supabaseRequest(env, '/rest/v1/crm_visits?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(visit) });
+    return json((await response.json())[0], 201);
+  }
+  const match = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)$/);
+  if (request.method === 'DELETE' && match) {
+    const id = decodeURIComponent(match[1]);
+    await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  if (request.method === 'PATCH' && match) {
+    const id = decodeURIComponent(match[1]);
+    const body = await readJson(request, 20_000);
+    const child = { ...normalizeCrmChildInput({ ...body, id }), updated_at: new Date().toISOString() };
+    const response = await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(child) });
+    const rows = await response.json();
+    if (!rows.length) return json({ error: 'Copilul nu a fost găsit' }, 404);
+    return json(rows[0]);
+  }
+  if (request.method === 'GET' && match) {
+    const id = decodeURIComponent(match[1]);
+    const [childResponse, visitsResponse] = await Promise.all([
+      supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(id)}&select=${CRM_CHILD_COLUMNS}`),
+      supabaseRequest(env, `/rest/v1/crm_visits?child_id=eq.${encodeURIComponent(id)}&select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`)
+    ]);
+    const child = (await childResponse.json())[0];
+    if (!child) return json({ error: 'Copilul nu a fost găsit' }, 404);
+    const visits = await visitsResponse.json();
+    return json({ child: crmChildSummary(child, visits), visits });
+  }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+
+function normalizeCrmChildInput(input) {
+  const id = String(input?.id || crypto.randomUUID()).trim();
+  const first_name = String(input?.first_name || '').trim();
+  const age = Number(input?.age);
+  const interests = String(input?.interests || '').trim();
+  const continuity = String(input?.continuity || '').trim();
+  if (!id || !first_name || !Number.isInteger(age) || age < 0 || age > 18 || interests.length > 240 || continuity.length > 500) throw Object.assign(new Error('CRM child invalid'), { status: 400 });
+  return { id, first_name, age, interests, continuity };
+}
+
+function normalizeCrmVisitInput(input, childId) {
+  const id = String(input?.id || crypto.randomUUID()).trim();
+  const visit_date = String(input?.visit_date || '').trim();
+  const note = String(input?.note || '').trim();
+  if (!id || !childId || !/^\d{4}-\d{2}-\d{2}$/.test(visit_date) || note.length > 500) throw Object.assign(new Error('CRM visit invalid'), { status: 400 });
+  return { id, child_id: childId, visit_date, note };
+}
+
+function crmChildSummary(child, visits) {
+  const childVisits = visits.filter(visit => visit.child_id === child.id).sort((a, b) => `${b.visit_date}T${b.created_at || ''}`.localeCompare(`${a.visit_date}T${a.created_at || ''}`));
+  return { ...child, visit_count: childVisits.length, last_visit: childVisits[0]?.visit_date || null };
 }
 
 const CALENDAR_COLUMNS = 'id,title,type,date,start_time,end_time,note,created_at,updated_at';
@@ -602,6 +729,8 @@ async function handleApi(request, env, pathname) {
   });
   if (pathname.startsWith('/api/auth/')) return handleAuth(request, env, pathname);
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
+  if (pathname === '/api/admin/crm' || pathname.startsWith('/api/admin/crm/')) return handleAdminCrm(request, env);
+  if (pathname === '/api/admin/monthly-report' || pathname.startsWith('/api/admin/monthly-report/')) return handleAdminMonthlyReport(request, env);
   if (pathname === '/api/admin/calendar' || pathname.startsWith('/api/admin/calendar/')) return handleAdminCalendar(request, env);
   if (pathname === '/api/event-survey/results') return handleSurveyResults(request, env);
   if (pathname === '/api/event-survey/funnel') return handleSurveyFunnel(request, env);

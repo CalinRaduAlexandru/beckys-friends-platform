@@ -78,7 +78,7 @@ body {
   height: 72px;
   min-height: 72px;
   color: var(--shell-teal);
-  font: 600 20px/1 'Mali', sans-serif;
+  font: 600 20px/1 'DynaPuff', sans-serif;
   text-decoration: none;
   white-space: nowrap;
 }
@@ -86,10 +86,10 @@ body {
 .site-header .nav-logo-full {
   position: absolute;
   top: -20px;
-  left: -60px !important;
+  left: -66px !important;
   display: block;
-  width: 390px;
-  height: 156px;
+  width: 429px;
+  height: 172px;
   object-fit: contain;
   opacity: 1;
   transform: translateX(-6px) scale(1) !important;
@@ -98,13 +98,13 @@ body {
 }
 
 .site-header:not(.is-scrolled) .nav-logo-full {
-  top: -26px !important;
+  top: -29px !important;
 }
 
 .site-header.is-scrolled .nav-logo-full {
-  left: -60px !important;
+  left: -66px !important;
   opacity: 1;
-  transform: translate(14px, -26px) scale(.65) !important;
+  transform: translate(14px, -29px) scale(.72) !important;
 }
 
 .site-header .nav-logo,
@@ -262,18 +262,18 @@ body {
 
   .site-header .nav-logo-full {
     top: -16px;
-    left: -52px !important;
-    width: 312px;
-    height: 130px;
+    left: -57px !important;
+    width: 343px;
+    height: 143px;
   }
 
   .site-header:not(.is-scrolled) .nav-logo-full {
-    top: -22px !important;
+    top: -24px !important;
   }
 
   .site-header.is-scrolled .nav-logo-full {
-    left: -52px !important;
-    transform: translate(14px, -22px) scale(.68) !important;
+    left: -57px !important;
+    transform: translate(14px, -24px) scale(.73) !important;
   }
 
   .site-header .nav-flags {
@@ -319,18 +319,18 @@ body {
 
   .site-header .nav-logo-full {
     top: -12px;
-    left: -44px !important;
-    width: 264px;
-    height: 110px;
+    left: -48px !important;
+    width: 290px;
+    height: 121px;
   }
 
   .site-header:not(.is-scrolled) .nav-logo-full {
-    top: -18px !important;
+    top: -20px !important;
   }
 
   .site-header.is-scrolled .nav-logo-full {
-    left: -44px !important;
-    transform: translate(14px, -18px) scale(.7) !important;
+    left: -48px !important;
+    transform: translate(14px, -20px) scale(.74) !important;
   }
 
   .site-header .nav-flags {
@@ -423,3 +423,4 @@ body:not(.is-loading) .community-hero-visual {
     translate: none;
   }
 }
+:root{--public-body-font:'Quicksand',sans-serif}body,.site-nav a,.nav-cta,.whatsapp-link,.site-footer,.site-footer a{font-family:'Quicksand',sans-serif!important}

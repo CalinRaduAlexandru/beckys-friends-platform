@@ -1,0 +1,153 @@
+{
+  "month_key": "2026-08",
+  "due_date": "2026-09-02",
+  "roles": [
+    {
+      "id": "experienta-copilului",
+      "label": "Experiența copilului",
+      "status": "Necesită atenție",
+      "sections": {
+        "scope": "Să fac fiecare copil să se simtă bine, înțeles și implicat într-o experiență valoroasă, adaptată lui.",
+        "objectives": "1️⃣ Primire și integrare adaptată. Să construiesc un mod consecvent de primire și integrare a copilului în spațiu, adaptat vârstei, intereselor și nivelului de autonomie dorit de părinte.\n\n2️⃣ Ofertă relevantă de activități. Să pot oferi fiecărui copil opțiuni relevante de joc și activitate, fără să-i impun participarea.\n\n3️⃣ Continuitatea experienței. Să dezvolt continuitatea experienței: copilul să aibă motive autentice să revină și să putem relua relația de unde am rămas.\n\n4️⃣ Observație → know-how. Să observ sistematic ce funcționează pentru copii și să transform observațiile recurente în know-how Becky.\n\n5️⃣ Să inventez și testez „Salutul Becky”",
+        "metrics": "Măsor același metric pentru fiecare copil. Să urmăresc dacă experiența produce trei rezultate: \n\n1️⃣ copilul dorește să rămână în spațiu pe toată durata vizitei\n\n2️⃣ pleacă cu ceva memorabil\n\n3️⃣ rămâne cu ceva ce dorește să continue",
+        "done": "",
+        "evidence": "",
+        "learned": "",
+        "next_step": ""
+      },
+      "sort_order": 0,
+      "created_at": "2026-08-18T13:07:44.298Z",
+      "updated_at": "2026-08-19T08:02:20.958Z",
+      "notes": {}
+    },
+    {
+      "id": "relatia-cu-parintii",
+      "label": "Relația cu părinții",
+      "status": "Necesită atenție",
+      "sections": {
+        "scope": "Să înțeleg ce are nevoie părintele și să construiesc o relație de încredere care îi oferă valoare și îl apropie de Becky.",
+        "objectives": "1️⃣ Să dezvolt un mod natural de a înțelege ce caută fiecare părinte la Becky — timp pentru el, susținere cu copilul, idei, conexiune sau o combinație — fără ca interacțiunea să pară un chestionar.\n\n2️⃣ Să testez diferite abordări de conversație și interacțiune pentru a identifica ce creează încredere, apropiere și sentimentul unei experiențe personale.\n\n3️⃣ Să observ și să documentez așteptările, preferințele și semnalele relevante ale părinților, astfel încât interacțiunile viitoare să poată continua și deveni mai bune.\n\n4️⃣ Să creez activ oportunități pentru feedback sincer — pozitiv, neutru și negativ — și să transform feedbackul util în acțiuni concrete.\n\n5️⃣ Să identific și să testez mecanisme prin care relația cu Becky continuă după vizită și crește probabilitatea unei reveniri autentice.",
+        "metrics": "PĂRINTELE PLEACĂ CU:\n\n🤍 Ce avea nevoie\n🌱 Bucuria pentru ce a primit copilul\n🏡 Dorința de a păstra Becky aproape\n\nNevoia părintelui a fost îndeplinită\nPărintele a primit ce avea nevoie în vizita respectivă:\nrelaxare / timp pentru sine;\nconexiune cu copilul;\ndistracție împreună;\ninspirație / idei;\nsusținere, dacă avea nevoie de ea.\n\nPărintele percepe timpul copilului ca fiind valoros. Nu doar „copilul s-a distrat”, ci: „Mă bucur că și-a petrecut timpul aici.” Asta poate însemna joacă bună, descoperire, autonomie, relaționare, învățare, mișcare etc.\n\nRelația părintelui cu Becky s-a consolidat. La plecare există măcar un semnal că: „Aș vrea să mai avem Becky în viața noastră.” Dovada poate fi revenirea, intenția explicită de revenire, recomandarea către altcineva, feedback voluntar sau pur și simplu o relație vizibil mai apropiată.",
+        "done": "",
+        "evidence": "",
+        "learned": "",
+        "next_step": ""
+      },
+      "sort_order": 1,
+      "created_at": "2026-08-18T13:07:44.298Z",
+      "updated_at": "2026-08-19T08:02:36.110Z",
+      "notes": {}
+    },
+    {
+      "id": "design-pedagogic",
+      "label": "Design pedagogic",
+      "status": "În urmă",
+      "sections": {
+        "scope": "Să transform intenția pedagogică în experiențe și activități fundamentate, testate și progresiv validate, dezvoltând în paralel Puieți de Oameni ca brand pedagogic.",
+        "objectives": "1️⃣ Să construiesc Biblioteca Becky astfel încât fiecare categorie de dezvoltare și fiecare categorie de vârstă relevantă să aibă minimum 3 activități utilizabile, iar pentru zonele prioritare să tind spre 5–10 activități.\n\n2️⃣ Să introduc un proces consecvent prin care o idee trece de la activitate propusă → testată → verificată, fără să consider o activitate validată doar pentru că a funcționat o dată.\n\n3️⃣ Să testez activitățile în contexte diferite de vârstă și număr de copii și să documentez ramificațiile în care funcționează.\n\n4️⃣ Să observ dacă activitățile produc efectiv comportamente/capacități asociate categoriei vizate — nu doar dacă sunt distractive.\n\n5️⃣ Să folosesc observațiile din interacțiunile reale cu copiii pentru a îmbunătăți activitățile existente și pentru a genera activități noi.\n\n6️⃣ Să dezvolt „Puieți de Oameni” ca fundament de documentare: bibliografie începută, structură generală stabilită și o primă iterație informațională, fără pretenția că modelul intern Becky reprezintă în sine un model pedagogic academic.",
+        "metrics": "1️⃣ % ramuri vârstă × categorie care au ≥3 activități\n\n2️⃣ activități testate / activități introduse\n\n3️⃣ activități care au trecut pragul de verificare / activități testate\n\n4️⃣ Fidelitate pedagogică - în câte s-a observat capacitatea ce se dorea stimulată?\n\n5️⃣ Am MVPul „Puieților de oameni” și pot să îi dau drumul în sălbăticie prin pagina de social media?",
+        "done": "",
+        "evidence": "",
+        "learned": "",
+        "next_step": ""
+      },
+      "sort_order": 2,
+      "created_at": "2026-08-18T13:07:44.298Z",
+      "updated_at": "2026-08-19T08:02:59.407Z",
+      "notes": {}
+    },
+    {
+      "id": "cultura-experienta-becky",
+      "label": "Cultura & experiența Becky",
+      "status": "Necesită atenție",
+      "sections": {
+        "scope": "Să transform valorile Becky într-o experiență recognoscibilă, memorabilă, consecventă și transmisibilă.",
+        "objectives": "1️⃣ Să definesc concret ce înseamnă „o experiență Becky”.\nSă transform valorile și personalitatea brandului în principii comportamentale observabile: cum primim oamenii, cum vorbim, cum intervenim, cum oferim ajutor, cum gestionăm greșelile și cum ne luăm rămas-bun.\n\n2️⃣ Să identific și să testez ritualurile Becky.\nSaluturi, mici obiceiuri de sosire și plecare, moduri de celebrare, continuități între vizite și alte elemente care pot deveni recognoscibile fără să pară artificiale.\n\n3️⃣ Să creez deliberat micro-momente memorabile.\nGesturi mici, personale și contextuale prin care copilul sau părintele simte că experiența a fost făcută și pentru el, nu doar livrată corect.\n\n5️⃣ Să identific elementele care rup experiența Becky.\nMomente impersonale, confuze, rigide, neglijente sau pur tranzacționale și să transform observațiile recurente în îmbunătățiri operaționale.\n\n6️⃣ Să încep codificarea culturii în Manualul Operațional Becky.\nCe funcționează repetabil trebuie să poată fi transmis unui om nou astfel încât acesta să reproducă spiritul Becky fără să memoreze sute de reguli.",
+        "metrics": "VALOARE → COMPORTAMENT → RITUAL → EXPERIENȚĂ → DOVADĂ → STANDARD BECKY\n\n🧭 Consistență — „Asta e Becky.”\nPutem identifica tot mai clar comportamentele care trebuie să rămână constante indiferent cine lucrează?\n\n✨ Memorabilitate — „Asta mi-a rămas.”\nAvem dovezi spontane că anumite momente, ritualuri sau gesturi sunt povestite, amintite, cerute din nou ori recunoscute?\n\n🤝 Transferabilitate — „Poate face și altcineva asta.”\nCât din experiența bună a fost transformată din intuiția ta în principiu, ritual sau proces pe care îl poate înțelege și reproduce un coleg?",
+        "done": "1️⃣ Mi-am procurat „Uniforma Becky” fără costuri adiționale pentru locație",
+        "evidence": "",
+        "learned": "",
+        "next_step": ""
+      },
+      "sort_order": 3,
+      "created_at": "2026-08-18T13:07:44.298Z",
+      "updated_at": "2026-08-19T08:03:15.658Z",
+      "notes": {}
+    },
+    {
+      "id": "marketing-comunicare",
+      "label": "Marketing & comunicare",
+      "status": "În urmă",
+      "sections": {
+        "scope": "Să fac valoarea Becky vizibilă și ușor de înțeles, transformând atenția în încredere, apropiere și relație reală cu spațiul și comunitatea.",
+        "objectives": "CE ȘTIM / CE TRĂIM → POVESTIM → PUBLICĂM → MĂSURĂM → ÎNVĂȚĂM → RAFINĂM → TEMPLATE → AUTOMATIZĂM\n\nScopul nu este să producem content. Scopul este ca tot mai mulți oameni relevanți să descopere Becky, să înțeleagă valoarea sa, să dorească să rămână aproape și, în cele din urmă, să transforme interesul digital într-o relație reală cu spațiul și comunitatea.\n\n1️⃣ Să stabilesc o prezență editorială consecventă pentru cele două identități complementare: Becky’s Garden ca spațiu fizic și Puieți de Oameni ca brand pedagogic.\n\n2️⃣ Să transform dezvoltarea Puieți de Oameni în conținut educațional reutilizabil, în special knowledge reels și carousels, astfel încât procesul de documentare și dezvoltare a ghidului să producă simultan valoare publică.\n\n3️⃣ Să documentez constant viața reală Becky prin storytelling recent și autentic: growth stories, backstage stories, authority stories, progres Becky, comunitate și alte formate rezultate din ceea ce se întâmplă efectiv în spațiu.\n\n4️⃣ Să dezvolt și să testez formate și template-uri repetabile de content, astfel încât producția să devină progresiv mai rapidă, coerentă și ușor de automatizat după validarea manuală.\n\n5️⃣ Să introduc experimentarea în procesul editorial, prin ipoteze, variații A/B și analiză pe tipuri de postări, pentru a înțelege ce produce reach, interes, interacțiune și apropiere de brand.\n\n6️⃣ Să încep să leg comunicarea digitală de comportamentul fizic, identificând, pe cât posibil, ce postări, campanii sau mesaje contribuie efectiv la vizite, participarea la evenimente și reveniri.\n\n4 outcomes:\n\n📣 ATENȚIE\nMai mulți oameni relevanți intră în contact cu Becky.\n\n💡 ÎNȚELEGERE & AUTORITATE\nOamenii nu doar văd conținutul, ci încep să înțeleagă de ce face Becky lucrurile diferit și percep competență în spatele lor.\n\n🤝 APROPIERE & COMUNITATE\nPublicul interacționează, răspunde, distribuie, revine și începe să simtă apartenență sau afinitate față de ceea ce construim.\n\n🚪 DIGITAL → FIZIC\nComunicarea contribuie la oameni care vin efectiv la Becky — program liber, petreceri, evenimente etc.",
+        "metrics": "număr de postări publicate, pe tip;\nconsistența publicării;\nformate/template-uri testate;\nexperimente A/B realizate;\nidei/branches populate în Content Tree;\ncontent derivat din Puieți de Oameni;\nvizite pentru care putem identifica o contribuție a comunicării.",
+        "done": "",
+        "evidence": "",
+        "learned": "",
+        "next_step": ""
+      },
+      "sort_order": 4,
+      "created_at": "2026-08-18T13:07:44.298Z",
+      "updated_at": "2026-08-19T08:04:07.145Z",
+      "notes": {}
+    },
+    {
+      "id": "sisteme-tehnologie",
+      "label": "Sisteme & tehnologie",
+      "status": "În urmă",
+      "sections": {
+        "scope": "Să transform informația, procesele și know-how-ul Becky într-un sistem digital coerent care simplifică munca, păstrează memoria și susține deciziile.",
+        "objectives": "Informația intră o singură dată, ajunge unde este relevantă și mă ajută să iau o decizie sau să fac o acțiune.\n\n1️⃣ Să lansez și să stabilizez Platforma Publică Becky, astfel încât un părinte să găsească gradual și fără efort cognitiv inutil informațiile de care are nevoie despre petreceri, evenimente, program, cultura Becky și legătura cu Puieți de Oameni.\n\n2️⃣ Să transform Admin Panel-ul într-un centru real de operare, cu un Overview simplu care îmi arată rapid ce se întâmplă, ce necesită atenție, ce informații noi au intrat, familiile/copiii relevanți și progresul raportului lunar.\n\n3️⃣ Să construiesc CRM-ul Copii & Familii ca memorie relațională Becky, astfel încât vizitele recurente să poată continua de la informațiile și experiențele relevante anterioare, fără colectare inutilă de date personale.\n\n4️⃣ Să aduc Biblioteca de activități pentru copii la un nivel utilizabil în operațional, cu filtrare relevantă, minimum 3 activități pentru ramurile vizate și posibilitatea de a documenta testarea și validitatea activităților.\n\n5️⃣ Să dezvolt și să testez Meniul de Activități pentru Adulți, pornind cu un pilot restrâns de activități cu niveluri și tipuri diferite de implicare, înainte de extinderea bibliotecii.\n\n6️⃣ Să construiesc infrastructura digitală pentru Evenimente & Comunitate, astfel încât conceptele, componentele, testările, feedbackul și calendarul Becky să poată fi urmărite într-un sistem coerent.\n\n7️⃣ Să structurez knowledge system-ul Becky, astfel încât Puieți de Oameni, Manualul Operațional Becky, Planul de Dezvoltare Strategică, Ghidul de Comunitate și Raportul Lunar să aibă roluri distincte, să fie ușor accesibile și să se completeze reciproc.\n\n8️⃣ Să dezvolt Content Director / Content Lab ca infrastructură pentru comunicare, astfel încât ideile, knowledge tree-ul, formatele, experimentele și viitoarele automatizări de content să poată fi gestionate sistematic.\n\n9️⃣ Să consolidez infrastructura de formulare și date, astfel încât feedbackul, chestionarele și alte inputuri să ajungă într-un flux ușor de urmărit și să poată alimenta decizii, experimente și dezvoltarea Becky.\n\n🔟 Să încep conectarea sistemelor prin Analytics & Raportare, astfel încât informația produsă în diferite componente să poată deveni dovadă pentru raportul lunar și suport pentru decizii, fără introducerea repetată manual a acelorași date.",
+        "metrics": "neînceput → în construcție → funcțional V1 → folosit real",
+        "done": "",
+        "evidence": "",
+        "learned": "",
+        "next_step": ""
+      },
+      "sort_order": 5,
+      "created_at": "2026-08-18T13:07:44.298Z",
+      "updated_at": "2026-08-19T08:04:20.977Z",
+      "notes": {}
+    },
+    {
+      "id": "operatiuni-logistica",
+      "label": "Operațiuni & logistică",
+      "status": "Necesită atenție",
+      "sections": {
+        "scope": "Să creez condițiile în care experiența Becky poate funcționa fluid, pregătit și predictibil, cu cât mai puține probleme evitabile.",
+        "objectives": "1️⃣ Să dezvolt și să folosesc un sistem clar de readiness înainte de sosirea vizitatorilor, prin checklist-uri pentru spațiile copiilor, terasă, mese, materiale, consumabile și prezentarea generală a spațiului.\n\n2️⃣ Să asigur disponibilitatea și buna stare a materialelor necesare experiențelor Becky, în special materialele din Biblioteca de activități, baloanele și consumabilele uzuale pentru copii.\n\n3️⃣ Să contribui la desfășurarea fluidă a petrecerilor și evenimentelor, respectând flow-ul stabilit și coordonându-mă cu echipa pentru momentele operaționale precum primirea, activitățile, servirea mesei și tortul.\n\n4️⃣ Să mențin spațiul funcțional pe parcursul programului, observând și corectând rapid lucrurile care se degradează odată cu utilizarea: dezordine, mese, materiale mutate, consumabile terminate sau zone care trebuie resetate.\n\n5️⃣ Să dezvolt un sistem simplu de semnalare a lipsurilor și problemelor, astfel încât hârtia igienică, săpunul, baloanele, creioanele, hârtia și alte materiale necesare să fie comunicate înainte să devină o problemă pentru experiență.\n\n6️⃣ Să transform problemele operaționale repetitive în standarde și checklist-uri, astfel încât aceeași problemă să nu trebuiască rezolvată de fiecare dată prin improvizație.",
+        "metrics": "„Cât de des a trebuit să improvizăm din cauza unui lucru pe care puteam să-l anticipăm?” Vrem ca numărul acela să scadă.\n\n✅ Readiness — câte zile/petreceri au început cu checklist-ul complet.\n\n⚠️ Incidente evitabile — de câte ori experiența a fost afectată de ceva ce putea fi pregătit anterior: material lipsă, masă nepregătită, consumabil terminat etc.\n\n📦 Lipsuri identificate — nu ca metrică negativă; faptul că le observi și le comunici din timp înseamnă că sistemul funcționează.\n\n🔁 Probleme recurente transformate în proces — câte situații repetate au produs o modificare de checklist, standard sau flow.",
+        "done": "",
+        "evidence": "",
+        "learned": "",
+        "next_step": ""
+      },
+      "sort_order": 6,
+      "created_at": "2026-08-18T13:07:44.298Z",
+      "updated_at": "2026-08-19T08:04:30.177Z",
+      "notes": {}
+    },
+    {
+      "id": "strategie-dezvoltare",
+      "label": "Strategie & dezvoltare",
+      "status": "În urmă",
+      "sections": {
+        "scope": "Să mă asigur că toate aceste componente evoluează împreună într-un sistem coerent, prin decizii deliberate, experimentare și învățare, astfel încât ceea ce funcționează să poată fi standardizat, automatizat și scalat.",
+        "objectives": "1️⃣ Să definesc și să documentez clar arhitectura strategică Becky, astfel încât să pot explica într-un vizual simplu cum se leagă pedagogia, experiența, relațiile, comunitatea, comunicarea, tehnologia și operaționalul într-un singur mecanism de creștere.\n\n2️⃣ Să folosesc o logică explicită de maturizare a inițiativelor, astfel încât proiectele să avanseze deliberat prin:\n\nIdee → În construcție → În testare → Validat → Standardizat → Automatizat → Scalat\n\nfără să automatizăm ceva ce încă nu înțelegem și fără să scalăm ceva ce încă nu am demonstrat.\n\n3️⃣ Să transform presupunerile importante în experimente mici înaintea investițiilor mari, documentând ce am presupus, ce am testat, ce s-a întâmplat și ce decizie rezultă.\n\n4️⃣ Să documentez deciziile strategice importante și raționamentul lor, inclusiv lucrurile pe care aleg deliberat să le amân, simplific sau opresc.\n\nExemplul foarte bun din luna aceasta este amânarea primului eveniment Becky pentru a testa mai întâi premisele și componentele care îi cresc probabilitatea unui impact real.\n\n5️⃣ Să dezvolt Planul Becky de Dezvoltare Strategică ca document viu pentru stakeholderi: unde suntem, ce construim, cum se leagă piesele, ce am demonstrat și care sunt întrebările încă deschise.\n\n6️⃣ Să identific dependențele și blind spot-urile dintre sisteme, nu doar lipsurile din interiorul fiecărui proiect. Aici intră inclusiv descoperirea nevoii unui Ghid de Comunitate, astfel încât „comunitatea” să nu rămână o aspirație abstractă.\n\n7️⃣ Să creez un motor repetabil de învățare organizațională:\n\nIpoteză → Pilot → Observație → Învățare → Decizie → Iterație\n\nastfel încât dezvoltarea Becky să devină progresiv mai puțin dependentă de intuiție pură.",
+        "metrics": "Aș urmări mai degrabă decizii strategice documentate, experimente/piloți finalizați, ipoteze confirmate sau infirmate, sisteme care au avansat demonstrabil într-un nou stadiu de maturitate și blind spot-uri importante identificate și transformate în acțiuni.\n\nȘi aș avea un indicator calitativ foarte puternic:\n\nPot explica de ce facem ceea ce facem — și ce dovadă ne-ar determina să ne schimbăm direcția?\n\nDacă răspunsul este da, avem strategie. Dacă răspunsul este doar „pentru că mi s-a părut o idee bună”, avem încă o ipoteză.\n\nIar propoziția cu care aș închide Rolul 8 în raport este:\n\nNu urmăresc să fac cât mai multe lucruri într-o lună, ci să cresc probabilitatea ca ceea ce construim astăzi să devină mâine o parte coerentă, demonstrată și repetabilă din Becky.",
+        "done": "",
+        "evidence": "",
+        "learned": "",
+        "next_step": ""
+      },
+      "sort_order": 7,
+      "created_at": "2026-08-18T13:07:44.298Z",
+      "updated_at": "2026-08-19T08:04:53.595Z",
+      "notes": {}
+    }
+  ],
+  "notes": {
+    "2026-08-18": "Obs.\n18.08 - Erdu, Carla și Antonia au venit în vizită. De când a intrat Erdu, mă aștepta cu privirea să urc cu ea. Ne-am jucat ceva împreună până când a venit și Carla. Am fost împărțit de câteva ori am coborat la Carla să ne jucam dar Erdu venea să îmi ceara atenția. Am invitat-o să se joace cu noi, nu a vrut și m-am întors la ea să nu se simtă singură... până la urmă am știut că cel mai probabil intre a se juca singură și a veni la mine si Carla, o să aleagă să se joace și cu noua fetiță așa că am plecat și nu m-am mai intors. Una peste alta s-au simțit foarte bine copiii și ne-am jucat foarte multe jocuri împreună. Chiar și șezutul pe minge și a funcționat bine cu cele două fetițe, chiar și Ștefan (colegul), s-a pus să se joace cu noi. Nu au plecat cu ceva memorabil (am nevoie să pregătesc o listă de opțiuni (eventual pregătite pentru interesele lor și atunci se vor plia pe copii noi asemănători). Nu am reușit să le dau ceva de anticipare pentru data viitoare. Am tot încercat să îi zic lui Erdu că poate vom cumpăra noi bureți până mai vine și că voi pregăti jocuri... nu a părut prea impresionată... probabil că nu funcționează și e periculos să creez așteptări așa care sunt în afara controlului meu. Ne-am jucat lego dar simt că vreau să intru să le organizez puțin pentru că multă muncă este să cauți prin teancul de lego care este deja ansamblat... poate le place copiilor asta, nu am reusit sa vad de la Erdu dacă o deranjează sau îi e indiferent. Sunt curios cum era dacă erau organizate mai bine, dacă era mai focusată. I-am expus rezultatul pe un raft. Sunt curios dacă o să mai fie data viitoare acolo, și dacă o sa aprecieze. Am vorbit de originea numelui și pana data viitoare trebuie să caut să îi spun. Eventual îi printez un cadou cu Becky și numele Erdu ceva drăgut (să fie elementul WOW). Ar fi fain să fac o imagine marca Becky și cu Carla și una cu Antonia („eu sunt fetiță mare”)."
+  }
+}

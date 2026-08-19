@@ -1,0 +1,70 @@
+{
+  "children": [
+    {
+      "id": "6daedfee-eebb-45b4-b54e-ab265d8824b1",
+      "first_name": "Antonia 6 ani",
+      "age": 6,
+      "interests": "",
+      "continuity": "",
+      "created_at": "2026-08-18T12:19:42.811Z",
+      "updated_at": "2026-08-18T17:19:10.791Z"
+    },
+    {
+      "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "first_name": "Erdu",
+      "age": 7,
+      "interests": "Este mult pe mișcare, gimnastică\nAre o pisică: pinky\nIn octombrie are concurs in Franța de dans acrobatic\nMarțea este mai liberă să vină la noi",
+      "continuity": "",
+      "created_at": "2026-08-18T17:15:50.787Z",
+      "updated_at": "2026-08-18T17:15:50.787Z"
+    },
+    {
+      "id": "9cea2ff1-4c92-480c-87a0-dcdd262d5fae",
+      "first_name": "Carla",
+      "age": 8,
+      "interests": "Are o surioară Antonia\nIi place fotbalul, este sportivă, am jucat mult fotbal",
+      "continuity": "",
+      "created_at": "2026-08-18T17:16:58.261Z",
+      "updated_at": "2026-08-18T17:16:58.261Z"
+    },
+    {
+      "id": "ba155388-b489-4e40-b1a1-c5579cbc3250",
+      "first_name": "Antonia (sora Carla) 4 ani",
+      "age": 4,
+      "interests": "Sora Carlei",
+      "continuity": "",
+      "created_at": "2026-08-18T17:17:22.909Z",
+      "updated_at": "2026-08-18T17:19:16.691Z"
+    }
+  ],
+  "visits": [
+    {
+      "id": "9322d78d-84ce-4d9f-b72c-fdd5cdf53e25",
+      "child_id": "9cea2ff1-4c92-480c-87a0-dcdd262d5fae",
+      "visit_date": "2026-08-18",
+      "note": "",
+      "created_at": "2026-08-18T17:19:36.680Z"
+    },
+    {
+      "id": "d5dee2ac-aa0e-47bb-afa2-076d188f884e",
+      "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "visit_date": "2026-08-18",
+      "note": "",
+      "created_at": "2026-08-18T17:19:48.311Z"
+    },
+    {
+      "id": "a9dff095-f7b1-433f-95b5-f5b6c896b3e8",
+      "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "visit_date": "2026-08-11",
+      "note": "",
+      "created_at": "2026-08-19T08:14:09.102Z"
+    },
+    {
+      "id": "60dc5459-4e27-4b2e-bfd7-7d8e75aa84ac",
+      "child_id": "ba155388-b489-4e40-b1a1-c5579cbc3250",
+      "visit_date": "2026-08-18",
+      "note": "",
+      "created_at": "2026-08-19T08:14:53.219Z"
+    }
+  ]
+}

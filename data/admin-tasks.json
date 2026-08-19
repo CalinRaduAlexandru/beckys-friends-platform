@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "ov-6",
+    "area": "operational",
+    "title": "Mapăm pachetele și ce intră în fiecare experiență",
+    "detail": "Spații, decor, meniu, activități, echipă și follow-up.",
+    "owner": "you",
+    "priority": "high",
+    "sort_order": 0,
+    "created_at": "2026-08-18T13:02:28.871Z",
+    "updated_at": "2026-08-18T13:04:25.802Z"
+  }
+]
