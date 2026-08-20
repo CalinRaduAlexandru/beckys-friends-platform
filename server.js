@@ -18,6 +18,9 @@ const ADMIN_CALENDAR_FILE = path.join(ROOT, 'data', 'admin-calendar.json');
 const ADMIN_CRM_FILE = path.join(ROOT, 'data', 'admin-crm.json');
 const ADMIN_MONTHLY_REPORT_FILE = path.join(ROOT, 'data', 'admin-monthly-report.json');
 const ADMIN_ACTIVITY_OBSERVATIONS_FILE = path.join(ROOT, 'data', 'admin-activity-observations.json');
+const ADMIN_CONTENT_LAB_IDEAS_FILE = path.join(ROOT, 'data', 'admin-content-lab-ideas.json');
+const ADMIN_EVENT_FINDINGS_FILE = path.join(ROOT, 'data', 'admin-event-community-findings.json');
+const ADMIN_KNOWLEDGE_CANDIDATES_FILE = path.join(ROOT, 'data', 'admin-knowledge-candidates.json');
 const PUBLIC = path.join(ROOT, 'public');
 
 const MONTHLY_REPORT_ROLES = [
@@ -29,6 +32,11 @@ const MONTHLY_REPORT_ROLES = [
 const MONTHLY_REPORT_SECTION_KEYS = ['scope', 'objectives', 'metrics', 'done', 'evidence', 'learned', 'next_step'];
 const MONTHLY_REPORT_STATUSES = ['În parametri', 'Necesită atenție', 'În urmă', 'Fără suficiente date'];
 const MONTHLY_REPORT_ENTRY_TYPES = ['done', 'evidence', 'learned'];
+const CONTENT_LAB_IDEA_TYPES = ['growth_story', 'behind_the_scenes', 'authority_expertise', 'reusable_insight'];
+const CONTENT_LAB_IDEA_STATUSES = ['active', 'archived'];
+const EVENT_FINDING_KINDS = ['observation', 'feedback', 'component_idea', 'hypothesis', 'pilot_result'];
+const KNOWLEDGE_CANDIDATE_TARGETS = ['operational_manual', 'puieti_de_oameni', 'community_guide', 'strategic_plan'];
+const KNOWLEDGE_CANDIDATE_STATUSES = ['proposed', 'approved', 'rejected'];
 
 function defaultMonthlyReport() {
   const now = new Date().toISOString();
@@ -43,6 +51,31 @@ function readMonthlyReport() {
   } catch { throw new Error('Invalid monthly report store'); }
 }
 function writeMonthlyReport(report) { fs.mkdirSync(path.dirname(ADMIN_MONTHLY_REPORT_FILE), { recursive: true }); fs.writeFileSync(ADMIN_MONTHLY_REPORT_FILE, JSON.stringify(report, null, 2)); }
+function readContentLabIdeas() { try { const value = fs.existsSync(ADMIN_CONTENT_LAB_IDEAS_FILE) ? JSON.parse(fs.readFileSync(ADMIN_CONTENT_LAB_IDEAS_FILE, 'utf8')) : []; return Array.isArray(value) ? value : []; } catch { throw new Error('Invalid Content Lab ideas store'); } }
+function writeContentLabIdeas(items) { fs.mkdirSync(path.dirname(ADMIN_CONTENT_LAB_IDEAS_FILE), { recursive: true }); fs.writeFileSync(ADMIN_CONTENT_LAB_IDEAS_FILE, JSON.stringify(items, null, 2)); }
+function readJsonStore(file, label) { try { const value = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []; return Array.isArray(value) ? value : []; } catch { throw new Error(`Invalid ${label} store`); } }
+function writeJsonStore(file, items) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(items, null, 2)); }
+function normalizeEventFinding(input, existing = {}) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim(); const kind = String(input?.kind ?? existing.kind ?? '').trim(); const text = String(input?.text ?? existing.text ?? '').trim();
+  const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null;
+  const event_ref = nullable('event_ref'); const concept_ref = nullable('concept_ref'); const source_type = nullable('source_type'); const source_id = nullable('source_id');
+  if (!id || !EVENT_FINDING_KINDS.includes(kind) || !text) throw new Error('Event finding invalid');
+  if (text.length > 10000 || [event_ref, concept_ref, source_type, source_id].some((value, index) => value && value.length > (index < 2 ? 300 : index === 2 ? 100 : 200))) throw new Error('Event finding too long');
+  const now = new Date().toISOString(); return { id, kind, text, event_ref, concept_ref, source_type, source_id, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+}
+function normalizeKnowledgeCandidate(input, existing = {}) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim(); const target = String(input?.target ?? existing.target ?? '').trim(); const text = String(input?.text ?? existing.text ?? '').trim(); const status = String(input?.status ?? existing.status ?? 'proposed').trim();
+  const source_type = input?.source_type === null ? null : String(input?.source_type ?? existing.source_type ?? '').trim() || null; const source_id = input?.source_id === null ? null : String(input?.source_id ?? existing.source_id ?? '').trim() || null;
+  if (!id || !KNOWLEDGE_CANDIDATE_TARGETS.includes(target) || !KNOWLEDGE_CANDIDATE_STATUSES.includes(status) || !text) throw new Error('Knowledge candidate invalid');
+  if (text.length > 10000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw new Error('Knowledge candidate too long');
+  const now = new Date().toISOString(); return { id, target, text, status, source_type, source_id, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+}
+function normalizeContentLabIdea(input, existing = {}) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim(); const idea_type = String(input?.idea_type ?? existing.idea_type ?? '').trim(); const title = String(input?.title ?? existing.title ?? '').trim(); const core_thought = String(input?.core_thought ?? existing.core_thought ?? input?.text ?? existing.text ?? '').trim(); const status = String(input?.status ?? existing.status ?? 'active').trim(); const source_type = input?.source_type === null ? null : String(input?.source_type ?? existing.source_type ?? '').trim() || null; const source_id = input?.source_id === null ? null : String(input?.source_id ?? existing.source_id ?? '').trim() || null;
+  if (!id || !CONTENT_LAB_IDEA_TYPES.includes(idea_type) || !core_thought || !CONTENT_LAB_IDEA_STATUSES.includes(status)) throw new Error('Content Lab idea invalid');
+  if (title.length > 500 || core_thought.length > 10000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw new Error('Content Lab idea too long');
+  const now = new Date().toISOString(); return { id, idea_type, title, core_thought, status, source_type, source_id, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+}
 function normalizeMonthlyReportEntry(input, existing = {}, monthKey = '2026-08') {
   const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
   const month_key = String(input?.month_key ?? existing.month_key ?? monthKey).trim();
@@ -809,6 +842,28 @@ const server = http.createServer((req, res) => {
       }
     });
     return;
+  }
+  if (url.pathname === '/api/admin/content-lab/ideas' && req.method === 'GET') {
+    try { const status = String(url.searchParams.get('status') || '').trim(); if (status && !CONTENT_LAB_IDEA_STATUSES.includes(status)) return send(res, 400, { error: 'Filtru invalid' }); return send(res, 200, { ideas: readContentLabIdeas().filter(item => !status || item.status === status).sort((a, b) => `${b.updated_at}${b.created_at}`.localeCompare(`${a.updated_at}${a.created_at}`)) }); } catch { return send(res, 500, { error: 'Ideile Content Lab nu sunt disponibile' }); }
+  }
+  if (url.pathname === '/api/admin/event-community/findings' && req.method === 'GET') {
+    try { const kind = String(url.searchParams.get('kind') || '').trim(); if (kind && !EVENT_FINDING_KINDS.includes(kind)) return send(res, 400, { error: 'Filtru invalid' }); return send(res, 200, { findings: readJsonStore(ADMIN_EVENT_FINDINGS_FILE, 'event findings').filter(item => !kind || item.kind === kind).sort((a, b) => `${b.updated_at}${b.created_at}`.localeCompare(`${a.updated_at}${a.created_at}`)) }); } catch { return send(res, 500, { error: 'Findings nu sunt disponibile' }); }
+  }
+  if (url.pathname === '/api/admin/event-community/findings' && req.method === 'POST') { readRequestJson(req, res, 50_000, body => { try { const items = readJsonStore(ADMIN_EVENT_FINDINGS_FILE, 'event findings'); const item = normalizeEventFinding(body); items.push(item); writeJsonStore(ADMIN_EVENT_FINDINGS_FILE, items); send(res, 201, item); } catch { send(res, 400, { error: 'Finding invalid' }); } }); return; }
+  const eventFindingMatch = url.pathname.match(/^\/api\/admin\/event-community\/findings\/([^/?]+)$/);
+  if (eventFindingMatch && ['PATCH', 'DELETE'].includes(req.method)) { const id = decodeURIComponent(eventFindingMatch[1]); if (req.method === 'DELETE') { try { const items = readJsonStore(ADMIN_EVENT_FINDINGS_FILE, 'event findings'); const next = items.filter(item => item.id !== id); if (next.length === items.length) return send(res, 404, { error: 'Finding not found' }); writeJsonStore(ADMIN_EVENT_FINDINGS_FILE, next); return send(res, 200, { ok: true }); } catch { return send(res, 500, { error: 'Finding could not be deleted' }); } } readRequestJson(req, res, 50_000, body => { try { const items = readJsonStore(ADMIN_EVENT_FINDINGS_FILE, 'event findings'); const index = items.findIndex(item => item.id === id); if (index < 0) return send(res, 404, { error: 'Finding not found' }); items[index] = normalizeEventFinding({ ...items[index], ...body, id }, items[index]); writeJsonStore(ADMIN_EVENT_FINDINGS_FILE, items); send(res, 200, items[index]); } catch { send(res, 400, { error: 'Finding invalid' }); } }); return; }
+  if (url.pathname === '/api/admin/knowledge-candidates' && req.method === 'GET') { try { const target = String(url.searchParams.get('target') || '').trim(); const status = String(url.searchParams.get('status') || '').trim(); if ((target && !KNOWLEDGE_CANDIDATE_TARGETS.includes(target)) || (status && !KNOWLEDGE_CANDIDATE_STATUSES.includes(status))) return send(res, 400, { error: 'Filtru invalid' }); return send(res, 200, { candidates: readJsonStore(ADMIN_KNOWLEDGE_CANDIDATES_FILE, 'knowledge candidates').filter(item => (!target || item.target === target) && (!status || item.status === status)).sort((a, b) => `${b.updated_at}${b.created_at}`.localeCompare(`${a.updated_at}${a.created_at}`)) }); } catch { return send(res, 500, { error: 'Knowledge candidates nu sunt disponibile' }); } }
+  if (url.pathname === '/api/admin/knowledge-candidates' && req.method === 'POST') { readRequestJson(req, res, 50_000, body => { try { const items = readJsonStore(ADMIN_KNOWLEDGE_CANDIDATES_FILE, 'knowledge candidates'); const item = normalizeKnowledgeCandidate(body); items.push(item); writeJsonStore(ADMIN_KNOWLEDGE_CANDIDATES_FILE, items); send(res, 201, item); } catch { send(res, 400, { error: 'Knowledge candidate invalid' }); } }); return; }
+  const knowledgeCandidateMatch = url.pathname.match(/^\/api\/admin\/knowledge-candidates\/([^/?]+)$/);
+  if (knowledgeCandidateMatch && ['PATCH', 'DELETE'].includes(req.method)) { const id = decodeURIComponent(knowledgeCandidateMatch[1]); if (req.method === 'DELETE') { try { const items = readJsonStore(ADMIN_KNOWLEDGE_CANDIDATES_FILE, 'knowledge candidates'); const next = items.filter(item => item.id !== id); if (next.length === items.length) return send(res, 404, { error: 'Candidate not found' }); writeJsonStore(ADMIN_KNOWLEDGE_CANDIDATES_FILE, next); return send(res, 200, { ok: true }); } catch { return send(res, 500, { error: 'Candidate could not be deleted' }); } } readRequestJson(req, res, 50_000, body => { try { const items = readJsonStore(ADMIN_KNOWLEDGE_CANDIDATES_FILE, 'knowledge candidates'); const index = items.findIndex(item => item.id === id); if (index < 0) return send(res, 404, { error: 'Candidate not found' }); items[index] = normalizeKnowledgeCandidate({ ...items[index], ...body, id }, items[index]); writeJsonStore(ADMIN_KNOWLEDGE_CANDIDATES_FILE, items); send(res, 200, items[index]); } catch { send(res, 400, { error: 'Knowledge candidate invalid' }); } }); return; }
+  if (url.pathname === '/api/admin/content-lab/ideas' && req.method === 'POST') {
+    readRequestJson(req, res, 40_000, body => { try { const ideas = readContentLabIdeas(); const idea = normalizeContentLabIdea(body); ideas.push(idea); writeContentLabIdeas(ideas); send(res, 201, idea); } catch { send(res, 400, { error: 'Ideea Content Lab este invalidă' }); } }); return;
+  }
+  const contentLabIdeaMatch = url.pathname.match(/^\/api\/admin\/content-lab\/ideas\/([^/?]+)$/);
+  if (contentLabIdeaMatch && ['PATCH', 'DELETE'].includes(req.method)) {
+    const id = decodeURIComponent(contentLabIdeaMatch[1]);
+    if (req.method === 'DELETE') { try { const ideas = readContentLabIdeas(); const next = ideas.filter(item => item.id !== id); if (next.length === ideas.length) return send(res, 404, { error: 'Ideea nu a fost găsită' }); writeContentLabIdeas(next); return send(res, 200, { ok: true }); } catch { return send(res, 500, { error: 'Ideea nu a putut fi ștearsă' }); } }
+    readRequestJson(req, res, 40_000, body => { try { const ideas = readContentLabIdeas(); const index = ideas.findIndex(item => item.id === id); if (index < 0) return send(res, 404, { error: 'Ideea nu a fost găsită' }); ideas[index] = normalizeContentLabIdea({ ...ideas[index], ...body, id }, ideas[index]); writeContentLabIdeas(ideas); send(res, 200, ideas[index]); } catch { send(res, 400, { error: 'Ideea Content Lab este invalidă' }); } }); return;
   }
   if (req.method === 'POST' && url.pathname === '/api/content/carousel/plan') {
     readRequestJson(req, res, 40_000, async body => {

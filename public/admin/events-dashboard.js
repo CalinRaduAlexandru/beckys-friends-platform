@@ -43,6 +43,10 @@ let eventSurveyFunnelEvents=[];
 let eventSurveyRange='all';
 let eventSurveyChildCount='all';
 let eventSurveyAge='all';
+let eventFindings=[];
+let eventFindingFilter='';
+let eventFindingEditing=null;
+const EVENT_FINDING_KINDS=[['observation','Observație'],['feedback','Feedback'],['component_idea','Idee de componentă'],['hypothesis','Ipoteză'],['pilot_result','Rezultat pilot']];
 
 const eventSafe=value=>escapeHtml(String(value??''));
 const eventDate=value=>new Intl.DateTimeFormat('ro-RO',{day:'2-digit',month:'short',year:'numeric'}).format(new Date(value));
@@ -217,12 +221,29 @@ function eventOpenAnswers(rows){
   </article>`;
 }
 
+function eventFindingLabel(kind){return EVENT_FINDING_KINDS.find(item=>item[0]===kind)?.[1]||kind;}
+function eventFindingsPanel(){
+  const editing=eventFindingEditing||{};
+  const form=eventFindingEditing!==null?`<form class="event-findings-form" id="event-finding-form"><label>Tip<select name="kind">${EVENT_FINDING_KINDS.map(([value,label])=>`<option value="${value}" ${editing.kind===value?'selected':''}>${label}</option>`).join('')}</select></label><label>Finding<textarea name="text" required maxlength="10000" placeholder="Ce ai observat, ce feedback ai primit sau ce vrei să verifici?">${eventSafe(editing.text||'')}</textarea></label><div class="event-findings-refs"><label>Eveniment / pilot (opțional)<input name="event_ref" value="${eventSafe(editing.event_ref||'')}"></label><label>Concept (opțional)<input name="concept_ref" value="${eventSafe(editing.concept_ref||'')}"></label></div><div class="event-findings-actions"><button class="primary" type="submit">${editing.id?'Salvează':'Adaugă finding'}</button><button type="button" class="event-secondary" id="event-finding-cancel">Renunță</button></div></form>`:'';
+  const rows=eventFindings.filter(item=>!eventFindingFilter||item.kind===eventFindingFilter);
+  return `<section class="event-findings event-panel-wide"><div class="event-panel-head"><div><span>MEMORIA EVENIMENTELOR</span><h3>Findings & învățări</h3><small>Fapte, feedback, idei și ipoteze păstrate separat de documentele existente.</small></div><div class="event-findings-toolbar"><select id="event-finding-filter"><option value="">Toate tipurile</option>${EVENT_FINDING_KINDS.map(([value,label])=>`<option value="${value}" ${eventFindingFilter===value?'selected':''}>${label}</option>`).join('')}</select><button class="primary" id="event-finding-add">＋ Adaugă finding</button></div></div>${form}<div class="event-findings-list">${rows.length?rows.map(item=>`<article class="event-finding-card"><div class="event-finding-meta"><span>${eventSafe(eventFindingLabel(item.kind))}</span><time>${eventSafe(eventDate(item.created_at))}</time></div><p>${eventSafe(item.text)}</p>${item.event_ref||item.concept_ref?`<small>${item.event_ref?`Eveniment: ${eventSafe(item.event_ref)}`:''}${item.event_ref&&item.concept_ref?' · ':''}${item.concept_ref?`Concept: ${eventSafe(item.concept_ref)}`:''}</small>`:''}<div class="event-finding-card-actions"><button data-event-finding-edit="${eventSafe(item.id)}">Editează</button><button data-event-finding-delete="${eventSafe(item.id)}">Șterge</button></div></article>`).join(''):'<p class="event-no-data">Nu există încă findings pentru acest filtru.</p>'}</div></section>`;
+}
+async function loadEventFindings(){try{const response=await apiFetch(`/api/admin/event-community/findings${eventFindingFilter?`?kind=${encodeURIComponent(eventFindingFilter)}`:''}`);const payload=await response.json();eventFindings=eventArray(payload.findings);}catch(error){console.warn('Event findings unavailable',error);eventFindings=[];}}
+async function bindEventFindings(){
+  document.getElementById('event-finding-filter')?.addEventListener('change',async event=>{eventFindingFilter=event.target.value;await loadEventFindings();paintEventDashboard();});
+  document.getElementById('event-finding-add')?.addEventListener('click',()=>{eventFindingEditing={};paintEventDashboard();document.querySelector('#event-finding-form textarea')?.focus();});
+  document.getElementById('event-finding-cancel')?.addEventListener('click',()=>{eventFindingEditing=null;paintEventDashboard();});
+  document.getElementById('event-finding-form')?.addEventListener('submit',async event=>{event.preventDefault();const form=new FormData(event.target);const body=Object.fromEntries(form.entries());try{const id=eventFindingEditing?.id;const response=await apiFetch(id?`/api/admin/event-community/findings/${encodeURIComponent(id)}`:'/api/admin/event-community/findings',{method:id?'PATCH':'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!response.ok)throw new Error('Finding invalid');eventFindingEditing=null;await loadEventFindings();paintEventDashboard();}catch(error){alert(error.message||'Findingul nu a putut fi salvat.');}});
+  document.querySelectorAll('[data-event-finding-edit]').forEach(button=>button.addEventListener('click',()=>{eventFindingEditing=eventFindings.find(item=>item.id===button.dataset.eventFindingEdit)||null;paintEventDashboard();}));
+  document.querySelectorAll('[data-event-finding-delete]').forEach(button=>button.addEventListener('click',async()=>{if(!confirm('Ștergi acest finding?'))return;const response=await apiFetch(`/api/admin/event-community/findings/${encodeURIComponent(button.dataset.eventFindingDelete)}`,{method:'DELETE'});if(response.ok){await loadEventFindings();paintEventDashboard();}}));
+}
+
 function eventEmptyState(){
   return `<section class="event-empty"><span>📊</span><h2>Dashboardul este pregătit.</h2><p>Primul răspuns trimis prin chestionar va apărea automat aici și în Supabase. Nu trebuie importat nimic manual.</p><div><a class="primary" href="/chestionar-evenimente.html" target="_blank" rel="noopener">Deschide chestionarul ↗</a><a class="event-secondary" href="https://supabase.com/dashboard/project/qsyetunppcepupfufrou/editor" target="_blank" rel="noopener">Vezi baza de date ↗</a></div></section>`;
 }
 
 function eventDashboardTemplate(rows,comparisonRows){
-  if(!eventSurveyAllResponses.length&&!eventSurveyFunnelEvents.length&&eventSurveyRange==='all')return eventEmptyState();
+  if(!eventSurveyAllResponses.length&&!eventSurveyFunnelEvents.length&&eventSurveyRange==='all')return `${eventEmptyState()}${eventFindingsPanel()}`;
   return `${eventSegmentControls(rows)}${eventInsightCards(rows)}${eventFunnelPanel(eventDateFilteredResponses().length)}
     <section class="event-grid">
       ${eventRankPanel(rows,'conceptRanking',{source:'concept',title:'Conceptele de eveniment',eyebrow:'CE MERITĂ TESTAT',wide:true,note:'Doar primele trei poziții sunt punctate; restul rămân context'})}
@@ -237,7 +258,7 @@ function eventDashboardTemplate(rows,comparisonRows){
       ${eventRankPanel(rows,'childAges',{source:'multi',title:'Vârstele copiilor',eyebrow:'PROFILUL FAMILIILOR'})}
       ${eventSegmentComparison(comparisonRows)}
       ${eventOpenAnswers(rows)}
-    </section>
+    </section>${eventFindingsPanel()}
     <details class="event-method"><summary>Cum sunt calculate prioritățile?</summary><p>Criteriile de decizie și barierele folosesc doar primele trei alegeri: prima primește 1 punct, a doua ½, iar a treia ⅓. Zilele, orele, motivațiile și rezultatele sunt analizate ca selecții multiple, fără prioritate inventată. Pentru concepte punctăm exclusiv topul 3 ajustat de participant; pozițiile inferioare nu influențează concluziile.</p></details>`;
 }
 
@@ -261,6 +282,7 @@ function bindEventDashboard(){
     const query=event.target.value.trim().toLocaleLowerCase('ro');
     document.querySelectorAll('[data-event-voice]').forEach(card=>card.hidden=!card.dataset.eventVoice.includes(query));
   });
+  bindEventFindings();
 }
 
 function paintEventDashboard(){
@@ -284,7 +306,7 @@ async function renderEventsDashboard(force=false){
   demo.className='workspace-demo events-workspace';
   demo.innerHTML=`<header class="event-dashboard-head"><div><span>CHESTIONAR · LIVE</span><h2>Ce merită să construim mai departe?</h2><p>Priorități, fricțiuni și oportunități — fără să cauți sensul într-un tabel brut.</p></div><div class="event-actions"><div class="event-range" aria-label="Interval analizat"><button data-event-range="all">Tot</button><button data-event-range="30">30 zile</button><button data-event-range="7">7 zile</button></div><button id="event-refresh" class="event-secondary">↻ Actualizează</button><button id="event-export" class="event-secondary">↓ CSV</button><a class="event-secondary" href="https://supabase.com/dashboard/project/qsyetunppcepupfufrou/editor" target="_blank" rel="noopener">Baza de date ↗</a></div></header><main id="event-dashboard-content"><div class="event-loading">Se citesc rezultatele…</div></main>`;
   try{
-    if(force||!eventSurveyAllResponses.length){const [response,funnelResponse]=await Promise.all([apiFetch('/api/event-survey/results'),apiFetch('/api/event-survey/funnel')]);const payload=await response.json();eventSurveyAllResponses=eventArray(payload.responses);if(funnelResponse.ok){const funnelPayload=await funnelResponse.json();eventSurveyFunnelEvents=eventArray(funnelPayload.events);}}
+    if(force||!eventSurveyAllResponses.length){const [response,funnelResponse]=await Promise.all([apiFetch('/api/event-survey/results'),apiFetch('/api/event-survey/funnel')]);const payload=await response.json();eventSurveyAllResponses=eventArray(payload.responses);if(funnelResponse.ok){const funnelPayload=await funnelResponse.json();eventSurveyFunnelEvents=eventArray(funnelPayload.events);}} await loadEventFindings();
     paintEventDashboard();
   }catch(error){document.getElementById('event-dashboard-content').innerHTML=`<section class="event-empty"><span>⚠️</span><h2>Nu am putut citi rezultatele.</h2><p>${eventSafe(error.message||'Încearcă din nou.')}</p><button id="event-refresh" class="primary">Încearcă din nou</button></section>`;bindEventDashboard();}
 }

@@ -92,6 +92,14 @@ async function supabaseRequest(env, path, init = {}) {
 }
 
 const ADMIN_TASK_COLUMNS = 'id,area,title,detail,owner,priority,sort_order,created_at,updated_at';
+const CONTENT_LAB_IDEA_TYPES = ['growth_story', 'behind_the_scenes', 'authority_expertise', 'reusable_insight'];
+const CONTENT_LAB_IDEA_STATUSES = ['active', 'archived'];
+const CONTENT_LAB_IDEA_COLUMNS = 'id,idea_type,title,core_thought,status,source_type,source_id,created_at,updated_at';
+const EVENT_FINDING_KINDS = ['observation', 'feedback', 'component_idea', 'hypothesis', 'pilot_result'];
+const EVENT_FINDING_COLUMNS = 'id,kind,text,event_ref,concept_ref,source_type,source_id,created_at,updated_at';
+const KNOWLEDGE_CANDIDATE_TARGETS = ['operational_manual', 'puieti_de_oameni', 'community_guide', 'strategic_plan'];
+const KNOWLEDGE_CANDIDATE_STATUSES = ['proposed', 'approved', 'rejected'];
+const KNOWLEDGE_CANDIDATE_COLUMNS = 'id,target,text,status,source_type,source_id,created_at,updated_at';
 const MONTHLY_REPORT_ROLES = [
   ['experienta-copilului', 'Experiența copilului'], ['relatia-cu-parintii', 'Relația cu părinții'], ['design-pedagogic', 'Design pedagogic'], ['cultura-experienta-becky', 'Cultura & experiența Becky'], ['marketing-comunicare', 'Marketing & comunicare'], ['sisteme-tehnologie', 'Sisteme & tehnologie'], ['operatiuni-logistica', 'Operațiuni & logistică'], ['strategie-dezvoltare', 'Strategie & dezvoltare']
 ];
@@ -103,6 +111,25 @@ const MONTHLY_REPORT_ENTRY_COLUMNS = 'id,month_key,entry_date,type,text,role_ids
 const ACTIVITY_OBSERVATION_COLUMNS = 'id,activity_id,tested_at,age_categories,participants,result,observed,interpreted,hypothesized,action,capacity,behavior_observed,behaviors,created_at,updated_at';
 const ACTIVITY_PARTICIPANTS = ['Individual', '2–3 copii', '4–9 copii', '10+ copii'];
 const ACTIVITY_RESULTS = ['A mers bine', 'Mixt', 'Nu a mers'];
+function normalizeContentLabIdeaInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const idea_type = String(input?.idea_type || existing.idea_type || '').trim(); const title = String(input?.title ?? existing.title ?? '').trim(); const core_thought = String(input?.core_thought ?? existing.core_thought ?? input?.text ?? existing.text ?? '').trim(); const status = String(input?.status || existing.status || 'active').trim(); const source_type = input?.source_type === null ? null : String(input?.source_type ?? existing.source_type ?? '').trim() || null; const source_id = input?.source_id === null ? null : String(input?.source_id ?? existing.source_id ?? '').trim() || null;
+  if (!id || !CONTENT_LAB_IDEA_TYPES.includes(idea_type) || !core_thought || !CONTENT_LAB_IDEA_STATUSES.includes(status)) throw Object.assign(new Error('Content Lab idea invalid'), { status: 400 });
+  if (title.length > 500 || core_thought.length > 10000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw Object.assign(new Error('Content Lab idea too long'), { status: 400 });
+  return { id, idea_type, title, core_thought, status, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+function normalizeEventFindingInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const kind = String(input?.kind || existing.kind || '').trim(); const text = String(input?.text ?? existing.text ?? '').trim(); const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null;
+  const event_ref = nullable('event_ref'); const concept_ref = nullable('concept_ref'); const source_type = nullable('source_type'); const source_id = nullable('source_id');
+  if (!id || !EVENT_FINDING_KINDS.includes(kind) || !text) throw Object.assign(new Error('Event finding invalid'), { status: 400 });
+  if (text.length > 10000 || [event_ref, concept_ref, source_type, source_id].some((value, index) => value && value.length > (index < 2 ? 300 : index === 2 ? 100 : 200))) throw Object.assign(new Error('Event finding too long'), { status: 400 });
+  return { id, kind, text, event_ref, concept_ref, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+function normalizeKnowledgeCandidateInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const target = String(input?.target || existing.target || '').trim(); const text = String(input?.text ?? existing.text ?? '').trim(); const status = String(input?.status || existing.status || 'proposed').trim(); const source_type = input?.source_type === null ? null : String(input?.source_type ?? existing.source_type ?? '').trim() || null; const source_id = input?.source_id === null ? null : String(input?.source_id ?? existing.source_id ?? '').trim() || null;
+  if (!id || !KNOWLEDGE_CANDIDATE_TARGETS.includes(target) || !KNOWLEDGE_CANDIDATE_STATUSES.includes(status) || !text) throw Object.assign(new Error('Knowledge candidate invalid'), { status: 400 });
+  if (text.length > 10000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw Object.assign(new Error('Knowledge candidate too long'), { status: 400 });
+  return { id, target, text, status, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
 function normalizeActivityObservationInput(input, existing = {}) {
   const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const activity_id = String(input?.activity_id || existing.activity_id || '').trim(); const tested_at = String(input?.tested_at || existing.tested_at || '').trim(); const age_categories = Array.isArray(input?.age_categories ?? existing.age_categories) ? (input.age_categories ?? existing.age_categories).map(String) : []; const participants = String(input?.participants || existing.participants || '').trim(); const result = String(input?.result || existing.result || '').trim(); const observed = String(input?.observed ?? existing.observed ?? '').trim();
   if (!id || !activity_id || !/^\d{4}-\d{2}-\d{2}$/.test(tested_at) || !ACTIVITY_PARTICIPANTS.includes(participants) || !ACTIVITY_RESULTS.includes(result) || !observed) throw Object.assign(new Error('Activity observation invalid'), { status: 400 });
@@ -179,6 +206,41 @@ async function handleAdminMonthlyReport(request, env) {
     return json({ role: monthlyRoleView(rows[0]) });
   }
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, PATCH' });
+}
+
+async function handleContentLabIdeas(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET') {
+    const status = String(url.searchParams.get('status') || '').trim(); if (status && !CONTENT_LAB_IDEA_STATUSES.includes(status)) return json({ error: 'Filtru invalid' }, 400);
+    const filter = status ? `&status=eq.${encodeURIComponent(status)}` : '';
+    const response = await supabaseRequest(env, `/rest/v1/admin_content_lab_ideas?select=${CONTENT_LAB_IDEA_COLUMNS}${filter}&order=updated_at.desc,created_at.desc`); return json({ ideas: await response.json() });
+  }
+  assertSameOrigin(request);
+  if (request.method === 'POST') { const item = normalizeContentLabIdeaInput(await readJson(request, 40_000)); const response = await supabaseRequest(env, '/rest/v1/admin_content_lab_ideas?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201); }
+  const match = url.pathname.match(/^\/api\/admin\/content-lab\/ideas\/([^/?]+)$/); if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' }); const id = decodeURIComponent(match[1]);
+  if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_content_lab_ideas?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+  if (request.method === 'PATCH') { const currentResponse = await supabaseRequest(env, `/rest/v1/admin_content_lab_ideas?id=eq.${encodeURIComponent(id)}&select=${CONTENT_LAB_IDEA_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Ideea nu a fost găsită' }, 404); const item = normalizeContentLabIdeaInput({ ...current, ...await readJson(request, 40_000), id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_content_lab_ideas?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+
+async function handleEventCommunityFindings(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET') { const kind = String(url.searchParams.get('kind') || '').trim(); if (kind && !EVENT_FINDING_KINDS.includes(kind)) return json({ error: 'Filtru invalid' }, 400); const filter = kind ? `&kind=eq.${encodeURIComponent(kind)}` : ''; const response = await supabaseRequest(env, `/rest/v1/admin_event_community_findings?select=${EVENT_FINDING_COLUMNS}${filter}&order=updated_at.desc,created_at.desc`); return json({ findings: await response.json() }); }
+  assertSameOrigin(request); if (request.method === 'POST') { const item = normalizeEventFindingInput(await readJson(request, 50_000)); const response = await supabaseRequest(env, '/rest/v1/admin_event_community_findings?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201); }
+  const match = url.pathname.match(/^\/api\/admin\/event-community\/findings\/([^/?]+)$/); if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' }); const id = decodeURIComponent(match[1]);
+  if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_event_community_findings?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+  if (request.method === 'PATCH') { const currentResponse = await supabaseRequest(env, `/rest/v1/admin_event_community_findings?id=eq.${encodeURIComponent(id)}&select=${EVENT_FINDING_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Finding not found' }, 404); const item = normalizeEventFindingInput({ ...current, ...await readJson(request, 50_000), id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_event_community_findings?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+
+async function handleKnowledgeCandidates(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET') { const target = String(url.searchParams.get('target') || '').trim(); const status = String(url.searchParams.get('status') || '').trim(); if ((target && !KNOWLEDGE_CANDIDATE_TARGETS.includes(target)) || (status && !KNOWLEDGE_CANDIDATE_STATUSES.includes(status))) return json({ error: 'Filtru invalid' }, 400); const filter = `${target ? `&target=eq.${encodeURIComponent(target)}` : ''}${status ? `&status=eq.${encodeURIComponent(status)}` : ''}`; const response = await supabaseRequest(env, `/rest/v1/admin_knowledge_candidates?select=${KNOWLEDGE_CANDIDATE_COLUMNS}${filter}&order=updated_at.desc,created_at.desc`); return json({ candidates: await response.json() }); }
+  assertSameOrigin(request); if (request.method === 'POST') { const item = normalizeKnowledgeCandidateInput(await readJson(request, 50_000)); const response = await supabaseRequest(env, '/rest/v1/admin_knowledge_candidates?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201); }
+  const match = url.pathname.match(/^\/api\/admin\/knowledge-candidates\/([^/?]+)$/); if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' }); const id = decodeURIComponent(match[1]);
+  if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_knowledge_candidates?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+  if (request.method === 'PATCH') { const currentResponse = await supabaseRequest(env, `/rest/v1/admin_knowledge_candidates?id=eq.${encodeURIComponent(id)}&select=${KNOWLEDGE_CANDIDATE_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Candidate not found' }, 404); const item = normalizeKnowledgeCandidateInput({ ...current, ...await readJson(request, 50_000), id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_knowledge_candidates?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
 }
 
 async function handleAdminTasks(request, env) {
@@ -824,6 +886,9 @@ async function handleApi(request, env, pathname) {
   });
   if (pathname.startsWith('/api/auth/')) return handleAuth(request, env, pathname);
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
+  if (pathname === '/api/admin/content-lab/ideas' || pathname.startsWith('/api/admin/content-lab/ideas/')) return handleContentLabIdeas(request, env);
+  if (pathname === '/api/admin/event-community/findings' || pathname.startsWith('/api/admin/event-community/findings/')) return handleEventCommunityFindings(request, env);
+  if (pathname === '/api/admin/knowledge-candidates' || pathname.startsWith('/api/admin/knowledge-candidates/')) return handleKnowledgeCandidates(request, env);
   if (pathname === '/api/admin/crm' || pathname.startsWith('/api/admin/crm/')) return handleAdminCrm(request, env);
   if (pathname === '/api/admin/monthly-report' || pathname.startsWith('/api/admin/monthly-report/')) return handleAdminMonthlyReport(request, env);
   if (pathname === '/api/admin/activity-observations' || pathname.startsWith('/api/admin/activity-observations/')) return handleActivityObservations(request, env);

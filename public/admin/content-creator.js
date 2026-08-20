@@ -129,6 +129,13 @@
   const MIN_CAROUSEL_SLIDES = 3;
   const DEFAULT_CAROUSEL_SLIDES = 5;
   const MAX_CAROUSEL_SLIDES = 10;
+  const contentLabIdeaTypes = [
+    ['growth_story', 'Growth story'],
+    ['behind_the_scenes', 'Behind the scenes'],
+    ['authority_expertise', 'Authority / expertise'],
+    ['reusable_insight', 'Insight reutilizabil']
+  ];
+  const contentLabStatuses = [['active', 'Activă'], ['archived', 'Arhivată']];
 
   function carouselSlideCount() {
     return Math.max(MIN_CAROUSEL_SLIDES, Math.min(MAX_CAROUSEL_SLIDES, state.carouselSlides?.length || DEFAULT_CAROUSEL_SLIDES));
@@ -407,6 +414,9 @@ Ce vă place să descoperiți împreună?`;
   let frozenComposedSlides = [];
   let carouselVersions = [];
   let carouselDrafts = [];
+  let contentLabIdeas = [];
+  let contentLabIdeasLoaded = false;
+  let contentLabIdeasRequest = null;
   let draftPersistTimer = null;
   let versionBusy = false;
   let versionMessage = '';
@@ -797,6 +807,7 @@ Ce vă place să descoperiți împreună?`;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     if (touchContent) scheduleDraftPersistence();
   };
+  const api = (url, options) => fetch(url, { credentials: 'same-origin', ...options });
   const contentRouteIsActive = () => new URLSearchParams(window.location.search).get('view') === 'content';
   const safe = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' })[character]);
 
@@ -1100,6 +1111,31 @@ Ce vă place să descoperiți împreună?`;
     }
   ];
 
+  function contentLabIdeaTypeLabel(type) { return contentLabIdeaTypes.find(item => item[0] === type)?.[1] || type; }
+  function contentLabIdeasSection() {
+    const cards = contentLabIdeasLoaded
+      ? (contentLabIdeas.length ? `<div class="cc-content-lab-idea-list">${contentLabIdeas.map(idea => `<article><div><small>${safe(contentLabIdeaTypeLabel(idea.idea_type))} · ${idea.status === 'archived' ? 'ARHIVATĂ' : 'ACTIVĂ'}</small>${idea.title ? `<h3>${safe(idea.title)}</h3>` : ''}<p>${safe(idea.core_thought)}</p><time>${safe(String(idea.updated_at || idea.created_at || '').slice(0, 10))}</time></div><div class="cc-content-lab-idea-actions"><button type="button" class="cc-back" data-cc-edit-idea="${safe(idea.id)}">Editează</button><button type="button" class="cc-back" data-cc-delete-idea="${safe(idea.id)}">Șterge</button></div></article>`).join('')}</div>` : '<div class="cc-empty-state"><strong>Nu ai încă idei salvate.</strong><p>Adaugă o idee manuală ca să devină disponibilă și pe alte dispozitive.</p></div>')
+      : '<div class="cc-empty-state"><strong>Se încarcă ideile salvate…</strong></div>';
+    return `<section class="cc-content-lab-ideas"><header class="cc-section-title"><div><small>CONTENT LAB · IDEI PERSISTENTE</small><h3>Ideile mele</h3></div><button type="button" class="cc-primary" data-cc-add-idea>＋ Adaugă idee</button></header><form class="cc-content-lab-form is-hidden" data-cc-idea-form><label>Tipul ideii<select name="idea_type" required>${contentLabIdeaTypes.map(([value,label]) => `<option value="${value}">${label}</option>`).join('')}</select></label><label>Status<select name="status">${contentLabStatuses.map(([value,label]) => `<option value="${value}">${label}</option>`).join('')}</select></label><label class="is-wide">Titlu opțional<input name="title" maxlength="500" placeholder="Un nume scurt pentru idee"></label><label class="is-wide">Ideea<textarea name="core_thought" maxlength="10000" required placeholder="Scrie ideea în forma în care vrei să o păstrezi."></textarea></label><div class="is-wide cc-content-lab-form-actions"><button type="submit" class="cc-primary">Salvează ideea</button><button type="button" class="cc-back" data-cc-cancel-idea>Anulează</button><span data-cc-idea-message></span></div></form>${cards}</section>`;
+  }
+
+  async function loadContentLabIdeas(renderAfter = false) {
+    if (contentLabIdeasLoaded) return;
+    if (contentLabIdeasRequest) return contentLabIdeasRequest;
+    contentLabIdeasRequest = api('/api/admin/content-lab/ideas').then(async response => {
+      if (!response.ok) throw new Error('Content Lab ideas unavailable');
+      const payload = await response.json(); contentLabIdeas = Array.isArray(payload.ideas) ? payload.ideas : []; contentLabIdeasLoaded = true;
+      const migrationKey = 'becky-content-lab-ideas-migrated-v1';
+      if (!localStorage.getItem(migrationKey)) {
+        const legacy = (state.savedIdeas || []).filter(item => contentLabIdeaTypes.some(([type]) => type === item?.idea_type) && String(item?.core_thought || item?.text || '').trim());
+        for (const item of legacy) { const migrated = await api('/api/admin/content-lab/ideas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id: item.id || undefined, idea_type: item.idea_type, title: item.title || '', core_thought: item.core_thought || item.text, status: item.status === 'archived' ? 'archived' : 'active' }) }); if (migrated.ok) contentLabIdeas.push(await migrated.json()); }
+        localStorage.setItem(migrationKey, '1');
+      }
+      if (renderAfter && contentRouteIsActive()) render(true);
+    }).catch(() => { contentLabIdeasLoaded = true; if (renderAfter && contentRouteIsActive()) render(true); }).finally(() => { contentLabIdeasRequest = null; });
+    return contentLabIdeasRequest;
+  }
+
   function ideasView() {
     const ideaBranches = [
       ['prepared', 'Carduri pregătite pentru generare', 'Deschizi structuri aprobate, cu text, concluzie și caption deja stabilite.'],
@@ -1130,7 +1166,7 @@ Ce vă place să descoperiți împreună?`;
     if (selectedBranch) {
       return `<main class="cc-os-page"><button type="button" class="cc-detail-back" data-cc-ideas-back>← Schimbă perspectiva</button><header class="cc-page-intro"><div><small>${suggestions[state.ideaBranch].length} IDEI PREGĂTITE</small><h2>${safe(selectedBranch[1])}</h2><p>Alege una. Construim imediat situația, pașii legați și CTA-ul — fără să mai scrii tu brief-ul.</p></div></header><div class="cc-suggestion-grid">${suggestions[state.ideaBranch].map((idea, index) => `<article><small>PROPUNEREA ${index + 1}</small><h3>${safe(idea.hook)}</h3><p>${safe(idea.value)}</p><button type="button" class="cc-primary" data-cc-use-idea="${index}" data-cc-idea-context="${safe(idea.context)}">✦ Construiește carouselul</button></article>`).join('')}</div></main>`;
     }
-    return `<main class="cc-os-page"><header class="cc-page-intro"><div><small>IDEI</small><h2>Ce fel de idee să-ți aduc?</h2><p>Nu trebuie să scrii nimic. Alege doar o zonă, iar Content Director îți oferă subiecte concrete și utile.</p></div></header><div class="cc-idea-grid">${ideaBranches.map(([key, title, description]) => `<button type="button" data-cc-idea-branch="${key}"><span>✦</span><strong>${title}</strong><p>${description}</p><b>Arată-mi ideile →</b></button>`).join('')}</div></main>`;
+    return `<main class="cc-os-page"><header class="cc-page-intro"><div><small>IDEI</small><h2>Ce fel de idee să-ți aduc?</h2><p>Nu trebuie să scrii nimic. Alege doar o zonă, iar Content Director îți oferă subiecte concrete și utile.</p></div></header>${contentLabIdeasSection()}<div class="cc-idea-grid">${ideaBranches.map(([key, title, description]) => `<button type="button" data-cc-idea-branch="${key}"><span>✦</span><strong>${title}</strong><p>${description}</p><b>Arată-mi ideile →</b></button>`).join('')}</div></main>`;
   }
 
   function curatedIdeaPlan(branch, index) {
@@ -2583,6 +2619,13 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       save(false);
       render();
     });
+    const ideaForm = demo.querySelector('[data-cc-idea-form]');
+    const resetIdeaForm = () => { if (!ideaForm) return; ideaForm.reset(); ideaForm.dataset.editId = ''; ideaForm.querySelector('[data-cc-idea-message]').textContent = ''; };
+    demo.querySelector('[data-cc-add-idea]')?.addEventListener('click', () => { resetIdeaForm(); ideaForm?.classList.remove('is-hidden'); ideaForm?.querySelector('[name="core_thought"]')?.focus(); });
+    demo.querySelector('[data-cc-cancel-idea]')?.addEventListener('click', () => { ideaForm?.classList.add('is-hidden'); resetIdeaForm(); });
+    demo.querySelectorAll('[data-cc-edit-idea]').forEach(button => button.addEventListener('click', () => { const idea = contentLabIdeas.find(item => item.id === button.dataset.ccEditIdea); if (!ideaForm || !idea) return; ideaForm.dataset.editId = idea.id; ideaForm.querySelector('[name="idea_type"]').value = idea.idea_type; ideaForm.querySelector('[name="status"]').value = idea.status; ideaForm.querySelector('[name="title"]').value = idea.title || ''; ideaForm.querySelector('[name="core_thought"]').value = idea.core_thought || ''; ideaForm.querySelector('[data-cc-idea-message]').textContent = ''; ideaForm.classList.remove('is-hidden'); ideaForm.querySelector('[name="core_thought"]').focus(); }));
+    demo.querySelectorAll('[data-cc-delete-idea]').forEach(button => button.addEventListener('click', async () => { if (!window.confirm('Ștergi această idee?')) return; const response = await api(`/api/admin/content-lab/ideas/${encodeURIComponent(button.dataset.ccDeleteIdea)}`, { method:'DELETE' }); if (!response.ok) return; contentLabIdeas = contentLabIdeas.filter(item => item.id !== button.dataset.ccDeleteIdea); render(true); }));
+    ideaForm?.addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const message = form.querySelector('[data-cc-idea-message]'); const payload = { idea_type: form.querySelector('[name="idea_type"]').value, status: form.querySelector('[name="status"]').value, title: form.querySelector('[name="title"]').value, core_thought: form.querySelector('[name="core_thought"]').value }; const editId = form.dataset.editId; const response = await api(editId ? `/api/admin/content-lab/ideas/${encodeURIComponent(editId)}` : '/api/admin/content-lab/ideas', { method: editId ? 'PATCH' : 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }); if (!response.ok) { message.textContent = 'Nu am putut salva ideea.'; return; } const savedIdea = await response.json(); contentLabIdeas = editId ? contentLabIdeas.map(item => item.id === editId ? savedIdea : item) : [savedIdea, ...contentLabIdeas]; contentLabIdeasLoaded = true; render(true); });
     demo.querySelectorAll('[data-cc-use-idea]').forEach(button => button.addEventListener('click', async () => {
       const branch = state.ideaBranch;
       const ideaIndex = Number(button.dataset.ccUseIdea);
@@ -3071,6 +3114,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       state.contentView = 'home';
       save(false);
     }
+    if (!contentLabIdeasLoaded) loadContentLabIdeas(true);
     render(Boolean(options.preserveScroll));
   };
 })();
