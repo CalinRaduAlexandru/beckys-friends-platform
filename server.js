@@ -17,6 +17,7 @@ const ADMIN_TASKS_FILE = path.join(ROOT, 'data', 'admin-tasks.json');
 const ADMIN_CALENDAR_FILE = path.join(ROOT, 'data', 'admin-calendar.json');
 const ADMIN_CRM_FILE = path.join(ROOT, 'data', 'admin-crm.json');
 const ADMIN_MONTHLY_REPORT_FILE = path.join(ROOT, 'data', 'admin-monthly-report.json');
+const ADMIN_ACTIVITY_OBSERVATIONS_FILE = path.join(ROOT, 'data', 'admin-activity-observations.json');
 const PUBLIC = path.join(ROOT, 'public');
 
 const MONTHLY_REPORT_ROLES = [
@@ -27,20 +28,46 @@ const MONTHLY_REPORT_ROLES = [
 ];
 const MONTHLY_REPORT_SECTION_KEYS = ['scope', 'objectives', 'metrics', 'done', 'evidence', 'learned', 'next_step'];
 const MONTHLY_REPORT_STATUSES = ['În parametri', 'Necesită atenție', 'În urmă', 'Fără suficiente date'];
+const MONTHLY_REPORT_ENTRY_TYPES = ['done', 'evidence', 'learned'];
 
 function defaultMonthlyReport() {
   const now = new Date().toISOString();
-  return { month_key: '2026-08', due_date: '2026-09-02', roles: MONTHLY_REPORT_ROLES.map(([id, label], sort_order) => ({ id, label, status: 'Fără suficiente date', sections: Object.fromEntries(MONTHLY_REPORT_SECTION_KEYS.map(key => [key, ''])), sort_order, created_at: now, updated_at: now })) };
+  return { month_key: '2026-08', due_date: '2026-09-02', entries: [], roles: MONTHLY_REPORT_ROLES.map(([id, label], sort_order) => ({ id, label, status: 'Fără suficiente date', sections: Object.fromEntries(MONTHLY_REPORT_SECTION_KEYS.map(key => [key, ''])), sort_order, created_at: now, updated_at: now })) };
 }
 function readMonthlyReport() {
   try {
     const raw = fs.existsSync(ADMIN_MONTHLY_REPORT_FILE) ? JSON.parse(fs.readFileSync(ADMIN_MONTHLY_REPORT_FILE, 'utf8')) : null;
     const base = defaultMonthlyReport();
     const roles = base.roles.map(item => ({ ...item, ...(raw?.roles || []).find(role => role.id === item.id), sections: { ...item.sections, ...((raw?.roles || []).find(role => role.id === item.id)?.sections || {}) } }));
-  return { ...base, ...raw, roles: roles.map(role => ({ ...role, notes: role.notes && typeof role.notes === 'object' ? role.notes : {} })) };
+  return { ...base, ...raw, entries: Array.isArray(raw?.entries) ? raw.entries : [], roles: roles.map(role => ({ ...role, notes: role.notes && typeof role.notes === 'object' ? role.notes : {} })) };
   } catch { throw new Error('Invalid monthly report store'); }
 }
 function writeMonthlyReport(report) { fs.mkdirSync(path.dirname(ADMIN_MONTHLY_REPORT_FILE), { recursive: true }); fs.writeFileSync(ADMIN_MONTHLY_REPORT_FILE, JSON.stringify(report, null, 2)); }
+function normalizeMonthlyReportEntry(input, existing = {}, monthKey = '2026-08') {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
+  const month_key = String(input?.month_key ?? existing.month_key ?? monthKey).trim();
+  const entry_date = String(input?.entry_date ?? existing.entry_date ?? '').trim();
+  const type = String(input?.type ?? existing.type ?? '').trim();
+  const text = String(input?.text ?? existing.text ?? '').trim();
+  const role_ids = Array.isArray(input?.role_ids ?? existing.role_ids) ? [...new Set((input?.role_ids ?? existing.role_ids).map(value => String(value).trim()).filter(Boolean))] : [];
+  const source_type = input?.source_type === null ? null : String(input?.source_type ?? existing.source_type ?? '').trim() || null;
+  const source_id = input?.source_id === null ? null : String(input?.source_id ?? existing.source_id ?? '').trim() || null;
+  const validRoles = new Set(MONTHLY_REPORT_ROLES.map(([roleId]) => roleId));
+  if (!id || !/^\d{4}-\d{2}$/.test(month_key) || !/^\d{4}-\d{2}-\d{2}$/.test(entry_date) || !MONTHLY_REPORT_ENTRY_TYPES.includes(type) || !text || !role_ids.length || role_ids.some(roleId => !validRoles.has(roleId))) throw new Error('Monthly report entry invalid');
+  if (text.length > 5000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw new Error('Monthly report entry too long');
+  const now = new Date().toISOString();
+  return { id, month_key, entry_date, type, text, role_ids, source_type, source_id, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+}
+function readActivityObservations() { try { const value = fs.existsSync(ADMIN_ACTIVITY_OBSERVATIONS_FILE) ? JSON.parse(fs.readFileSync(ADMIN_ACTIVITY_OBSERVATIONS_FILE, 'utf8')) : []; return Array.isArray(value) ? value : []; } catch { throw new Error('Invalid activity observations store'); } }
+function writeActivityObservations(items) { fs.mkdirSync(path.dirname(ADMIN_ACTIVITY_OBSERVATIONS_FILE), { recursive: true }); fs.writeFileSync(ADMIN_ACTIVITY_OBSERVATIONS_FILE, JSON.stringify(items, null, 2)); }
+function normalizeActivityObservation(input, existing = {}) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim(); const activityId = String(input?.activity_id ?? existing.activity_id ?? '').trim(); const testedAt = String(input?.tested_at ?? existing.tested_at ?? '').trim();
+  const ages = Array.isArray(input?.age_categories ?? existing.age_categories) ? (input?.age_categories ?? existing.age_categories).map(String).filter(Boolean) : []; const participants = String(input?.participants ?? existing.participants ?? '').trim(); const result = String(input?.result ?? existing.result ?? '').trim();
+  const observed = String(input?.observed ?? existing.observed ?? '').trim(); const interpreted = String(input?.interpreted ?? existing.interpreted ?? '').trim(); const hypothesized = String(input?.hypothesized ?? existing.hypothesized ?? '').trim(); const action = String(input?.action ?? existing.action ?? '').trim(); const capacity = String(input?.capacity ?? existing.capacity ?? '').trim(); const behaviorObserved = input?.behavior_observed === null || input?.behavior_observed === undefined ? (existing.behavior_observed ?? null) : Boolean(input.behavior_observed); const behaviors = Array.isArray(input?.behaviors ?? existing.behaviors) ? (input?.behaviors ?? existing.behaviors).map(item => ({ label: String(item?.label || '').trim(), status: ['Da','Parțial','Nu'].includes(item?.status) ? item.status : '' })).filter(item => item.label) : [];
+  if (!id || !activityId || !/^\d{4}-\d{2}-\d{2}$/.test(testedAt) || !['Individual','2–3 copii','4–9 copii','10+ copii'].includes(participants) || !['A mers bine','Mixt','Nu a mers'].includes(result) || !observed) throw new Error('Activity observation invalid');
+  if ([...arguments].length && [observed, interpreted, hypothesized, action, capacity].some(value => value.length > 10000)) throw new Error('Activity observation too long');
+  const now = new Date().toISOString(); return { id, activity_id: activityId, tested_at: testedAt, age_categories: ages, participants, result, observed, interpreted, hypothesized, action, capacity, behavior_observed: behaviorObserved, behaviors, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+}
 
 function escapeHtml(value) {
   return value.replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' }[c]));
@@ -190,7 +217,7 @@ function calendarWeekDates(weekStart) {
 function readCrmStore() {
   try {
     const store = fs.existsSync(ADMIN_CRM_FILE) ? JSON.parse(fs.readFileSync(ADMIN_CRM_FILE, 'utf8')) : {};
-    return { children: Array.isArray(store.children) ? store.children : [], visits: Array.isArray(store.visits) ? store.visits : [] };
+    return { children: Array.isArray(store.children) ? store.children : [], visits: Array.isArray(store.visits) ? store.visits : [], observations: Array.isArray(store.observations) ? store.observations : [] };
   } catch { throw new Error('Invalid CRM store'); }
 }
 
@@ -217,6 +244,18 @@ function normalizeCrmVisit(input, existing = {}, childIds = new Set()) {
   const note = String(input?.note ?? existing.note ?? '').trim();
   if (!id || !childIds.has(childId) || !/^\d{4}-\d{2}-\d{2}$/.test(visitDate) || note.length > 500) throw new Error('CRM visit invalid');
   return { id, child_id: childId, visit_date: visitDate, note, created_at: existing.created_at || input?.created_at || new Date().toISOString() };
+}
+
+function normalizeCrmObservation(input, existing = {}, childIds = new Set(), visitMap = new Map()) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
+  const childId = String(input?.child_id ?? existing.child_id ?? '').trim();
+  const visitId = input?.visit_id === null || input?.visit_id === undefined || input?.visit_id === '' ? (existing.visit_id || null) : String(input.visit_id).trim();
+  const rawObservedAt = String(input?.observed_at ?? existing.observed_at ?? '').trim();
+  const observation = String(input?.observation ?? existing.observation ?? '').trim();
+  const observedDate = new Date(rawObservedAt);
+  if (!id || !childIds.has(childId) || (visitId && (!visitMap.has(visitId) || visitMap.get(visitId).child_id !== childId)) || Number.isNaN(observedDate.getTime()) || !observation || observation.length > 5000) throw new Error('CRM observation invalid');
+  const now = new Date().toISOString();
+  return { id, child_id: childId, visit_id: visitId, observed_at: observedDate.toISOString(), observation, created_at: existing.created_at || input?.created_at || now, updated_at: now };
 }
 
 function crmChildSummary(child, visits) {
@@ -416,9 +455,48 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/admin/monthly-report' && req.method === 'GET') {
     try { return send(res, 200, { report: readMonthlyReport() }); } catch { return send(res, 500, { error: 'Raport lunar indisponibil' }); }
   }
+  if (url.pathname === '/api/admin/monthly-report/entries' && req.method === 'GET') {
+    try {
+      const report = readMonthlyReport();
+      const monthKey = String(url.searchParams.get('month_key') || report.month_key || '2026-08');
+      const roleId = String(url.searchParams.get('role_id') || '').trim();
+      if (!/^\d{4}-\d{2}$/.test(monthKey) || (roleId && !MONTHLY_REPORT_ROLES.some(([id]) => id === roleId))) return send(res, 400, { error: 'Filtru invalid' });
+      const entries = report.entries.filter(entry => entry.month_key === monthKey && (!roleId || entry.role_ids.includes(roleId))).sort((a, b) => `${b.entry_date}${b.created_at}`.localeCompare(`${a.entry_date}${a.created_at}`));
+      return send(res, 200, { entries });
+    } catch { return send(res, 500, { error: 'Intrările raportului nu sunt disponibile' }); }
+  }
+  if (url.pathname === '/api/admin/monthly-report/entries' && req.method === 'POST') {
+    readRequestJson(req, res, 40_000, body => {
+      try { const report = readMonthlyReport(); const entry = normalizeMonthlyReportEntry(body, {}, report.month_key); report.entries.push(entry); writeMonthlyReport(report); send(res, 201, entry); } catch { send(res, 400, { error: 'Intrarea raportului este invalidă' }); }
+    });
+    return;
+  }
+  const monthlyEntryMatch = url.pathname.match(/^\/api\/admin\/monthly-report\/entries\/([^/?]+)$/);
+  if (monthlyEntryMatch && ['PATCH', 'DELETE'].includes(req.method)) {
+    const id = decodeURIComponent(monthlyEntryMatch[1]);
+    if (req.method === 'DELETE') {
+      try { const report = readMonthlyReport(); const next = report.entries.filter(entry => entry.id !== id); if (next.length === report.entries.length) return send(res, 404, { error: 'Intrarea nu a fost găsită' }); report.entries = next; writeMonthlyReport(report); return send(res, 200, { ok: true }); } catch { return send(res, 500, { error: 'Intrarea nu a putut fi ștearsă' }); }
+    }
+    readRequestJson(req, res, 40_000, body => {
+      try { const report = readMonthlyReport(); const index = report.entries.findIndex(entry => entry.id === id); if (index < 0) return send(res, 404, { error: 'Intrarea nu a fost găsită' }); report.entries[index] = normalizeMonthlyReportEntry({ ...report.entries[index], ...body, id }, report.entries[index], report.month_key); writeMonthlyReport(report); send(res, 200, report.entries[index]); } catch { send(res, 400, { error: 'Intrarea raportului este invalidă' }); }
+    });
+    return;
+  }
+  if (url.pathname === '/api/admin/activity-observations' && req.method === 'GET') {
+    try { const activityId = String(url.searchParams.get('activity_id') || '').trim(); return send(res, 200, { observations: readActivityObservations().filter(item => !activityId || item.activity_id === activityId).sort((a,b) => `${b.tested_at}${b.created_at}`.localeCompare(`${a.tested_at}${a.created_at}`)) }); } catch { return send(res, 500, { error: 'Observațiile nu sunt disponibile' }); }
+  }
+  if (url.pathname === '/api/admin/activity-observations' && req.method === 'POST') {
+    readRequestJson(req, res, 100_000, body => { try { const items = readActivityObservations(); const item = normalizeActivityObservation(body); items.push(item); writeActivityObservations(items); send(res, 201, item); } catch { send(res, 400, { error: 'Testarea este invalidă' }); } }); return;
+  }
+  const observationMatch = url.pathname.match(/^\/api\/admin\/activity-observations\/([^/?]+)$/);
+  if (observationMatch && ['PATCH', 'DELETE'].includes(req.method)) {
+    const id = decodeURIComponent(observationMatch[1]);
+    if (req.method === 'DELETE') { try { const items = readActivityObservations(); const next = items.filter(item => item.id !== id); if (next.length === items.length) return send(res, 404, { error: 'Testarea nu a fost găsită' }); writeActivityObservations(next); return send(res, 200, { ok: true }); } catch { return send(res, 500, { error: 'Testarea nu a putut fi ștearsă' }); } }
+    readRequestJson(req, res, 100_000, body => { try { const items = readActivityObservations(); const index = items.findIndex(item => item.id === id); if (index < 0) return send(res, 404, { error: 'Testarea nu a fost găsită' }); items[index] = normalizeActivityObservation({ ...items[index], ...body, id }, items[index]); writeActivityObservations(items); send(res, 200, items[index]); } catch { send(res, 400, { error: 'Testarea este invalidă' }); } }); return;
+  }
   if (url.pathname === '/api/admin/monthly-report/notes' && req.method === 'PATCH') {
-    readRequestJson(req, res, 20_000, body => {
-      try { const report = readMonthlyReport(); const date = String(body?.date || ''); const text = String(body?.text || '').trim(); if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || text.length > 5000) throw new Error(); report.notes = report.notes && typeof report.notes === 'object' ? report.notes : {}; if (text) report.notes[date] = text; else delete report.notes[date]; writeMonthlyReport(report); send(res, 200, { notes: report.notes }); } catch { send(res, 400, { error: 'Notă invalidă' }); }
+    readRequestJson(req, res, 1_000_000, body => {
+      try { const report = readMonthlyReport(); const date = String(body?.date || ''); const text = String(body?.text || '').trim(); if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error(); report.notes = report.notes && typeof report.notes === 'object' ? report.notes : {}; if (text) report.notes[date] = text; else delete report.notes[date]; writeMonthlyReport(report); send(res, 200, { notes: report.notes }); } catch { send(res, 400, { error: 'Notă invalidă' }); }
     });
     return;
   }
@@ -433,7 +511,6 @@ const server = http.createServer((req, res) => {
           const date = String(body.note.date || '');
           if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Data invalidă');
           const text = String(body.note.text || '').trim();
-          if (text.length > 5000) throw new Error('Notă prea lungă');
           role.notes = role.notes && typeof role.notes === 'object' ? role.notes : {};
           if (text) role.notes[date] = text; else delete role.notes[date];
         }
@@ -473,6 +550,53 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  const crmObservationListMatch = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)\/observations$/);
+  if (crmObservationListMatch && req.method === 'GET') {
+    try {
+      const store = readCrmStore();
+      const childId = decodeURIComponent(crmObservationListMatch[1]);
+      if (!store.children.some(child => child.id === childId)) return send(res, 404, { error: 'Copilul nu a fost găsit' });
+      return send(res, 200, { observations: store.observations.filter(item => item.child_id === childId).sort((a, b) => String(b.observed_at).localeCompare(String(a.observed_at)) || String(b.created_at).localeCompare(String(a.created_at))) });
+    } catch { return send(res, 500, { error: 'Observațiile nu sunt disponibile' }); }
+  }
+  if (crmObservationListMatch && req.method === 'POST') {
+    readRequestJson(req, res, 40_000, body => {
+      try {
+        const store = readCrmStore();
+        const childId = decodeURIComponent(crmObservationListMatch[1]);
+        const observation = normalizeCrmObservation({ ...body, child_id: childId }, {}, new Set(store.children.map(child => child.id)), new Map(store.visits.map(visit => [visit.id, visit])));
+        store.observations.push(observation);
+        writeCrmStore(store);
+        send(res, 201, observation);
+      } catch { send(res, 400, { error: 'Observația este invalidă' }); }
+    });
+    return;
+  }
+  const crmObservationMatch = url.pathname.match(/^\/api\/admin\/crm\/observations\/([^/?]+)$/);
+  if (crmObservationMatch && ['PATCH', 'DELETE'].includes(req.method)) {
+    const id = decodeURIComponent(crmObservationMatch[1]);
+    if (req.method === 'DELETE') {
+      try {
+        const store = readCrmStore();
+        const next = store.observations.filter(item => item.id !== id);
+        if (next.length === store.observations.length) return send(res, 404, { error: 'Observația nu a fost găsită' });
+        store.observations = next;
+        writeCrmStore(store);
+        return send(res, 200, { ok: true });
+      } catch { return send(res, 500, { error: 'Observația nu a putut fi ștearsă' }); }
+    }
+    readRequestJson(req, res, 40_000, body => {
+      try {
+        const store = readCrmStore();
+        const index = store.observations.findIndex(item => item.id === id);
+        if (index < 0) return send(res, 404, { error: 'Observația nu a fost găsită' });
+        store.observations[index] = normalizeCrmObservation({ ...store.observations[index], ...body, id }, store.observations[index], new Set(store.children.map(child => child.id)), new Map(store.visits.map(visit => [visit.id, visit])));
+        writeCrmStore(store);
+        send(res, 200, store.observations[index]);
+      } catch { send(res, 400, { error: 'Observația este invalidă' }); }
+    });
+    return;
+  }
   const crmChildMatch = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)$/);
   if (crmChildMatch && req.method === 'DELETE') {
     try {
@@ -482,6 +606,7 @@ const server = http.createServer((req, res) => {
       if (nextChildren.length === store.children.length) return send(res, 404, { error: 'Copilul nu a fost găsit' });
       store.children = nextChildren;
       store.visits = store.visits.filter(visit => visit.child_id !== id);
+      store.observations = store.observations.filter(observation => observation.child_id !== id);
       writeCrmStore(store);
       return send(res, 200, { ok: true });
     } catch { return send(res, 500, { error: 'Profil indisponibil' }); }
@@ -505,7 +630,8 @@ const server = http.createServer((req, res) => {
       const child = store.children.find(item => item.id === decodeURIComponent(crmChildMatch[1]));
       if (!child) return send(res, 404, { error: 'Copilul nu a fost găsit' });
       const visits = store.visits.filter(visit => visit.child_id === child.id).sort((a, b) => b.visit_date.localeCompare(a.visit_date) || b.created_at.localeCompare(a.created_at));
-      return send(res, 200, { child: crmChildSummary(child, store.visits), visits });
+      const observations = store.observations.filter(item => item.child_id === child.id).sort((a, b) => String(b.observed_at).localeCompare(String(a.observed_at)) || String(b.created_at).localeCompare(String(a.created_at)));
+      return send(res, 200, { child: crmChildSummary(child, store.visits), visits, observations });
     } catch { return send(res, 500, { error: 'CRM unavailable' }); }
   }
   if (url.pathname === '/api/admin/calendar' && req.method === 'GET') {

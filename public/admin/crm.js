@@ -40,6 +40,27 @@
 
   function profilePlaceholder(child) { return `<div class="crm-profile-loading"><span class="crm-child-avatar">${escape(child.first_name.slice(0, 1).toUpperCase())}</span><p>Se încarcă istoricul…</p></div>`; }
 
+  const formatDateTime = value => value ? new Intl.DateTimeFormat('ro-RO', { day:'numeric', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' }).format(new Date(value)) : '—';
+  const dateTimeInputValue = value => { const date = value ? new Date(value) : new Date(); if (Number.isNaN(date.getTime())) return ''; const pad = number => String(number).padStart(2, '0'); return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`; };
+
+  function renderChildObservations(profile, demo, child, visits, observations) {
+    const section = document.createElement('section');
+    section.className = 'crm-observations';
+    section.innerHTML = `<div class="crm-section-label"><div><span class="eyebrow">MEMORIE FACTUALĂ</span><h4>Observații</h4></div><button type="button" class="crm-observation-add" data-crm-add-observation>＋ Adaugă observație</button></div><div class="crm-observation-list">${observations.map(observation => `<article class="crm-observation" data-crm-observation="${escape(observation.id)}"><div class="crm-observation-head"><time>${formatDateTime(observation.observed_at)}</time><div><button type="button" data-crm-edit-observation>Editează</button><button type="button" data-crm-delete-observation>Șterge</button></div></div><p>${escape(observation.observation)}</p>${observation.visit_id ? `<small>Vizită asociată</small>` : ''}</article>`).join('') || '<p class="crm-empty-line">Nu există încă observații.</p>'}</div>`;
+    profile.appendChild(section);
+    section.querySelector('[data-crm-add-observation]').onclick = () => openObservationModal(demo, child, visits);
+    section.querySelectorAll('[data-crm-edit-observation]').forEach(button => button.onclick = () => { const item = observations.find(observation => observation.id === button.closest('[data-crm-observation]').dataset.crmObservation); if (item) openObservationModal(demo, child, visits, item); });
+    section.querySelectorAll('[data-crm-delete-observation]').forEach(button => button.onclick = async () => { const item = observations.find(observation => observation.id === button.closest('[data-crm-observation]').dataset.crmObservation); if (!item || !window.confirm('Ștergi această observație?')) return; const response = await apiFetch(`/api/admin/crm/observations/${encodeURIComponent(item.id)}`, { method: 'DELETE' }); if (response.ok) loadProfile(demo, [child], child.id); });
+  }
+
+  function openObservationModal(demo, child, visits, observation = null) {
+    const modal = demo.querySelector('[data-crm-modal]');
+    modal.classList.remove('hidden');
+    modal.innerHTML = `<form class="crm-form-card crm-observation-form"><button type="button" class="crm-modal-close" data-crm-close>×</button><span class="eyebrow">OBSERVAȚIE FACTUALĂ</span><h3>${observation ? 'Editează observația' : 'Adaugă observație'}</h3><label>Data / momentul<input name="observed_at" type="datetime-local" value="${escape(dateTimeInputValue(observation?.observed_at))}" required></label><label>Vizită asociată <span>opțional</span><select name="visit_id"><option value="">Fără vizită asociată</option>${visits.map(visit => `<option value="${escape(visit.id)}" ${visit.id === observation?.visit_id ? 'selected' : ''}>${escape(formatDate(visit.visit_date))}</option>`).join('')}</select></label><label>Ce s-a întâmplat / ce ai observat?<textarea name="observation" maxlength="5000" required placeholder="Descrie doar ce ai observat, fără interpretări sau recomandări.">${escape(observation?.observation || '')}</textarea><div class="crm-form-actions"><button type="button" class="crm-secondary" data-crm-close>Anulează</button><button class="primary">Salvează observația</button></div></form>`;
+    modal.querySelectorAll('[data-crm-close]').forEach(button => button.onclick = () => modal.classList.add('hidden'));
+    modal.querySelector('form').onsubmit = async event => { event.preventDefault(); const form = new FormData(event.currentTarget); const id = observation?.id; const observedAt = new Date(String(form.get('observed_at') || '')); if (Number.isNaN(observedAt.getTime())) return; const response = await apiFetch(id ? `/api/admin/crm/observations/${encodeURIComponent(id)}` : `/api/admin/crm/children/${encodeURIComponent(child.id)}/observations`, { method: id ? 'PATCH' : 'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ observed_at: observedAt.toISOString(), visit_id: form.get('visit_id') || null, observation: String(form.get('observation') || '').trim() }) }); if (!response.ok) return; modal.classList.add('hidden'); loadProfile(demo, [child], child.id); };
+  }
+
   async function loadProfile(demo, children, childId) {
     const profile = demo.querySelector('[data-crm-profile]');
     const child = children.find(item => item.id === childId);
@@ -49,6 +70,7 @@
     if (!response.ok) { profile.innerHTML = '<div class="crm-profile-empty"><h3>Profil indisponibil</h3></div>'; return; }
     const payload = await response.json();
     profile.innerHTML = `<div class="crm-profile-head"><div class="crm-profile-avatar">${escape(payload.child.first_name.slice(0, 1).toUpperCase())}</div><div class="crm-profile-identity"><span class="eyebrow">PROFIL COPIL</span><h3>${escape(payload.child.first_name)}</h3><p>${payload.child.age} ${payload.child.age === 1 ? 'an' : 'ani'} · ${payload.child.visit_count} ${payload.child.visit_count === 1 ? 'vizită' : 'vizite'}</p></div><button type="button" class="crm-edit-profile" data-crm-edit-profile>Editează profilul</button></div><div class="crm-profile-meta"><div><small>INTERESE</small><strong>${escape(payload.child.interests || 'Nu au fost notate')}</strong></div><div><small>ULTIMA VIZITĂ</small><strong>${formatDate(payload.child.last_visit)}</strong></div><div class="crm-continuity-meta"><small>DE UNDE CONTINUĂM DATA VIITOARE?</small><strong>${escape(payload.child.continuity || 'Nu este notat')}</strong></div></div><div class="crm-history"><div class="crm-section-label"><span class="eyebrow">ISTORIC</span><strong>${payload.visits.length} vizite</strong></div>${payload.visits.map(visit => `<article class="crm-visit"><time>${formatDate(visit.visit_date)}</time><p>${escape(visit.note || 'Fără notă.')}</p></article>`).join('') || '<p class="crm-empty-line">Nu există încă vizite.</p>'}</div>`;
+    renderChildObservations(profile, demo, payload.child, payload.visits || [], payload.observations || []);
     profile.querySelector('[data-crm-edit-profile]').onclick = () => openChildModal(demo, children, payload.child);
     const deleteButton = document.createElement('button');
     deleteButton.type = 'button';

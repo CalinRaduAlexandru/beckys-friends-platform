@@ -98,11 +98,39 @@ const MONTHLY_REPORT_ROLES = [
 const MONTHLY_REPORT_SECTION_KEYS = ['scope', 'objectives', 'metrics', 'done', 'evidence', 'learned', 'next_step'];
 const MONTHLY_REPORT_STATUSES = ['În parametri', 'Necesită atenție', 'În urmă', 'Fără suficiente date'];
 const MONTHLY_REPORT_COLUMNS = 'id,month_key,label,status,scope,objectives,metrics,done,evidence,learned,next_step,notes,created_at,updated_at';
+const MONTHLY_REPORT_ENTRY_TYPES = ['done', 'evidence', 'learned'];
+const MONTHLY_REPORT_ENTRY_COLUMNS = 'id,month_key,entry_date,type,text,role_ids,source_type,source_id,created_at,updated_at';
+const ACTIVITY_OBSERVATION_COLUMNS = 'id,activity_id,tested_at,age_categories,participants,result,observed,interpreted,hypothesized,action,capacity,behavior_observed,behaviors,created_at,updated_at';
+const ACTIVITY_PARTICIPANTS = ['Individual', '2–3 copii', '4–9 copii', '10+ copii'];
+const ACTIVITY_RESULTS = ['A mers bine', 'Mixt', 'Nu a mers'];
+function normalizeActivityObservationInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const activity_id = String(input?.activity_id || existing.activity_id || '').trim(); const tested_at = String(input?.tested_at || existing.tested_at || '').trim(); const age_categories = Array.isArray(input?.age_categories ?? existing.age_categories) ? (input.age_categories ?? existing.age_categories).map(String) : []; const participants = String(input?.participants || existing.participants || '').trim(); const result = String(input?.result || existing.result || '').trim(); const observed = String(input?.observed ?? existing.observed ?? '').trim();
+  if (!id || !activity_id || !/^\d{4}-\d{2}-\d{2}$/.test(tested_at) || !ACTIVITY_PARTICIPANTS.includes(participants) || !ACTIVITY_RESULTS.includes(result) || !observed) throw Object.assign(new Error('Activity observation invalid'), { status: 400 });
+  const behaviors = Array.isArray(input?.behaviors ?? existing.behaviors) ? (input?.behaviors ?? existing.behaviors).map(item => ({ label: String(item?.label || '').trim(), status: ['Da','Parțial','Nu'].includes(item?.status) ? item.status : '' })).filter(item => item.label) : [];
+  return { id, activity_id, tested_at, age_categories, participants, result, observed, interpreted: String(input?.interpreted ?? existing.interpreted ?? '').trim(), hypothesized: String(input?.hypothesized ?? existing.hypothesized ?? '').trim(), action: String(input?.action ?? existing.action ?? '').trim(), capacity: String(input?.capacity ?? existing.capacity ?? '').trim(), behavior_observed: input?.behavior_observed === null || input?.behavior_observed === undefined ? (existing.behavior_observed ?? null) : Boolean(input.behavior_observed), behaviors, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+async function handleActivityObservations(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET') { const activityId = String(url.searchParams.get('activity_id') || '').trim(); const filter = activityId ? `&activity_id=eq.${encodeURIComponent(activityId)}` : ''; const response = await supabaseRequest(env, `/rest/v1/admin_activity_observations?select=${ACTIVITY_OBSERVATION_COLUMNS}${filter}&order=tested_at.desc,created_at.desc`); return json({ observations: await response.json() }); }
+  assertSameOrigin(request); const match = url.pathname.match(/^\/api\/admin\/activity-observations\/([^/?]+)$/);
+  if (request.method === 'POST') { const item = normalizeActivityObservationInput(await readJson(request, 100_000)); const response = await supabaseRequest(env, '/rest/v1/admin_activity_observations?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201); }
+  if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+  const id = decodeURIComponent(match[1]); if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+  if (request.method === 'PATCH') { const body = await readJson(request, 100_000); const currentResponse = await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}&select=${ACTIVITY_OBSERVATION_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Testarea nu a fost găsită' }, 404); const item = normalizeActivityObservationInput({ ...current, ...body, id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
 function monthlyReportDefaults() {
   const now = new Date().toISOString();
   return MONTHLY_REPORT_ROLES.map(([id, label], sort_order) => ({ id, month_key: '2026-08', label, status: 'Fără suficiente date', scope: '', objectives: '', metrics: '', done: '', evidence: '', learned: '', next_step: '', sort_order, created_at: now, updated_at: now }));
 }
 function monthlyRoleView(row) { return { id: row.id, label: row.label, status: row.status, sort_order: row.sort_order, created_at: row.created_at, updated_at: row.updated_at, notes: row.notes && typeof row.notes === 'object' ? row.notes : {}, sections: Object.fromEntries(MONTHLY_REPORT_SECTION_KEYS.map(key => [key, row[key] || ''])) }; }
+function normalizeMonthlyReportEntryInput(input, existing = {}, monthKey = '2026-08') {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const month_key = String(input?.month_key || existing.month_key || monthKey).trim(); const entry_date = String(input?.entry_date || existing.entry_date || '').trim(); const type = String(input?.type || existing.type || '').trim(); const text = String(input?.text ?? existing.text ?? '').trim(); const role_ids = Array.isArray(input?.role_ids ?? existing.role_ids) ? [...new Set((input.role_ids ?? existing.role_ids).map(String).map(value => value.trim()).filter(Boolean))] : []; const source_type = input?.source_type === null ? null : String(input?.source_type ?? existing.source_type ?? '').trim() || null; const source_id = input?.source_id === null ? null : String(input?.source_id ?? existing.source_id ?? '').trim() || null;
+  const validRoles = new Set(MONTHLY_REPORT_ROLES.map(([roleId]) => roleId));
+  if (!id || !/^\d{4}-\d{2}$/.test(month_key) || !/^\d{4}-\d{2}-\d{2}$/.test(entry_date) || !MONTHLY_REPORT_ENTRY_TYPES.includes(type) || !text || !role_ids.length || role_ids.some(roleId => !validRoles.has(roleId))) throw Object.assign(new Error('Monthly report entry invalid'), { status: 400 });
+  if (text.length > 5000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw Object.assign(new Error('Monthly report entry too long'), { status: 400 });
+  return { id, month_key, entry_date, type, text, role_ids, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
 async function handleAdminMonthlyReport(request, env) {
   await requireAdmin(request, env);
   const url = new URL(request.url);
@@ -113,13 +141,29 @@ async function handleAdminMonthlyReport(request, env) {
     return json({ report: { month_key: '2026-08', due_date: '2026-09-02', notes: Object.fromEntries(noteRows.map(row => [row.note_date, row.note])), roles: monthlyReportDefaults().map(def => monthlyRoleView(byId.get(def.id) || def)) } });
   }
   if (request.method === 'PATCH' && url.pathname === '/api/admin/monthly-report/notes') {
-    const body = await readJson(request, 20_000); const date = String(body?.date || '').trim(); const text = String(body?.text || '').trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || text.length > 5000) return json({ error: 'Notă invalidă' }, 400);
+    const body = await readJson(request, 200_000); const date = String(body?.date || '').trim(); const text = String(body?.text || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: 'Notă invalidă' }, 400);
     if (text) await supabaseRequest(env, '/rest/v1/admin_monthly_report_notes?on_conflict=note_date', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify({ note_date: date, note: text, updated_at: new Date().toISOString() }) });
     else await supabaseRequest(env, `/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(date)}`, { method: 'DELETE' });
     return json({ ok: true });
   }
+  if (request.method === 'GET' && url.pathname === '/api/admin/monthly-report/entries') {
+    const monthKey = String(url.searchParams.get('month_key') || '2026-08').trim(); const roleId = String(url.searchParams.get('role_id') || '').trim();
+    if (!/^\d{4}-\d{2}$/.test(monthKey) || (roleId && !MONTHLY_REPORT_ROLES.some(([id]) => id === roleId))) return json({ error: 'Filtru invalid' }, 400);
+    const response = await supabaseRequest(env, `/rest/v1/admin_monthly_report_entries?select=${MONTHLY_REPORT_ENTRY_COLUMNS}&month_key=eq.${encodeURIComponent(monthKey)}&order=entry_date.desc,created_at.desc`); let entries = await response.json();
+    if (roleId) entries = entries.filter(entry => Array.isArray(entry.role_ids) && entry.role_ids.includes(roleId));
+    return json({ entries });
+  }
   assertSameOrigin(request);
+  const monthlyEntryMatch = url.pathname.match(/^\/api\/admin\/monthly-report\/entries\/([^/?]+)$/);
+  if (request.method === 'POST' && url.pathname === '/api/admin/monthly-report/entries') {
+    const item = normalizeMonthlyReportEntryInput(await readJson(request, 40_000)); const response = await supabaseRequest(env, '/rest/v1/admin_monthly_report_entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201);
+  }
+  if (monthlyEntryMatch && ['PATCH', 'DELETE'].includes(request.method)) {
+    const id = decodeURIComponent(monthlyEntryMatch[1]);
+    if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_monthly_report_entries?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+    const currentResponse = await supabaseRequest(env, `/rest/v1/admin_monthly_report_entries?id=eq.${encodeURIComponent(id)}&select=${MONTHLY_REPORT_ENTRY_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Intrarea nu a fost găsită' }, 404); const item = normalizeMonthlyReportEntryInput({ ...current, ...await readJson(request, 40_000), id }, current, current.month_key); const response = await supabaseRequest(env, `/rest/v1/admin_monthly_report_entries?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]);
+  }
   const match = url.pathname.match(/^\/api\/admin\/monthly-report\/roles\/([^/?]+)$/);
   if (request.method === 'PATCH' && match) {
     const id = decodeURIComponent(match[1]);
@@ -194,6 +238,7 @@ async function handleAdminTasks(request, env) {
 
 const CRM_CHILD_COLUMNS = 'id,first_name,age,interests,continuity,created_at,updated_at';
 const CRM_VISIT_COLUMNS = 'id,child_id,visit_date,note,created_at';
+const CRM_OBSERVATION_COLUMNS = 'id,child_id,visit_id,observed_at,observation,created_at,updated_at';
 
 async function handleAdminCrm(request, env) {
   await requireAdmin(request, env);
@@ -223,6 +268,45 @@ async function handleAdminCrm(request, env) {
     const response = await supabaseRequest(env, '/rest/v1/crm_visits?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(visit) });
     return json((await response.json())[0], 201);
   }
+  const observationListMatch = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)\/observations$/);
+  if (request.method === 'GET' && observationListMatch) {
+    const childId = decodeURIComponent(observationListMatch[1]);
+    const response = await supabaseRequest(env, `/rest/v1/crm_child_observations?child_id=eq.${encodeURIComponent(childId)}&select=${CRM_OBSERVATION_COLUMNS}&order=observed_at.desc,created_at.desc`);
+    return json({ observations: await response.json() });
+  }
+  if (request.method === 'POST' && observationListMatch) {
+    const childId = decodeURIComponent(observationListMatch[1]);
+    const body = await readJson(request, 40_000);
+    const childResponse = await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(childId)}&select=id`);
+    if (!(await childResponse.json()).length) return json({ error: 'Copilul nu a fost găsit' }, 404);
+    const observation = normalizeCrmObservationInput({ ...body, child_id: childId });
+    if (observation.visit_id) {
+      const visitResponse = await supabaseRequest(env, `/rest/v1/crm_visits?id=eq.${encodeURIComponent(observation.visit_id)}&child_id=eq.${encodeURIComponent(childId)}&select=id`);
+      if (!(await visitResponse.json()).length) return json({ error: 'Vizita asociată nu a fost găsită' }, 400);
+    }
+    const response = await supabaseRequest(env, '/rest/v1/crm_child_observations?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(observation) });
+    return json((await response.json())[0], 201);
+  }
+  const observationMatch = url.pathname.match(/^\/api\/admin\/crm\/observations\/([^/?]+)$/);
+  if (observationMatch && request.method === 'DELETE') {
+    await supabaseRequest(env, `/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(decodeURIComponent(observationMatch[1]))}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  if (observationMatch && request.method === 'PATCH') {
+    const id = decodeURIComponent(observationMatch[1]);
+    const body = await readJson(request, 40_000);
+    const currentResponse = await supabaseRequest(env, `/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(id)}&select=${CRM_OBSERVATION_COLUMNS}`);
+    const current = (await currentResponse.json())[0];
+    if (!current) return json({ error: 'Observația nu a fost găsită' }, 404);
+    const observation = normalizeCrmObservationInput({ ...current, ...body, id }, current);
+    if (observation.visit_id) {
+      const visitResponse = await supabaseRequest(env, `/rest/v1/crm_visits?id=eq.${encodeURIComponent(observation.visit_id)}&child_id=eq.${encodeURIComponent(observation.child_id)}&select=id`);
+      if (!(await visitResponse.json()).length) return json({ error: 'Vizita asociată nu a fost găsită' }, 400);
+    }
+    const response = await supabaseRequest(env, `/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(observation) });
+    const rows = await response.json();
+    return json(rows[0] || { error: 'Observația nu a fost găsită' }, rows.length ? 200 : 404);
+  }
   const match = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)$/);
   if (request.method === 'DELETE' && match) {
     const id = decodeURIComponent(match[1]);
@@ -247,7 +331,8 @@ async function handleAdminCrm(request, env) {
     const child = (await childResponse.json())[0];
     if (!child) return json({ error: 'Copilul nu a fost găsit' }, 404);
     const visits = await visitsResponse.json();
-    return json({ child: crmChildSummary(child, visits), visits });
+    const observationsResponse = await supabaseRequest(env, `/rest/v1/crm_child_observations?child_id=eq.${encodeURIComponent(id)}&select=${CRM_OBSERVATION_COLUMNS}&order=observed_at.desc,created_at.desc`);
+    return json({ child: crmChildSummary(child, visits), visits, observations: await observationsResponse.json() });
   }
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
 }
@@ -268,6 +353,16 @@ function normalizeCrmVisitInput(input, childId) {
   const note = String(input?.note || '').trim();
   if (!id || !childId || !/^\d{4}-\d{2}-\d{2}$/.test(visit_date) || note.length > 500) throw Object.assign(new Error('CRM visit invalid'), { status: 400 });
   return { id, child_id: childId, visit_date, note };
+}
+
+function normalizeCrmObservationInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim();
+  const child_id = String(input?.child_id || existing.child_id || '').trim();
+  const visit_id = input?.visit_id === null || input?.visit_id === undefined || input?.visit_id === '' ? (existing.visit_id || null) : String(input.visit_id).trim();
+  const observedAt = new Date(String(input?.observed_at || existing.observed_at || '').trim());
+  const observation = String(input?.observation ?? existing.observation ?? '').trim();
+  if (!id || !child_id || Number.isNaN(observedAt.getTime()) || !observation || observation.length > 5000) throw Object.assign(new Error('CRM observation invalid'), { status: 400 });
+  return { id, child_id, visit_id, observed_at: observedAt.toISOString(), observation, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
 }
 
 function crmChildSummary(child, visits) {
@@ -731,6 +826,7 @@ async function handleApi(request, env, pathname) {
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
   if (pathname === '/api/admin/crm' || pathname.startsWith('/api/admin/crm/')) return handleAdminCrm(request, env);
   if (pathname === '/api/admin/monthly-report' || pathname.startsWith('/api/admin/monthly-report/')) return handleAdminMonthlyReport(request, env);
+  if (pathname === '/api/admin/activity-observations' || pathname.startsWith('/api/admin/activity-observations/')) return handleActivityObservations(request, env);
   if (pathname === '/api/admin/calendar' || pathname.startsWith('/api/admin/calendar/')) return handleAdminCalendar(request, env);
   if (pathname === '/api/event-survey/results') return handleSurveyResults(request, env);
   if (pathname === '/api/event-survey/funnel') return handleSurveyFunnel(request, env);
