@@ -22,6 +22,7 @@ const ADMIN_CONTENT_LAB_IDEAS_FILE = path.join(ROOT, 'data', 'admin-content-lab-
 const ADMIN_EVENT_FINDINGS_FILE = path.join(ROOT, 'data', 'admin-event-community-findings.json');
 const ADMIN_KNOWLEDGE_CANDIDATES_FILE = path.join(ROOT, 'data', 'admin-knowledge-candidates.json');
 const ADMIN_BECKY_INBOX_FILE = process.env.BECKY_INBOX_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-inbox-proposals.json');
+const ADMIN_BECKY_BRIEF_FILE = process.env.BECKY_BRIEF_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-brief.json');
 const PUBLIC = path.join(ROOT, 'public');
 const beckyInboxCorePromise = import('./src/becky-inbox/core.mjs');
 const beckyInboxAnalyzePromise = import('./src/becky-inbox/analyze.mjs');
@@ -60,6 +61,8 @@ function readJsonStore(file, label) { try { const value = fs.existsSync(file) ? 
 function writeJsonStore(file, items) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(items, null, 2)); }
 function readBeckyInbox() { return readJsonStore(ADMIN_BECKY_INBOX_FILE, 'Becky Inbox'); }
 function writeBeckyInbox(items) { writeJsonStore(ADMIN_BECKY_INBOX_FILE, items); }
+function readBeckyBrief() { return readJsonStore(ADMIN_BECKY_BRIEF_FILE, 'Becky Brief'); }
+function writeBeckyBrief(items) { writeJsonStore(ADMIN_BECKY_BRIEF_FILE, items); }
 function localBeckyContext() {
   const crm = readCrmStore(); const workspaces = readWorkspaces(); const childrenWorkspace = (workspaces.workspaces || []).find(item => item.id === 'children');
   const activities = (childrenWorkspace?.activities || []).filter(item => item?.id && item?.title && item.title !== 'Activitate nouă').map(item => ({ id:item.id, title:item.title, age_categories:Array.isArray(item.ageCategories) ? item.ageCategories : item.age ? [item.age] : [] }));
@@ -437,6 +440,7 @@ async function buildLocalProposals(noteDate, noteText, rawProposals) {
   }
   writeBeckyInbox(existing); return { proposals:created, source_hash:sourceHash };
 }
+async function buildLocalBrief(noteDate,noteText,rawInsights,proposals){const core=await beckyInboxCorePromise;const sourceHash=await core.sha256(noteText);const existing=readBeckyBrief();const persisted=existing.filter(item=>item.source_type==='daily_note'&&item.source_id===noteDate&&item.source_hash===sourceHash);if(persisted.length)return persisted.sort((a,b)=>b.rank_score-a.rank_score);const selected=core.selectBriefInsights(rawInsights,{note_text:noteText,proposals});const now=new Date().toISOString();const created=selected.map((item,index)=>({id:crypto.randomUUID(),source_type:'daily_note',source_id:noteDate,source_version:sourceHash,source_hash:sourceHash,...item,sort_order:index,created_at:now,updated_at:now}));writeBeckyBrief([...existing,...created]);return created;}
 async function updateLocalProposal(id, body) {
   const core = await beckyInboxCorePromise; const items = readBeckyInbox(); const index = items.findIndex(item => item.id === id); if (index < 0) throw Object.assign(new Error('Propunerea nu a fost găsită'), { status:404 }); const current = items[index]; if (current.status === 'approved' || current.status === 'ignored') throw Object.assign(new Error('Propunerea nu mai poate fi editată'), { status:409 });
   const context = localBeckyContext(); const next = { ...current, payload:{ ...current.payload, ...(body?.payload && typeof body.payload === 'object' ? body.payload : {}) }, updated_at:new Date().toISOString(), status:'pending', last_error:null };
@@ -486,14 +490,15 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/manual') return send(res, 200, readDocument());
   if (req.method === 'GET' && url.pathname === '/api/styles') return send(res, 200, { css: fs.existsSync(CSS_FILE) ? fs.readFileSync(CSS_FILE, 'utf8') : '' });
   if (req.method === 'GET' && url.pathname === '/api/workspaces') return send(res, 200, readWorkspaces());
+  if (url.pathname === '/api/admin/becky-inbox/brief' && req.method === 'GET') { try { const core=await beckyInboxCorePromise;const report=readMonthlyReport();const sourceId=String(url.searchParams.get('source_id')||'');const sourceVersion=String(url.searchParams.get('source_version')||'');let insights=readBeckyBrief().filter(item=>(!sourceId||item.source_id===sourceId)&&(!sourceVersion||item.source_version===sourceVersion));const hashes=new Map();for(const item of insights){if(item.source_type==='daily_note'&&!hashes.has(item.source_id))hashes.set(item.source_id,await core.sha256(String(report.notes?.[item.source_id]||'')));}insights=insights.map(item=>({...item,stale:item.source_type==='daily_note'&&hashes.get(item.source_id)!==item.source_hash})).sort((a,b)=>(a.sort_order??99)-(b.sort_order??99)||String(b.created_at).localeCompare(String(a.created_at)));return send(res,200,{insights}); } catch(error){return send(res,500,{error:error.message||'Becky Brief indisponibil'});}}
   if (url.pathname === '/api/admin/becky-inbox/context' && req.method === 'GET') return send(res, 200, localBeckyContext());
   if (url.pathname === '/api/admin/becky-inbox/proposals' && req.method === 'GET') {
     try { const core=await beckyInboxCorePromise; const report=readMonthlyReport(); const destination=String(url.searchParams.get('destination')||''); const status=String(url.searchParams.get('status')||''); const sourceId=String(url.searchParams.get('source_id')||''); let items=readBeckyInbox().filter(item=>(!destination||item.destination===destination)&&(!status||item.status===status)&&(!sourceId||item.source_id===sourceId)); const hashes=new Map(); for(const item of items){if(item.source_type==='daily_note'&&!hashes.has(item.source_id))hashes.set(item.source_id,await core.sha256(String(report.notes?.[item.source_id]||'')));} items=items.map(item=>({...item,resolution_status:item.resolution_status||(item.destination==='monthly_report_entry'||item.target_entity_id?'resolved':(item.target_candidates||[]).length>1?'ambiguous':'not_found'),stale:item.source_type==='daily_note'&&hashes.get(item.source_id)!==item.source_hash})).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at))); return send(res,200,{proposals:items}); } catch(error){return send(res,500,{error:error.message||'Becky Inbox indisponibil'});}
   }
   if (url.pathname === '/api/admin/becky-inbox/analyze' && req.method === 'POST') {
     try { const body=await readRequestJsonAsync(req,100_000); const date=String(body?.date||''); const report=readMonthlyReport(); const noteText=String(report.notes?.[date]||'').trim(); if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!noteText)return send(res,400,{error:'Nota zilei nu există sau este goală.'}); const context=localBeckyContext(); let raw;
-      if(process.env.BECKY_INBOX_TEST_MODE==='1'&&Array.isArray(body.analysis_override))raw=body.analysis_override; else { const analyzer=await beckyInboxAnalyzePromise; raw=await analyzer.analyzeDailyNoteWithOpenAI({apiKey:localSecret('OPENAI_API_KEY'),model:localSecret('OPENAI_TEXT_MODEL')||'gpt-4.1-mini',noteDate:date,noteText,children:context.children,activities:context.activities,roles:context.roles}); }
-      const result=await buildLocalProposals(date,noteText,raw); return send(res,201,result);
+      let analysis;if(process.env.BECKY_INBOX_TEST_MODE==='1'&&Array.isArray(body.analysis_override))analysis={proposals:body.analysis_override,insights:Array.isArray(body.brief_override)?body.brief_override:[]}; else { const analyzer=await beckyInboxAnalyzePromise; analysis=await analyzer.analyzeDailyNoteWithOpenAI({apiKey:localSecret('OPENAI_API_KEY'),model:localSecret('OPENAI_TEXT_MODEL')||'gpt-4.1-mini',noteDate:date,noteText,children:context.children,activities:context.activities,roles:context.roles}); }
+      const result=await buildLocalProposals(date,noteText,analysis.proposals||[]);const insights=await buildLocalBrief(date,noteText,analysis.insights||[],result.proposals); return send(res,201,{...result,insights});
     } catch(error){return send(res,error.status||500,{error:error.message||'Nota nu a putut fi analizată.'});}
   }
   const beckyProposalMatch=url.pathname.match(/^\/api\/admin\/becky-inbox\/proposals\/([^/?]+)(?:\/(approve|ignore|revert))?$/);

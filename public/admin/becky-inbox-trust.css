@@ -1,4 +1,5 @@
 .becky-inbox-filters button b { margin-left: 6px; }
+.becky-inbox-head > button { border: 1px solid #b4dbde; border-radius: 12px; background: #fff; padding: 10px 14px; color: #198e9f; font: inherit; font-weight: 800; cursor: pointer; }
 .becky-status-filters { flex-wrap: wrap; }
 .becky-result-link { color: #198e9f; font-weight: 800; text-decoration: none; }
 .becky-execution { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #eef8f6; color: #557084; }
@@ -13,3 +14,31 @@
 .monthly-note-analysis-summary { display: grid; gap: 5px; margin: 4px 0 14px; padding: 14px 16px; border-radius: 14px; background: #eef8f6; color: #557084; }
 .monthly-note-analysis-summary strong { color: #198e9f; }
 .monthly-note-analysis-summary a { width: fit-content; color: #198e9f; font-weight: 800; text-decoration: none; }
+
+.becky-brief-head { margin-bottom: 24px; }
+.becky-brief-head h1 { max-width: 760px; }
+.becky-brief-list { display: grid; gap: 18px; max-width: 980px; }
+.becky-brief-card { display: grid; gap: 18px; padding: 24px 26px; border: 1px solid #c7e3e3; border-radius: 22px; background: #fffdfb; box-shadow: 0 12px 30px rgba(15, 39, 76, .07); color: #0f274c; }
+.becky-brief-card > header { display: grid; gap: 6px; }
+.becky-brief-card > header span { width: fit-content; padding: 5px 10px; border-radius: 999px; background: #e9f7f5; color: #178d9d; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.becky-brief-card h2 { margin: 0; font-size: clamp(24px, 2.5vw, 34px); line-height: 1.08; }
+.becky-brief-card p { margin: 0; line-height: 1.55; }
+.becky-brief-summary { max-width: 800px; font-size: 18px; font-weight: 650; }
+.becky-brief-why { display: grid; gap: 5px; padding-top: 16px; border-top: 1px solid #e5eeee; }
+.becky-brief-why small, .becky-brief-action small { color: #f1656b; font-size: 11px; font-weight: 900; letter-spacing: .1em; }
+.becky-brief-action { display: flex; align-items: flex-start; gap: 12px; padding: 15px 17px; border-radius: 15px; background: #fff3e4; }
+.becky-brief-action > span { color: #178d9d; font-size: 24px; font-weight: 900; line-height: 1; }
+.becky-brief-action > div { display: grid; gap: 4px; }
+.becky-brief-action strong { line-height: 1.4; }
+.becky-brief-card details { padding-top: 4px; color: #64798e; }
+.becky-brief-card details summary { cursor: pointer; color: #178d9d; font-weight: 800; }
+.becky-brief-card details ul { display: grid; gap: 8px; margin: 12px 0 0; padding-left: 22px; }
+.becky-brief-related { color: #7b8da2; }
+.becky-brief-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; margin-top: 24px; padding-top: 20px; border-top: 1px solid #dce9e9; color: #6e8297; }
+.becky-brief-footer button { padding: 12px 18px; border: 0; border-radius: 12px; background: #178d9d; color: white; font: inherit; font-weight: 800; cursor: pointer; }
+.becky-inbox-empty { display: grid; gap: 7px; }
+
+@media (max-width: 700px) {
+  .becky-brief-card { padding: 20px; }
+  .becky-brief-summary { font-size: 16px; }
+}
