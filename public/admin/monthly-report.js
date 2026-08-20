@@ -77,7 +77,7 @@
     ["next_visit_thread", "Fir pentru data viitoare"],
     ["memorable_close", "Final memorabil"],
   ];
-  const repertoireAges = [["age_2", "2 ani"], ["age_3", "3 ani"], ["age_4_5", "4–5 ani"], ["age_6_7", "6–7 ani"], ["age_8_plus", "8+ ani"]];
+  const repertoireAges = [["age_2", "2 ani"], ["age_3", "3–4 ani"], ["age_4_5", "5–6 ani"], ["age_6_7", "7–8 ani"], ["age_8_plus", "9+ ani"]];
   const repertoireStageLabels = Object.fromEntries(repertoireStages.map(([id, label]) => [id, label]));
   const repertoireCoverage = (ideaCount, validatedCount) => ideaCount === 0 ? ["Gol", "empty"] : validatedCount === 0 ? ["Nevalidat", "unvalidated"] : validatedCount <= 2 ? ["Începe să se lege", "partial"] : ["Bine validat", "validated"];
   const overlayFor = (item, age) => (item.age_overlays || []).find(overlay => overlay.age_group === age) || { validation_status: "idea" };

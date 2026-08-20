@@ -49,8 +49,8 @@ const KNOWLEDGE_CANDIDATE_TARGETS = ['operational_manual', 'puieti_de_oameni', '
 const KNOWLEDGE_CANDIDATE_STATUSES = ['proposed', 'approved', 'rejected'];
 const EXPERIENCE_REPERTOIRE_STAGES = ['welcome', 'surprise_connect', 'next_visit_thread', 'memorable_close'];
 const EXPERIENCE_REPERTOIRE_AGES = ['age_2', 'age_3', 'age_4_5', 'age_6_7', 'age_8_plus'];
-const EXPERIENCE_REPERTOIRE_AGE_LABELS = [['age_2', '2 ani'], ['age_3', '3 ani'], ['age_4_5', '4–5 ani'], ['age_6_7', '6–7 ani'], ['age_8_plus', '8+ ani']];
-const EXPERIENCE_REPERTOIRE_AGE_MAP = { age_2: ['1–2 ani'], age_3: ['3–4 ani'], age_4_5: ['3–4 ani', '5–6 ani'], age_6_7: ['5–6 ani', '7–8 ani'], age_8_plus: ['9+ ani'] };
+const EXPERIENCE_REPERTOIRE_AGE_LABELS = [['age_2', '2 ani'], ['age_3', '3–4 ani'], ['age_4_5', '5–6 ani'], ['age_6_7', '7–8 ani'], ['age_8_plus', '9+ ani']];
+const EXPERIENCE_REPERTOIRE_AGE_MAP = { age_2: ['1–2 ani'], age_3: ['3–4 ani'], age_4_5: ['5–6 ani'], age_6_7: ['7–8 ani'], age_8_plus: ['9+ ani'] };
 
 function defaultMonthlyReport() {
   const now = new Date().toISOString();
