@@ -143,6 +143,7 @@ let overviewFilter='all';
 let overviewOwnerFilter='all';
 const overviewAreas=[
   {id:'technical',label:'Tehnic',color:'#33A9BA',icon:'⚙',hint:'Ce trebuie să funcționeze fără fricțiune.'},
+  {id:'pedagogical',label:'Activități pedagogice',color:'#8B68C9',icon:'✎',hint:'Activități, observații și învățare din practică.'},
   {id:'logistic',label:'Logistică & experiență',color:'#FDCB4B',icon:'◌',hint:'Cum facem ieșirea ușor de ales și trăit.'},
   {id:'operational',label:'Operațional',color:'#FAA76E',icon:'✦',hint:'Procese, roluri și pași repetabili.'},
   {id:'creative',label:'Creativ & brand',color:'#CBBAD8',icon:'♡',hint:'Tot ce se vede, se simte și se ține minte.'}

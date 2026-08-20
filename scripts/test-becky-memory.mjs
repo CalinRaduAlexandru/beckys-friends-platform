@@ -11,6 +11,7 @@ const resolved=resolveMemorySignal({exact_source_excerpt:note,normalized_observa
 assert.equal(resolved.entities[0].id,'erdu');
 assert.equal(resolved.possible_canonical_context[0].destination,'crm_child_observation');
 assert.equal(resolveMemorySignal({...resolved,exact_source_excerpt:'inventat'},{note_text:note,children:[],activities:[]}),null);
+assert.equal(resolveMemorySignal({exact_source_excerpt:'Consider că părinții ar aprecia o grijă mare pentru siguranță.',normalized_observation:'Consider că părinții ar aprecia o grijă mare pentru siguranță.',epistemic_type:'observed',entities:{children:[],activities:[]},topics:[],age_categories:[],confidence:.9},{note_text:'Consider că părinții ar aprecia o grijă mare pentru siguranță.',children:[],activities:[]}),null);
 
 const dir=await mkdtemp(join(tmpdir(),'becky-memory-'));const files={crm:join(dir,'crm.json'),report:join(dir,'report.json'),memory:join(dir,'memory.json'),attention:join(dir,'attention.json'),activities:join(dir,'activities.json'),workspaces:join(dir,'workspaces.json'),knowledge:join(dir,'knowledge.json'),inbox:join(dir,'inbox.json'),brief:join(dir,'brief.json')};
 await writeFile(files.crm,JSON.stringify({children:[{id:'erdu',first_name:'Erdu',age:7,interests:'',continuity:'',created_at:'2026-08-01T00:00:00Z',updated_at:'2026-08-01T00:00:00Z'},{id:'mara',first_name:'Mara',age:7,interests:'',continuity:'',created_at:'2026-08-01T00:00:00Z',updated_at:'2026-08-01T00:00:00Z'}],visits:[],observations:[]}));

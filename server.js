@@ -21,6 +21,7 @@ const ADMIN_ACTIVITY_OBSERVATIONS_FILE = process.env.BECKY_ACTIVITY_OBSERVATIONS
 const ADMIN_CONTENT_LAB_IDEAS_FILE = path.join(ROOT, 'data', 'admin-content-lab-ideas.json');
 const ADMIN_EVENT_FINDINGS_FILE = path.join(ROOT, 'data', 'admin-event-community-findings.json');
 const ADMIN_KNOWLEDGE_CANDIDATES_FILE = path.join(ROOT, 'data', 'admin-knowledge-candidates.json');
+const ADMIN_EXPERIENCE_REPERTOIRE_FILE = path.join(ROOT, 'data', 'admin-experience-repertoire.json');
 const ADMIN_BECKY_INBOX_FILE = process.env.BECKY_INBOX_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-inbox-proposals.json');
 const ADMIN_BECKY_BRIEF_FILE = process.env.BECKY_BRIEF_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-brief.json');
 const ADMIN_BECKY_MEMORY_FILE = process.env.BECKY_MEMORY_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-memory-signals.json');
@@ -45,6 +46,10 @@ const CONTENT_LAB_IDEA_STATUSES = ['active', 'archived'];
 const EVENT_FINDING_KINDS = ['observation', 'feedback', 'component_idea', 'hypothesis', 'pilot_result'];
 const KNOWLEDGE_CANDIDATE_TARGETS = ['operational_manual', 'puieti_de_oameni', 'community_guide', 'strategic_plan'];
 const KNOWLEDGE_CANDIDATE_STATUSES = ['proposed', 'approved', 'rejected'];
+const EXPERIENCE_REPERTOIRE_STAGES = ['welcome', 'surprise_connect', 'next_visit_thread', 'memorable_close'];
+const EXPERIENCE_REPERTOIRE_AGES = ['age_2', 'age_3', 'age_4_5', 'age_6_7', 'age_8_plus'];
+const EXPERIENCE_REPERTOIRE_AGE_LABELS = [['age_2', '2 ani'], ['age_3', '3 ani'], ['age_4_5', '4–5 ani'], ['age_6_7', '6–7 ani'], ['age_8_plus', '8+ ani']];
+const EXPERIENCE_REPERTOIRE_AGE_MAP = { age_2: ['1–2 ani'], age_3: ['3–4 ani'], age_4_5: ['3–4 ani', '5–6 ani'], age_6_7: ['5–6 ani', '7–8 ani'], age_8_plus: ['9+ ani'] };
 
 function defaultMonthlyReport() {
   const now = new Date().toISOString();
@@ -63,6 +68,19 @@ function readContentLabIdeas() { try { const value = fs.existsSync(ADMIN_CONTENT
 function writeContentLabIdeas(items) { fs.mkdirSync(path.dirname(ADMIN_CONTENT_LAB_IDEAS_FILE), { recursive: true }); fs.writeFileSync(ADMIN_CONTENT_LAB_IDEAS_FILE, JSON.stringify(items, null, 2)); }
 function readJsonStore(file, label) { try { const value = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []; return Array.isArray(value) ? value : []; } catch { throw new Error(`Invalid ${label} store`); } }
 function writeJsonStore(file, items) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(items, null, 2)); }
+function readExperienceRepertoire() { return readJsonStore(ADMIN_EXPERIENCE_REPERTOIRE_FILE, 'experience repertoire'); }
+function normalizeExperienceRepertoire(input, existing = {}) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim(); const stage = String(input?.stage ?? existing.stage ?? '').trim(); const title = String(input?.title ?? existing.title ?? '').trim(); const description = String(input?.description ?? existing.description ?? '').trim(); const age_groups = Array.isArray(input?.age_groups ?? existing.age_groups) ? [...new Set((input?.age_groups ?? existing.age_groups).map(String).filter(value => EXPERIENCE_REPERTOIRE_AGES.includes(value)))] : []; const status = String(input?.status ?? existing.status ?? 'active').trim(); const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null; const source_type = nullable('source_type'); const source_id = nullable('source_id');
+  if (!id || !EXPERIENCE_REPERTOIRE_STAGES.includes(stage) || !title || !age_groups.length || !['active', 'archived'].includes(status)) throw new Error('Experience repertoire invalid');
+  if (title.length > 180 || description.length > 5000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw new Error('Experience repertoire too long');
+  const now = new Date().toISOString(); return { id, stage, title, description, age_groups, status, source_type, source_id, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+}
+function experienceRepertoireView(items) {
+  const workspaces = readWorkspaces(); const childrenWorkspace = (workspaces.workspaces || []).find(item => item.id === 'children'); const activities = (childrenWorkspace?.activities || []).filter(item => item?.title && item.title !== 'Activitate nouă');
+  const activityMatches = activity => { const source = Array.isArray(activity.ageCategories) && activity.ageCategories.length ? activity.ageCategories : [activity.age]; const ranges = value => { const nums = String(value || '').match(/\d+/g)?.map(Number) || []; return nums.length > 1 ? [nums[0], nums[1]] : nums.length ? [nums[0], /\+/.test(value) ? 99 : nums[0]] : [0, 99]; }; return EXPERIENCE_REPERTOIRE_AGE_LABELS.reduce((acc, [id]) => { const matches = EXPERIENCE_REPERTOIRE_AGE_MAP[id]; acc[id] = source.some(value => { const [a,b] = ranges(value); return matches.some(filter => { const [c,d] = ranges(filter); return a <= d && b >= c; }); }); return acc; }, {}); };
+  const activity_counts = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, activities.filter(activity => activityMatches(activity)[age]).length]));
+  return { items: items.filter(item => item.status === 'active'), activity_counts, activity_previews: Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, activities.filter(activity => activityMatches(activity)[age]).slice(0, 3).map(item => ({ id: item.id, title: item.title }))])) };
+}
 function readBeckyInbox() { return readJsonStore(ADMIN_BECKY_INBOX_FILE, 'Becky Inbox'); }
 function writeBeckyInbox(items) { writeJsonStore(ADMIN_BECKY_INBOX_FILE, items); }
 function readBeckyBrief() { return readJsonStore(ADMIN_BECKY_BRIEF_FILE, 'Becky Brief'); }
@@ -77,9 +95,11 @@ function localBeckyContext() {
   return { children:crm.children.map(item => ({ id:item.id, first_name:item.first_name, age:item.age })), activities, roles:MONTHLY_REPORT_ROLES.map(([id,label]) => ({ id,label })) };
 }
 async function activeLocalMemorySignals() {
-  const inboxCore=await beckyInboxCorePromise;const report=readMonthlyReport();const hashes=new Map();const signals=readBeckyMemory();
+  const inboxCore=await beckyInboxCorePromise;const memoryCore=await beckyMemoryCorePromise;const report=readMonthlyReport();const hashes=new Map();const signals=readBeckyMemory();
   for(const signal of signals){if(!hashes.has(signal.source_note_id))hashes.set(signal.source_note_id,await inboxCore.sha256(String(report.notes?.[signal.source_note_id]||'')));}
-  return signals.filter(signal=>hashes.get(signal.source_note_id)===signal.source_hash);
+  const active=signals.filter(signal=>hashes.get(signal.source_note_id)===signal.source_hash&&!memoryCore.isSpeculativeMemorySignal(signal.exact_source_excerpt)&&!memoryCore.isSpeculativeMemorySignal(signal.normalized_observation));
+  const unique=[];for(const signal of active){const duplicate=unique.find(item=>memoryCore.memorySignalContentMatches(item,signal));if(!duplicate)unique.push(signal);}
+  return unique.map(signal=>({...signal,task_candidate:memoryCore.isTaskCandidateMemorySignal(signal.normalized_observation)}));
 }
 async function localMemoryContext() {
   const memoryCore=await beckyMemoryCorePromise;const crm=readCrmStore();const report=readMonthlyReport();
@@ -95,7 +115,7 @@ function autoStoreLocalMemorySignal(signal) {
 }
 async function buildLocalMemory(date,noteText,rawSignals,rawCandidates) {
   const memoryCore=await beckyMemoryCorePromise;const inboxCore=await beckyInboxCorePromise;const sourceHash=await inboxCore.sha256(noteText);const context=localBeckyContext();const existing=readBeckyMemory();const created=[];
-  for(const raw of Array.isArray(rawSignals)?rawSignals:[]){const resolved=memoryCore.resolveMemorySignal(raw,{...context,note_text:noteText});if(!resolved)continue;const now=new Date().toISOString();const draft={id:crypto.randomUUID(),source_type:'daily_note',source_note_id:date,source_version:sourceHash,source_hash:sourceHash,source_date:date,...resolved,created_at:now,updated_at:now};draft.dedupe_key=await memoryCore.memorySignalDedupeKey(draft);const duplicate=existing.find(item=>item.dedupe_key===draft.dedupe_key);if(duplicate){created.push(duplicate);continue;}autoStoreLocalMemorySignal(draft);existing.push(draft);created.push(draft);}
+  for(const raw of Array.isArray(rawSignals)?rawSignals:[]){const resolved=memoryCore.resolveMemorySignal(raw,{...context,note_text:noteText});if(!resolved)continue;const now=new Date().toISOString();const draft={id:crypto.randomUUID(),source_type:'daily_note',source_note_id:date,source_version:sourceHash,source_hash:sourceHash,source_date:date,...resolved,created_at:now,updated_at:now};draft.dedupe_key=await memoryCore.memorySignalDedupeKey(draft);const duplicate=existing.find(item=>memoryCore.memorySignalContentMatches(item,draft));if(duplicate){Object.assign(duplicate,{source_version:sourceHash,source_hash:sourceHash,updated_at:now});created.push(duplicate);continue;}autoStoreLocalMemorySignal(draft);existing.push(draft);created.push(draft);}
   writeBeckyMemory(existing);const active=await activeLocalMemorySignals();const selected=memoryCore.selectAttentionCandidates(rawCandidates,{signals:active,noteDate:date});const attention=readBeckyAttention();const candidates=[];
   for(const candidate of selected){const previous=attention.find(item=>item.fingerprint===candidate.fingerprint&&JSON.stringify([...(item.evidence_signal_ids||[])].sort())===JSON.stringify([...candidate.evidence_signal_ids].sort()));const now=new Date().toISOString();const item={id:previous?.id||crypto.randomUUID(),status:previous?.status||'active',...candidate,created_at:previous?.created_at||now,updated_at:now};if(previous)attention[attention.indexOf(previous)]=item;else attention.push(item);candidates.push(item);}
   writeBeckyAttention(attention);return {signals:created,attention_candidates:candidates,source_hash:sourceHash};
@@ -295,7 +315,7 @@ function calendarWeekDates(weekStart) {
 function readCrmStore() {
   try {
     const store = fs.existsSync(ADMIN_CRM_FILE) ? JSON.parse(fs.readFileSync(ADMIN_CRM_FILE, 'utf8')) : {};
-    return { children: Array.isArray(store.children) ? store.children : [], visits: Array.isArray(store.visits) ? store.visits : [], observations: Array.isArray(store.observations) ? store.observations : [] };
+    return { children: Array.isArray(store.children) ? store.children : [], visits: Array.isArray(store.visits) ? store.visits : [], observations: Array.isArray(store.observations) ? store.observations : [], companions: Array.isArray(store.companions) ? store.companions : [], child_companions: Array.isArray(store.child_companions) ? store.child_companions : [], companion_observations: Array.isArray(store.companion_observations) ? store.companion_observations : [] };
   } catch { throw new Error('Invalid CRM store'); }
 }
 
@@ -315,13 +335,29 @@ function normalizeCrmChild(input, existing = {}) {
   return { id, first_name: firstName, age, interests, continuity, created_at: existing.created_at || input?.created_at || now, updated_at: now };
 }
 
-function normalizeCrmVisit(input, existing = {}, childIds = new Set()) {
+function normalizeCrmCompanion(input, existing = {}) {
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
+  const firstName = String(input?.first_name ?? existing.first_name ?? '').trim();
+  const relationshipLabel = String(input?.relationship_label ?? existing.relationship_label ?? '').trim();
+  if (!id || !firstName || firstName.length > 100 || relationshipLabel.length > 80) throw new Error('CRM companion invalid');
+  const now = new Date().toISOString();
+  return { id, first_name:firstName, relationship_label:relationshipLabel || null, created_at:existing.created_at || input?.created_at || now, updated_at:now };
+}
+
+function normalizeCrmVisit(input, existing = {}, childIds = new Set(), companionIds = new Set()) {
   const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
   const childId = String(input?.child_id ?? existing.child_id ?? '').trim();
   const visitDate = String(input?.visit_date ?? existing.visit_date ?? '').trim();
   const note = String(input?.note ?? existing.note ?? '').trim();
-  if (!id || !childIds.has(childId) || !/^\d{4}-\d{2}-\d{2}$/.test(visitDate) || note.length > 500) throw new Error('CRM visit invalid');
-  return { id, child_id: childId, visit_date: visitDate, note, created_at: existing.created_at || input?.created_at || new Date().toISOString() };
+  const companionId = input?.companion_id === null || input?.companion_id === undefined || input?.companion_id === '' ? (existing.companion_id || null) : String(input.companion_id).trim();
+  if (!id || !childIds.has(childId) || (companionId && !companionIds.has(companionId)) || !/^\d{4}-\d{2}-\d{2}$/.test(visitDate) || note.length > 500) throw new Error('CRM visit invalid');
+  return { id, child_id: childId, companion_id:companionId, visit_date: visitDate, note, created_at: existing.created_at || input?.created_at || new Date().toISOString() };
+}
+
+function normalizeCrmCompanionObservation(input, existing = {}, companionIds = new Set(), visitMap = new Map()) {
+  const id=String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();const companionId=String(input?.companion_id ?? existing.companion_id ?? '').trim();const visitId=input?.visit_id === null || input?.visit_id === undefined || input?.visit_id === '' ? (existing.visit_id || null) : String(input.visit_id).trim();const observedAt=new Date(String(input?.observed_at ?? existing.observed_at ?? '').trim());const observation=String(input?.observation ?? existing.observation ?? '').trim();
+  if(!id||!companionIds.has(companionId)||(visitId&&!visitMap.has(visitId))||Number.isNaN(observedAt.getTime())||!observation||observation.length>5000)throw new Error('CRM companion observation invalid');
+  const now=new Date().toISOString();return {id,companion_id:companionId,visit_id:visitId,observed_at:observedAt.toISOString(),observation,created_at:existing.created_at||input?.created_at||now,updated_at:now};
 }
 
 function normalizeCrmObservation(input, existing = {}, childIds = new Set(), visitMap = new Map()) {
@@ -339,6 +375,12 @@ function normalizeCrmObservation(input, existing = {}, childIds = new Set(), vis
 function crmChildSummary(child, visits) {
   const childVisits = visits.filter(visit => visit.child_id === child.id).sort((a, b) => b.visit_date.localeCompare(a.visit_date) || b.created_at.localeCompare(a.created_at));
   return { ...child, visit_count: childVisits.length, last_visit: childVisits[0]?.visit_date || null };
+}
+
+function crmCompanionSummary(companion, store) {
+  const children=(store.child_companions||[]).filter(link=>link.companion_id===companion.id).map(link=>store.children.find(child=>child.id===link.child_id)).filter(Boolean).map(child=>crmChildSummary(child,store.visits));
+  const visits=store.visits.filter(visit=>visit.companion_id===companion.id).sort((a,b)=>`${b.visit_date}${b.created_at}`.localeCompare(`${a.visit_date}${a.created_at}`));
+  return {...companion,children,visit_count:visits.length,last_visit:visits[0]?.visit_date||null};
 }
 
 function readRequestJson(req, res, maxBytes, callback) {
@@ -522,7 +564,7 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/manual') return send(res, 200, readDocument());
   if (req.method === 'GET' && url.pathname === '/api/styles') return send(res, 200, { css: fs.existsSync(CSS_FILE) ? fs.readFileSync(CSS_FILE, 'utf8') : '' });
   if (req.method === 'GET' && url.pathname === '/api/workspaces') return send(res, 200, readWorkspaces());
-  if (url.pathname === '/api/admin/becky-memory/signals' && req.method === 'GET') { try { const sourceId=String(url.searchParams.get('source_note_id')||'');const report=readMonthlyReport();const inboxCore=await beckyInboxCorePromise;let signals=readBeckyMemory().filter(item=>!sourceId||item.source_note_id===sourceId);const hashes=new Map();for(const item of signals){if(!hashes.has(item.source_note_id))hashes.set(item.source_note_id,await inboxCore.sha256(String(report.notes?.[item.source_note_id]||'')));}signals=signals.map(item=>({...item,stale:hashes.get(item.source_note_id)!==item.source_hash})).sort((a,b)=>`${b.source_date}${b.created_at}`.localeCompare(`${a.source_date}${a.created_at}`));return send(res,200,{signals});}catch(error){return send(res,500,{error:error.message||'Memoria Becky nu este disponibilă'});} }
+  if (url.pathname === '/api/admin/becky-memory/signals' && req.method === 'GET') { try { const sourceId=String(url.searchParams.get('source_note_id')||'');const report=readMonthlyReport();const inboxCore=await beckyInboxCorePromise;const memoryCore=await beckyMemoryCorePromise;let signals=readBeckyMemory().filter(item=>(!sourceId||item.source_note_id===sourceId)&&!memoryCore.isSpeculativeMemorySignal(item.exact_source_excerpt)&&!memoryCore.isSpeculativeMemorySignal(item.normalized_observation));const hashes=new Map();for(const item of signals){if(!hashes.has(item.source_note_id))hashes.set(item.source_note_id,await inboxCore.sha256(String(report.notes?.[item.source_note_id]||'')));}signals=signals.map(item=>({...item,stale:hashes.get(item.source_note_id)!==item.source_hash})).sort((a,b)=>`${b.source_date}${b.created_at}`.localeCompare(`${a.source_date}${a.created_at}`));return send(res,200,{signals});}catch(error){return send(res,500,{error:error.message||'Memoria Becky nu este disponibilă'});} }
   if (url.pathname === '/api/admin/becky-memory/attention' && req.method === 'GET') { try { return send(res,200,{candidates:readBeckyAttention().filter(item=>item.status==='active'||item.status==='investigating').sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)))}); } catch(error){return send(res,500,{error:error.message||'Atenția Becky nu este disponibilă'});} }
   if (url.pathname === '/api/admin/becky-memory/analyze' && req.method === 'POST') { try { const body=await readRequestJsonAsync(req,100_000);const date=String(body?.date||'');const report=readMonthlyReport();const noteText=String(report.notes?.[date]||'').trim();if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!noteText)return send(res,400,{error:'Nota zilei nu există sau este goală.'});const context=localBeckyContext();const historicContext=await localMemoryContext();let analysis;if(process.env.BECKY_INBOX_TEST_MODE==='1'&&Array.isArray(body.memory_override))analysis={memory_signals:body.memory_override,attention_candidates:Array.isArray(body.attention_override)?body.attention_override:[]};else{const analyzer=await beckyMemoryAnalyzePromise;analysis=await analyzer.analyzeDailyNoteForMemory({apiKey:localSecret('OPENAI_API_KEY'),model:localSecret('OPENAI_TEXT_MODEL')||'gpt-4.1-mini',noteDate:date,noteText,children:context.children,activities:context.activities,historicContext});}return send(res,201,await buildLocalMemory(date,noteText,analysis.memory_signals,analysis.attention_candidates));}catch(error){return send(res,error.status||500,{error:error.message||'Nota nu a putut fi procesată.'});} }
   const memorySignalMatch=url.pathname.match(/^\/api\/admin\/becky-memory\/signals\/([^/?]+)$/);
@@ -602,11 +644,23 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/admin/crm' && req.method === 'GET') {
     try {
       const store = readCrmStore();
-      return send(res, 200, { children: store.children.map(child => crmChildSummary(child, store.visits)).sort((a, b) => (b.last_visit || '').localeCompare(a.last_visit || '') || a.first_name.localeCompare(b.first_name, 'ro')) });
+      return send(res, 200, { children: store.children.map(child => ({...crmChildSummary(child, store.visits), primary_companion_id:(store.child_companions.find(link=>link.child_id===child.id&&link.is_primary)||{}).companion_id||null})).sort((a, b) => (b.last_visit || '').localeCompare(a.last_visit || '') || a.first_name.localeCompare(b.first_name, 'ro')), companions:store.companions.map(companion=>crmCompanionSummary(companion,store)).sort((a,b)=>a.first_name.localeCompare(b.first_name,'ro')) });
     } catch { return send(res, 500, { error: 'CRM unavailable' }); }
   }
   if (url.pathname === '/api/admin/monthly-report' && req.method === 'GET') {
     try { return send(res, 200, { report: readMonthlyReport() }); } catch { return send(res, 500, { error: 'Raport lunar indisponibil' }); }
+  }
+  if (url.pathname === '/api/admin/experience-repertoire' && req.method === 'GET') {
+    try { return send(res, 200, experienceRepertoireView(readExperienceRepertoire())); } catch { return send(res, 500, { error: 'Repertoriul experienței nu este disponibil' }); }
+  }
+  if (url.pathname === '/api/admin/experience-repertoire' && req.method === 'POST') {
+    readRequestJson(req, res, 40_000, body => { try { const items = readExperienceRepertoire(); const item = normalizeExperienceRepertoire(body); items.push(item); writeJsonStore(ADMIN_EXPERIENCE_REPERTOIRE_FILE, items); send(res, 201, item); } catch { send(res, 400, { error: 'Ideea de repertoriu este invalidă' }); } }); return;
+  }
+  const repertoireMatch = url.pathname.match(/^\/api\/admin\/experience-repertoire\/([^/?]+)$/);
+  if (repertoireMatch && ['PATCH', 'DELETE'].includes(req.method)) {
+    const id = decodeURIComponent(repertoireMatch[1]);
+    if (req.method === 'DELETE') { try { const items = readExperienceRepertoire(); const index = items.findIndex(item => item.id === id); if (index < 0) return send(res, 404, { error: 'Ideea nu a fost găsită' }); items[index] = normalizeExperienceRepertoire({ ...items[index], status: 'archived', id }, items[index]); writeJsonStore(ADMIN_EXPERIENCE_REPERTOIRE_FILE, items); return send(res, 200, items[index]); } catch { return send(res, 400, { error: 'Ideea nu a putut fi arhivată' }); } }
+    readRequestJson(req, res, 40_000, body => { try { const items = readExperienceRepertoire(); const index = items.findIndex(item => item.id === id); if (index < 0) return send(res, 404, { error: 'Ideea nu a fost găsită' }); items[index] = normalizeExperienceRepertoire({ ...items[index], ...body, id }, items[index]); writeJsonStore(ADMIN_EXPERIENCE_REPERTOIRE_FILE, items); send(res, 200, items[index]); } catch { send(res, 400, { error: 'Ideea repertoriului este invalidă' }); } }); return;
   }
   if (url.pathname === '/api/admin/monthly-report/entries' && req.method === 'GET') {
     try {
@@ -685,6 +739,7 @@ const server = http.createServer(async (req, res) => {
         const store = readCrmStore();
         const child = normalizeCrmChild(body);
         store.children.push(child);
+        const primaryCompanionId=String(body?.primary_companion_id||'').trim(); if(primaryCompanionId){if(!store.companions.some(item=>item.id===primaryCompanionId))throw new Error('Companion invalid');store.child_companions.push({child_id:child.id,companion_id:primaryCompanionId,is_primary:true,created_at:new Date().toISOString()});}
         writeCrmStore(store);
         send(res, 201, crmChildSummary(child, store.visits));
       } catch { send(res, 400, { error: 'Copil invalid' }); }
@@ -695,7 +750,7 @@ const server = http.createServer(async (req, res) => {
     readRequestJson(req, res, 20_000, body => {
       try {
         const store = readCrmStore();
-        const visit = normalizeCrmVisit(body, {}, new Set(store.children.map(child => child.id)));
+        const visit = normalizeCrmVisit(body, {}, new Set(store.children.map(child => child.id)),new Set(store.companions.map(item=>item.id)));
         store.visits.push(visit);
         writeCrmStore(store);
         send(res, 201, visit);
@@ -703,6 +758,17 @@ const server = http.createServer(async (req, res) => {
     });
     return;
   }
+  if (url.pathname === '/api/admin/crm/companions' && req.method === 'POST') {
+    readRequestJson(req,res,20_000,body=>{try{const store=readCrmStore();const companion=normalizeCrmCompanion(body);store.companions.push(companion);writeCrmStore(store);send(res,201,crmCompanionSummary(companion,store));}catch{send(res,400,{error:'Însoțitor invalid'});}});return;
+  }
+  const companionObservationListMatch=url.pathname.match(/^\/api\/admin\/crm\/companions\/([^/?]+)\/observations$/);
+  if(companionObservationListMatch&&req.method==='POST'){readRequestJson(req,res,40_000,body=>{try{const store=readCrmStore();const companionId=decodeURIComponent(companionObservationListMatch[1]);const observation=normalizeCrmCompanionObservation({...body,companion_id:companionId},{},new Set(store.companions.map(item=>item.id)),new Map(store.visits.map(item=>[item.id,item])));store.companion_observations.push(observation);writeCrmStore(store);send(res,201,observation);}catch{send(res,400,{error:'Observația despre însoțitor este invalidă'});}});return;}
+  const companionObservationMatch=url.pathname.match(/^\/api\/admin\/crm\/companion-observations\/([^/?]+)$/);
+  if(companionObservationMatch&&['PATCH','DELETE'].includes(req.method)){const id=decodeURIComponent(companionObservationMatch[1]);if(req.method==='DELETE'){try{const store=readCrmStore();const values=store.companion_observations.filter(item=>item.id!==id);if(values.length===store.companion_observations.length)return send(res,404,{error:'Observația nu a fost găsită'});store.companion_observations=values;writeCrmStore(store);return send(res,200,{ok:true});}catch{return send(res,500,{error:'Observația nu a putut fi ștearsă'});}}readRequestJson(req,res,40_000,body=>{try{const store=readCrmStore();const index=store.companion_observations.findIndex(item=>item.id===id);if(index<0)return send(res,404,{error:'Observația nu a fost găsită'});store.companion_observations[index]=normalizeCrmCompanionObservation({...store.companion_observations[index],...body,id},store.companion_observations[index],new Set(store.companions.map(item=>item.id)),new Map(store.visits.map(item=>[item.id,item])));writeCrmStore(store);send(res,200,store.companion_observations[index]);}catch{send(res,400,{error:'Observația este invalidă'});}});return;}
+  const companionMatch=url.pathname.match(/^\/api\/admin\/crm\/companions\/([^/?]+)$/);
+  if(companionMatch&&req.method==='GET'){try{const store=readCrmStore();const companion=store.companions.find(item=>item.id===decodeURIComponent(companionMatch[1]));if(!companion)return send(res,404,{error:'Însoțitorul nu a fost găsit'});const visits=store.visits.filter(item=>item.companion_id===companion.id).sort((a,b)=>`${b.visit_date}${b.created_at}`.localeCompare(`${a.visit_date}${a.created_at}`));const observations=store.companion_observations.filter(item=>item.companion_id===companion.id).sort((a,b)=>`${b.observed_at}${b.created_at}`.localeCompare(`${a.observed_at}${a.created_at}`));return send(res,200,{companion:crmCompanionSummary(companion,store),visits,observations});}catch{return send(res,500,{error:'Însoțitor indisponibil'});}}
+  if(companionMatch&&req.method==='PATCH'){readRequestJson(req,res,20_000,body=>{try{const store=readCrmStore();const index=store.companions.findIndex(item=>item.id===decodeURIComponent(companionMatch[1]));if(index<0)return send(res,404,{error:'Însoțitorul nu a fost găsit'});store.companions[index]=normalizeCrmCompanion({...body,id:store.companions[index].id},store.companions[index]);writeCrmStore(store);send(res,200,crmCompanionSummary(store.companions[index],store));}catch{send(res,400,{error:'Însoțitor invalid'});}});return;}
+  if(companionMatch&&req.method==='DELETE'){try{const store=readCrmStore();const id=decodeURIComponent(companionMatch[1]);if(!store.companions.some(item=>item.id===id))return send(res,404,{error:'Însoțitorul nu a fost găsit'});store.companions=store.companions.filter(item=>item.id!==id);store.child_companions=store.child_companions.filter(item=>item.companion_id!==id);store.visits=store.visits.map(item=>item.companion_id===id?{...item,companion_id:null}:item);store.companion_observations=store.companion_observations.filter(item=>item.companion_id!==id);writeCrmStore(store);return send(res,200,{ok:true});}catch{return send(res,500,{error:'Însoțitor indisponibil'});}}
   const crmObservationListMatch = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)\/observations$/);
   if (crmObservationListMatch && req.method === 'GET') {
     try {
@@ -758,8 +824,11 @@ const server = http.createServer(async (req, res) => {
       const nextChildren = store.children.filter(item => item.id !== id);
       if (nextChildren.length === store.children.length) return send(res, 404, { error: 'Copilul nu a fost găsit' });
       store.children = nextChildren;
+      const removedVisits=new Set(store.visits.filter(visit => visit.child_id === id).map(visit=>visit.id));
       store.visits = store.visits.filter(visit => visit.child_id !== id);
       store.observations = store.observations.filter(observation => observation.child_id !== id);
+      store.child_companions=store.child_companions.filter(link=>link.child_id!==id);
+      store.companion_observations=store.companion_observations.map(item=>removedVisits.has(item.visit_id)?{...item,visit_id:null}:item);
       writeCrmStore(store);
       return send(res, 200, { ok: true });
     } catch { return send(res, 500, { error: 'Profil indisponibil' }); }
@@ -771,6 +840,8 @@ const server = http.createServer(async (req, res) => {
         const index = store.children.findIndex(item => item.id === decodeURIComponent(crmChildMatch[1]));
         if (index < 0) return send(res, 404, { error: 'Copilul nu a fost găsit' });
         store.children[index] = normalizeCrmChild({ ...body, id:store.children[index].id }, store.children[index]);
+        if(body?.primary_companion_id!==undefined){const companionId=String(body.primary_companion_id||'').trim();if(companionId&&!store.companions.some(item=>item.id===companionId))throw new Error('Companion invalid');store.child_companions=store.child_companions.filter(link=>!(link.child_id===store.children[index].id&&link.is_primary));if(companionId){const existing=store.child_companions.find(link=>link.child_id===store.children[index].id&&link.companion_id===companionId);if(existing)existing.is_primary=true;else store.child_companions.push({child_id:store.children[index].id,companion_id:companionId,is_primary:true,created_at:new Date().toISOString()});}
+        }
         writeCrmStore(store);
         send(res, 200, crmChildSummary(store.children[index], store.visits));
       } catch { send(res, 400, { error: 'Profil invalid' }); }
@@ -784,7 +855,8 @@ const server = http.createServer(async (req, res) => {
       if (!child) return send(res, 404, { error: 'Copilul nu a fost găsit' });
       const visits = store.visits.filter(visit => visit.child_id === child.id).sort((a, b) => b.visit_date.localeCompare(a.visit_date) || b.created_at.localeCompare(a.created_at));
       const observations = store.observations.filter(item => item.child_id === child.id).sort((a, b) => String(b.observed_at).localeCompare(String(a.observed_at)) || String(b.created_at).localeCompare(String(a.created_at)));
-      return send(res, 200, { child: crmChildSummary(child, store.visits), visits, observations });
+      const primaryLink=store.child_companions.find(link=>link.child_id===child.id&&link.is_primary);const companions=store.child_companions.filter(link=>link.child_id===child.id).map(link=>store.companions.find(item=>item.id===link.companion_id)).filter(Boolean).map(item=>({...item,is_primary:item.id===primaryLink?.companion_id}));
+      return send(res, 200, { child: {...crmChildSummary(child, store.visits),primary_companion_id:primaryLink?.companion_id||null}, visits, observations, companions });
     } catch { return send(res, 500, { error: 'CRM unavailable' }); }
   }
   if (url.pathname === '/api/admin/calendar' && req.method === 'GET') {

@@ -1,6 +1,6 @@
 import { EXECUTABLE_DESTINATIONS, resolveAiProposal, validateProposedChange, proposalDedupeKey, canonicalExecutionPayload, selectBriefInsights, sha256 } from './becky-inbox/core.mjs';
 import { analyzeDailyNoteWithOpenAI } from './becky-inbox/analyze.mjs';
-import { resolveMemorySignal, memorySignalDedupeKey, selectAttentionCandidates, historicEvidenceContext } from './becky-memory/core.mjs';
+import { resolveMemorySignal, isSpeculativeMemorySignal, isTaskCandidateMemorySignal, memorySignalDedupeKey, memorySignalContentMatches, selectAttentionCandidates, historicEvidenceContext } from './becky-memory/core.mjs';
 import { analyzeDailyNoteForMemory } from './becky-memory/analyze.mjs';
 
 const ROUTES = new Map([
@@ -117,6 +117,9 @@ const MONTHLY_REPORT_STATUSES = ['În parametri', 'Necesită atenție', 'În urm
 const MONTHLY_REPORT_COLUMNS = 'id,month_key,label,status,scope,objectives,metrics,done,evidence,learned,next_step,sort_order,created_at,updated_at';
 const MONTHLY_REPORT_ENTRY_TYPES = ['done', 'evidence', 'learned'];
 const MONTHLY_REPORT_ENTRY_COLUMNS = 'id,month_key,entry_date,type,text,role_ids,source_type,source_id,created_at,updated_at';
+const EXPERIENCE_REPERTOIRE_STAGES = ['welcome', 'surprise_connect', 'next_visit_thread', 'memorable_close'];
+const EXPERIENCE_REPERTOIRE_AGES = ['age_2', 'age_3', 'age_4_5', 'age_6_7', 'age_8_plus'];
+const EXPERIENCE_REPERTOIRE_AGE_MAP = { age_2: ['1–2 ani'], age_3: ['3–4 ani'], age_4_5: ['3–4 ani', '5–6 ani'], age_6_7: ['5–6 ani', '7–8 ani'], age_8_plus: ['9+ ani'] };
 const ACTIVITY_OBSERVATION_COLUMNS = 'id,activity_id,tested_at,age_categories,participants,result,observed,interpreted,hypothesized,action,capacity,behavior_observed,behaviors,created_at,updated_at';
 const ACTIVITY_PARTICIPANTS = ['Individual', '2–3 copii', '4–9 copii', '10+ copii'];
 const ACTIVITY_RESULTS = ['A mers bine', 'Mixt', 'Nu a mers'];
@@ -145,6 +148,19 @@ function normalizeActivityObservationInput(input, existing = {}) {
   const behaviors = Array.isArray(input?.behaviors ?? existing.behaviors) ? (input?.behaviors ?? existing.behaviors).map(item => ({ label: String(item?.label || '').trim(), status: ['Da','Parțial','Nu'].includes(item?.status) ? item.status : '' })).filter(item => item.label) : [];
   return { id, activity_id, tested_at, age_categories, participants, result, observed, interpreted: String(input?.interpreted ?? existing.interpreted ?? '').trim(), hypothesized: String(input?.hypothesized ?? existing.hypothesized ?? '').trim(), action: String(input?.action ?? existing.action ?? '').trim(), capacity: String(input?.capacity ?? existing.capacity ?? '').trim(), behavior_observed: input?.behavior_observed === null || input?.behavior_observed === undefined ? (existing.behavior_observed ?? null) : Boolean(input.behavior_observed), behaviors, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
 }
+function normalizeExperienceRepertoireInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const stage = String(input?.stage || existing.stage || '').trim(); const title = String(input?.title || existing.title || '').trim(); const description = String(input?.description ?? existing.description ?? '').trim(); const age_groups = Array.isArray(input?.age_groups ?? existing.age_groups) ? [...new Set((input.age_groups ?? existing.age_groups).map(String).filter(value => EXPERIENCE_REPERTOIRE_AGES.includes(value)))] : []; const status = String(input?.status || existing.status || 'active').trim(); const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null; const source_type = nullable('source_type'); const source_id = nullable('source_id');
+  if (!id || !EXPERIENCE_REPERTOIRE_STAGES.includes(stage) || !title || !age_groups.length || !['active', 'archived'].includes(status)) throw Object.assign(new Error('Experience repertoire invalid'), { status: 400 });
+  if (title.length > 180 || description.length > 5000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw Object.assign(new Error('Experience repertoire too long'), { status: 400 });
+  return { id, stage, title, description, age_groups, status, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+function experienceRepertoireActivities(workspaces) {
+  const childrenWorkspace = (workspaces.workspaces || []).find(item => item.id === 'children'); const activities = (childrenWorkspace?.activities || []).filter(item => item?.title && item.title !== 'Activitate nouă');
+  const ranges = value => { const nums = String(value || '').match(/\d+/g)?.map(Number) || []; return nums.length > 1 ? [nums[0], nums[1]] : nums.length ? [nums[0], /\+/.test(value) ? 99 : nums[0]] : [0, 99]; };
+  const counts = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, 0])); const previews = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, []]));
+  for (const activity of activities) { const source = Array.isArray(activity.ageCategories) && activity.ageCategories.length ? activity.ageCategories : [activity.age]; for (const age of EXPERIENCE_REPERTOIRE_AGES) if (source.some(value => EXPERIENCE_REPERTOIRE_AGE_MAP[age].some(filter => { const [a,b]=ranges(value); const [c,d]=ranges(filter); return a<=d && b>=c; }))) { counts[age]++; if (previews[age].length < 3) previews[age].push({ id: activity.id, title: activity.title }); } }
+  return { activity_counts: counts, activity_previews: previews };
+}
 async function handleActivityObservations(request, env) {
   await requireAdmin(request, env); const url = new URL(request.url);
   if (request.method === 'GET') { const activityId = String(url.searchParams.get('activity_id') || '').trim(); const filter = activityId ? `&activity_id=eq.${encodeURIComponent(activityId)}` : ''; const response = await supabaseRequest(env, `/rest/v1/admin_activity_observations?select=${ACTIVITY_OBSERVATION_COLUMNS}${filter}&order=tested_at.desc,created_at.desc`); return json({ observations: await response.json() }); }
@@ -154,6 +170,16 @@ async function handleActivityObservations(request, env) {
   const id = decodeURIComponent(match[1]); if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
   if (request.method === 'PATCH') { const body = await readJson(request, 100_000); const currentResponse = await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}&select=${ACTIVITY_OBSERVATION_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Testarea nu a fost găsită' }, 404); const item = normalizeActivityObservationInput({ ...current, ...body, id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+async function handleExperienceRepertoire(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET' && url.pathname === '/api/admin/experience-repertoire') { const [itemsResponse, workspaces] = await Promise.all([supabaseRequest(env, '/rest/v1/admin_experience_repertoire_items?select=id,stage,title,description,age_groups,status,source_type,source_id,created_at,updated_at&order=updated_at.desc'), getDocument(env, 'workspaces')]); const activities = experienceRepertoireActivities(workspaces); return json({ items: (await itemsResponse.json()).filter(item => item.status === 'active'), ...activities }); }
+  assertSameOrigin(request); const itemMatch = url.pathname.match(/^\/api\/admin\/experience-repertoire\/([^/?]+)$/);
+  if (request.method === 'POST' && url.pathname === '/api/admin/experience-repertoire') { const item = normalizeExperienceRepertoireInput(await readJson(request, 40_000)); const response = await supabaseRequest(env, '/rest/v1/admin_experience_repertoire_items?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201); }
+  if (!itemMatch) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' }); const id = decodeURIComponent(itemMatch[1]);
+  if (request.method === 'DELETE') { const response = await supabaseRequest(env, `/rest/v1/admin_experience_repertoire_items?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ status: 'archived', updated_at: new Date().toISOString() }) }); return json((await response.json())[0] || { ok: true }); }
+  if (request.method === 'PATCH') { const currentResponse = await supabaseRequest(env, `/rest/v1/admin_experience_repertoire_items?id=eq.${encodeURIComponent(id)}&select=id,stage,title,description,age_groups,status,source_type,source_id,created_at,updated_at`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Ideea nu a fost găsită' }, 404); const item = normalizeExperienceRepertoireInput({ ...current, ...await readJson(request, 40_000), id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_experience_repertoire_items?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
+  return json({ error: 'Method not allowed' }, 405);
 }
 function monthlyReportDefaults() {
   const now = new Date().toISOString();
@@ -246,7 +272,7 @@ function beckyDestinationTable(item) {
 async function readProductionDestination(env,item,id=item.destination_entity_id){if(!id)return null;const [table,columns]=beckyDestinationTable(item);const response=await supabaseRequest(env,`/rest/v1/${table}?id=eq.${encodeURIComponent(id)}&select=${columns}`);return (await response.json())[0]||null;}
 async function deleteProductionDestination(env,item,id){const [table]=beckyDestinationTable(item);await supabaseRequest(env,`/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`,{method:'DELETE'});return !(await readProductionDestination(env,item,id));}
 async function activeProductionMemorySignals(env) {
-  const response=await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?select=${BECKY_MEMORY_COLUMNS}&order=source_date.asc,created_at.asc`);const signals=await response.json();const hashes=new Map();for(const signal of signals){if(!hashes.has(signal.source_note_id)){const noteResponse=await supabaseRequest(env,`/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(signal.source_note_id)}&select=note`);hashes.set(signal.source_note_id,await sha256(String((await noteResponse.json())[0]?.note||'')));}}return signals.filter(signal=>hashes.get(signal.source_note_id)===signal.source_hash);
+  const response=await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?select=${BECKY_MEMORY_COLUMNS}&order=source_date.asc,created_at.asc`);const signals=await response.json();const hashes=new Map();for(const signal of signals){if(!hashes.has(signal.source_note_id)){const noteResponse=await supabaseRequest(env,`/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(signal.source_note_id)}&select=note`);hashes.set(signal.source_note_id,await sha256(String((await noteResponse.json())[0]?.note||'')));}}const active=signals.filter(signal=>hashes.get(signal.source_note_id)===signal.source_hash&&!isSpeculativeMemorySignal(signal.exact_source_excerpt)&&!isSpeculativeMemorySignal(signal.normalized_observation));const unique=[];for(const signal of active){if(!unique.some(item=>memorySignalContentMatches(item,signal)))unique.push(signal);}return unique.map(signal=>({...signal,task_candidate:isTaskCandidateMemorySignal(signal.normalized_observation)}));
 }
 async function productionMemoryContext(env) {
   const [signals,crmResponse,activityResponse,knowledgeResponse,entryResponse]=await Promise.all([activeProductionMemorySignals(env),supabaseRequest(env,`/rest/v1/crm_child_observations?select=${CRM_OBSERVATION_COLUMNS}&order=observed_at.desc&limit=40`),supabaseRequest(env,`/rest/v1/admin_activity_observations?select=${ACTIVITY_OBSERVATION_COLUMNS}&order=tested_at.desc&limit=40`),supabaseRequest(env,`/rest/v1/admin_knowledge_candidates?select=${KNOWLEDGE_CANDIDATE_COLUMNS}&order=updated_at.desc&limit=20`),supabaseRequest(env,`/rest/v1/admin_monthly_report_entries?select=${MONTHLY_REPORT_ENTRY_COLUMNS}&type=eq.evidence&order=entry_date.desc&limit=30`)]);return historicEvidenceContext({signals,crmObservations:await crmResponse.json(),activityObservations:await activityResponse.json(),knowledgeCandidates:await knowledgeResponse.json(),monthlyEntries:await entryResponse.json()});
@@ -256,7 +282,8 @@ async function autoStoreProductionMemorySignal(env, signal) {
 }
 async function buildProductionMemory(env,date,noteText,rawSignals,rawCandidates) {
   const sourceHash=await sha256(noteText);const context=await productionBeckyContext(env);const created=[];
-  for(const raw of Array.isArray(rawSignals)?rawSignals:[]){const resolved=resolveMemorySignal(raw,{...context,note_text:noteText});if(!resolved)continue;const now=new Date().toISOString();const draft={id:crypto.randomUUID(),source_type:'daily_note',source_note_id:date,source_version:sourceHash,source_hash:sourceHash,source_date:date,...resolved,canonical_context:[],created_at:now,updated_at:now};draft.dedupe_key=await memorySignalDedupeKey(draft);const duplicateResponse=await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?dedupe_key=eq.${encodeURIComponent(draft.dedupe_key)}&select=${BECKY_MEMORY_COLUMNS}&limit=1`);const duplicate=(await duplicateResponse.json())[0];if(duplicate){created.push(duplicate);continue;}await autoStoreProductionMemorySignal(env,draft);const inserted=await supabaseRequest(env,'/rest/v1/admin_becky_memory_signals',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(draft)});created.push((await inserted.json())[0]);}
+  const noteSignalsResponse=await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?source_note_id=eq.${encodeURIComponent(date)}&select=${BECKY_MEMORY_COLUMNS}&order=created_at.asc`);const noteSignals=await noteSignalsResponse.json();
+  for(const raw of Array.isArray(rawSignals)?rawSignals:[]){const resolved=resolveMemorySignal(raw,{...context,note_text:noteText});if(!resolved)continue;const now=new Date().toISOString();const draft={id:crypto.randomUUID(),source_type:'daily_note',source_note_id:date,source_version:sourceHash,source_hash:sourceHash,source_date:date,...resolved,canonical_context:[],created_at:now,updated_at:now};draft.dedupe_key=await memorySignalDedupeKey(draft);const duplicate=noteSignals.find(item=>memorySignalContentMatches(item,draft));if(duplicate){const updated={...duplicate,source_version:sourceHash,source_hash:sourceHash,updated_at:now};await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?id=eq.${encodeURIComponent(duplicate.id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({source_version:sourceHash,source_hash:sourceHash,updated_at:now})});Object.assign(duplicate,updated);created.push(updated);continue;}await autoStoreProductionMemorySignal(env,draft);const inserted=await supabaseRequest(env,'/rest/v1/admin_becky_memory_signals',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(draft)});const saved=(await inserted.json())[0];noteSignals.push(saved);created.push(saved);}
   const active=await activeProductionMemorySignals(env);const selected=selectAttentionCandidates(rawCandidates,{signals:active,noteDate:date});const candidates=[];
   for(const candidate of selected){const previousResponse=await supabaseRequest(env,`/rest/v1/admin_becky_attention_candidates?fingerprint=eq.${encodeURIComponent(candidate.fingerprint)}&select=${BECKY_ATTENTION_COLUMNS}&limit=20`);const previous=(await previousResponse.json()).find(item=>JSON.stringify([...(item.evidence_signal_ids||[])].sort())===JSON.stringify([...candidate.evidence_signal_ids].sort()));const now=new Date().toISOString();const item={id:previous?.id||crypto.randomUUID(),status:previous?.status||'active',knowledge_candidate_id:previous?.knowledge_candidate_id||null,...candidate,created_at:previous?.created_at||now,updated_at:now};const response=await supabaseRequest(env,previous?`/rest/v1/admin_becky_attention_candidates?id=eq.${encodeURIComponent(previous.id)}`:'/rest/v1/admin_becky_attention_candidates',{method:previous?'PATCH':'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(item)});candidates.push((await response.json())[0]);}
   return {signals:created,attention_candidates:candidates,source_hash:sourceHash};
@@ -387,33 +414,41 @@ async function handleAdminTasks(request, env) {
 }
 
 const CRM_CHILD_COLUMNS = 'id,first_name,age,interests,continuity,created_at,updated_at';
-const CRM_VISIT_COLUMNS = 'id,child_id,visit_date,note,created_at';
+const CRM_VISIT_COLUMNS = 'id,child_id,companion_id,visit_date,note,created_at';
 const CRM_OBSERVATION_COLUMNS = 'id,child_id,visit_id,observed_at,observation,created_at,updated_at';
+const CRM_COMPANION_COLUMNS = 'id,first_name,relationship_label,created_at,updated_at';
+const CRM_CHILD_COMPANION_COLUMNS = 'child_id,companion_id,is_primary,created_at';
+const CRM_COMPANION_OBSERVATION_COLUMNS = 'id,companion_id,visit_id,observed_at,observation,created_at,updated_at';
 
 async function handleAdminCrm(request, env) {
   await requireAdmin(request, env);
   const url = new URL(request.url);
   if (request.method === 'GET' && url.pathname === '/api/admin/crm') {
-    const [childrenResponse, visitsResponse] = await Promise.all([
+    const [childrenResponse, visitsResponse, companionsResponse, linksResponse] = await Promise.all([
       supabaseRequest(env, `/rest/v1/crm_children?select=${CRM_CHILD_COLUMNS}&order=first_name.asc`),
-      supabaseRequest(env, `/rest/v1/crm_visits?select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`)
+      supabaseRequest(env, `/rest/v1/crm_visits?select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`),
+      supabaseRequest(env, `/rest/v1/crm_companions?select=${CRM_COMPANION_COLUMNS}&order=first_name.asc`),
+      supabaseRequest(env, `/rest/v1/crm_child_companions?select=${CRM_CHILD_COMPANION_COLUMNS}`)
     ]);
     const children = await childrenResponse.json();
     const visits = await visitsResponse.json();
-    return json({ children: children.map(child => crmChildSummary(child, visits)).sort((a, b) => (b.last_visit || '').localeCompare(a.last_visit || '') || a.first_name.localeCompare(b.first_name, 'ro')) });
+    const companions=await companionsResponse.json();const links=await linksResponse.json();
+    return json({ children: children.map(child => ({...crmChildSummary(child, visits),primary_companion_id:(links.find(link=>link.child_id===child.id&&link.is_primary)||{}).companion_id||null})).sort((a, b) => (b.last_visit || '').localeCompare(a.last_visit || '') || a.first_name.localeCompare(b.first_name, 'ro')), companions:companions.map(companion=>crmCompanionSummary(companion,{children,visits,child_companions:links})).sort((a,b)=>a.first_name.localeCompare(b.first_name,'ro')) });
   }
   assertSameOrigin(request);
   if (request.method === 'POST' && url.pathname === '/api/admin/crm/children') {
     const body = await readJson(request, 20_000);
     const child = normalizeCrmChildInput(body);
-    const response = await supabaseRequest(env, '/rest/v1/crm_children?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(child) });
-    return json((await response.json())[0], 201);
+    const response = await supabaseRequest(env, '/rest/v1/crm_children?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(child) }); const saved=(await response.json())[0];
+    const companionId=String(body?.primary_companion_id||'').trim();if(companionId){const companion=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(companionId)}&select=id`);if(!(await companion.json()).length)return json({error:'Însoțitorul nu a fost găsit'},400);await supabaseRequest(env,'/rest/v1/crm_child_companions',{method:'POST',body:JSON.stringify({child_id:saved.id,companion_id:companionId,is_primary:true})});}
+    return json(saved, 201);
   }
   if (request.method === 'POST' && url.pathname === '/api/admin/crm/visits') {
     const body = await readJson(request, 20_000);
     const childId = String(body?.child_id || '').trim();
     const childResponse = await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(childId)}&select=id`);
     if (!(await childResponse.json()).length) return json({ error: 'Copilul nu a fost găsit' }, 404);
+    const companionId=body?.companion_id ? String(body.companion_id).trim() : null;if(companionId){const companion=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(companionId)}&select=id`);if(!(await companion.json()).length)return json({error:'Însoțitorul nu a fost găsit'},400);}
     const visit = normalizeCrmVisitInput(body, childId);
     const response = await supabaseRequest(env, '/rest/v1/crm_visits?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(visit) });
     return json((await response.json())[0], 201);
@@ -457,6 +492,16 @@ async function handleAdminCrm(request, env) {
     const rows = await response.json();
     return json(rows[0] || { error: 'Observația nu a fost găsită' }, rows.length ? 200 : 404);
   }
+  if(request.method==='POST'&&url.pathname==='/api/admin/crm/companions'){const companion=normalizeCrmCompanionInput(await readJson(request,20_000));const response=await supabaseRequest(env,'/rest/v1/crm_companions',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(companion)});return json((await response.json())[0],201);}
+  const companionObservationListMatch=url.pathname.match(/^\/api\/admin\/crm\/companions\/([^/?]+)\/observations$/);
+  if(companionObservationListMatch&&request.method==='POST'){const companion_id=decodeURIComponent(companionObservationListMatch[1]);const companion=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(companion_id)}&select=id`);if(!(await companion.json()).length)return json({error:'Însoțitorul nu a fost găsit'},404);const observation=normalizeCrmCompanionObservationInput({...await readJson(request,40_000),companion_id});if(observation.visit_id){const visit=await supabaseRequest(env,`/rest/v1/crm_visits?id=eq.${encodeURIComponent(observation.visit_id)}&select=id`);if(!(await visit.json()).length)return json({error:'Vizita asociată nu a fost găsită'},400);}const response=await supabaseRequest(env,'/rest/v1/crm_companion_observations',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(observation)});return json((await response.json())[0],201);}
+  const companionObservationMatch=url.pathname.match(/^\/api\/admin\/crm\/companion-observations\/([^/?]+)$/);
+  if(companionObservationMatch&&request.method==='DELETE'){await supabaseRequest(env,`/rest/v1/crm_companion_observations?id=eq.${encodeURIComponent(decodeURIComponent(companionObservationMatch[1]))}`,{method:'DELETE'});return json({ok:true});}
+  if(companionObservationMatch&&request.method==='PATCH'){const id=decodeURIComponent(companionObservationMatch[1]);const currentResponse=await supabaseRequest(env,`/rest/v1/crm_companion_observations?id=eq.${encodeURIComponent(id)}&select=${CRM_COMPANION_OBSERVATION_COLUMNS}`);const current=(await currentResponse.json())[0];if(!current)return json({error:'Observația nu a fost găsită'},404);const item=normalizeCrmCompanionObservationInput({...current,...await readJson(request,40_000),id},current);const response=await supabaseRequest(env,`/rest/v1/crm_companion_observations?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(item)});return json((await response.json())[0]);}
+  const companionMatch=url.pathname.match(/^\/api\/admin\/crm\/companions\/([^/?]+)$/);
+  if(companionMatch&&request.method==='GET'){const id=decodeURIComponent(companionMatch[1]);const [companionResponse,childrenResponse,visitsResponse,linksResponse,observationsResponse]=await Promise.all([supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(id)}&select=${CRM_COMPANION_COLUMNS}`),supabaseRequest(env,`/rest/v1/crm_children?select=${CRM_CHILD_COLUMNS}`),supabaseRequest(env,`/rest/v1/crm_visits?companion_id=eq.${encodeURIComponent(id)}&select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`),supabaseRequest(env,`/rest/v1/crm_child_companions?companion_id=eq.${encodeURIComponent(id)}&select=${CRM_CHILD_COMPANION_COLUMNS}`),supabaseRequest(env,`/rest/v1/crm_companion_observations?companion_id=eq.${encodeURIComponent(id)}&select=${CRM_COMPANION_OBSERVATION_COLUMNS}&order=observed_at.desc,created_at.desc`)]);const companion=(await companionResponse.json())[0];if(!companion)return json({error:'Însoțitorul nu a fost găsit'},404);const children=await childrenResponse.json(),visits=await visitsResponse.json(),links=await linksResponse.json();return json({companion:crmCompanionSummary(companion,{children,visits,child_companions:links}),visits,observations:await observationsResponse.json()});}
+  if(companionMatch&&request.method==='PATCH'){const id=decodeURIComponent(companionMatch[1]);const currentResponse=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(id)}&select=${CRM_COMPANION_COLUMNS}`);const current=(await currentResponse.json())[0];if(!current)return json({error:'Însoțitorul nu a fost găsit'},404);const item=normalizeCrmCompanionInput({...current,...await readJson(request,20_000),id},current);const response=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(item)});return json((await response.json())[0]);}
+  if(companionMatch&&request.method==='DELETE'){await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(decodeURIComponent(companionMatch[1]))}`,{method:'DELETE'});return json({ok:true});}
   const match = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)$/);
   if (request.method === 'DELETE' && match) {
     const id = decodeURIComponent(match[1]);
@@ -466,6 +511,7 @@ async function handleAdminCrm(request, env) {
   if (request.method === 'PATCH' && match) {
     const id = decodeURIComponent(match[1]);
     const body = await readJson(request, 20_000);
+    if(body?.primary_companion_id!==undefined){const companionId=String(body.primary_companion_id||'').trim();if(companionId){const found=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(companionId)}&select=id`);if(!(await found.json()).length)return json({error:'Însoțitorul nu a fost găsit'},400);}await supabaseRequest(env,`/rest/v1/crm_child_companions?child_id=eq.${encodeURIComponent(id)}&is_primary=is.true`,{method:'PATCH',body:JSON.stringify({is_primary:false})});if(companionId)await supabaseRequest(env,'/rest/v1/crm_child_companions',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify({child_id:id,companion_id:companionId,is_primary:true})});}
     const child = { ...normalizeCrmChildInput({ ...body, id }), updated_at: new Date().toISOString() };
     const response = await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(child) });
     const rows = await response.json();
@@ -474,15 +520,17 @@ async function handleAdminCrm(request, env) {
   }
   if (request.method === 'GET' && match) {
     const id = decodeURIComponent(match[1]);
-    const [childResponse, visitsResponse] = await Promise.all([
+    const [childResponse, visitsResponse, companionsResponse, linksResponse] = await Promise.all([
       supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(id)}&select=${CRM_CHILD_COLUMNS}`),
-      supabaseRequest(env, `/rest/v1/crm_visits?child_id=eq.${encodeURIComponent(id)}&select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`)
+      supabaseRequest(env, `/rest/v1/crm_visits?child_id=eq.${encodeURIComponent(id)}&select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`),
+      supabaseRequest(env,`/rest/v1/crm_companions?select=${CRM_COMPANION_COLUMNS}`),
+      supabaseRequest(env,`/rest/v1/crm_child_companions?child_id=eq.${encodeURIComponent(id)}&select=${CRM_CHILD_COMPANION_COLUMNS}`)
     ]);
     const child = (await childResponse.json())[0];
     if (!child) return json({ error: 'Copilul nu a fost găsit' }, 404);
-    const visits = await visitsResponse.json();
+    const visits = await visitsResponse.json();const companions=await companionsResponse.json();const links=await linksResponse.json();
     const observationsResponse = await supabaseRequest(env, `/rest/v1/crm_child_observations?child_id=eq.${encodeURIComponent(id)}&select=${CRM_OBSERVATION_COLUMNS}&order=observed_at.desc,created_at.desc`);
-    return json({ child: crmChildSummary(child, visits), visits, observations: await observationsResponse.json() });
+    const primary=links.find(link=>link.is_primary);return json({ child: {...crmChildSummary(child, visits),primary_companion_id:primary?.companion_id||null}, visits, observations: await observationsResponse.json(), companions:links.map(link=>({...companions.find(item=>item.id===link.companion_id),is_primary:link.is_primary})).filter(item=>item.id) });
   }
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
 }
@@ -501,8 +549,18 @@ function normalizeCrmVisitInput(input, childId) {
   const id = String(input?.id || crypto.randomUUID()).trim();
   const visit_date = String(input?.visit_date || '').trim();
   const note = String(input?.note || '').trim();
+  const companion_id=input?.companion_id === null || input?.companion_id === undefined || input?.companion_id === '' ? null : String(input.companion_id).trim();
   if (!id || !childId || !/^\d{4}-\d{2}-\d{2}$/.test(visit_date) || note.length > 500) throw Object.assign(new Error('CRM visit invalid'), { status: 400 });
-  return { id, child_id: childId, visit_date, note };
+  return { id, child_id: childId, companion_id, visit_date, note };
+}
+
+function normalizeCrmCompanionInput(input, existing = {}) {
+  const id=String(input?.id||existing.id||crypto.randomUUID()).trim();const first_name=String(input?.first_name??existing.first_name??'').trim();const relationship_label=String(input?.relationship_label??existing.relationship_label??'').trim()||null;
+  if(!id||!first_name||first_name.length>100||(relationship_label||'').length>80)throw Object.assign(new Error('CRM companion invalid'),{status:400});return {id,first_name,relationship_label,created_at:existing.created_at||input?.created_at||new Date().toISOString(),updated_at:new Date().toISOString()};
+}
+function normalizeCrmCompanionObservationInput(input, existing = {}) {
+  const id=String(input?.id||existing.id||crypto.randomUUID()).trim();const companion_id=String(input?.companion_id||existing.companion_id||'').trim();const visit_id=input?.visit_id === null || input?.visit_id === undefined || input?.visit_id === '' ? (existing.visit_id||null) : String(input.visit_id).trim();const observedAt=new Date(String(input?.observed_at||existing.observed_at||'').trim());const observation=String(input?.observation??existing.observation??'').trim();
+  if(!id||!companion_id||Number.isNaN(observedAt.getTime())||!observation||observation.length>5000)throw Object.assign(new Error('CRM companion observation invalid'),{status:400});return {id,companion_id,visit_id,observed_at:observedAt.toISOString(),observation,created_at:existing.created_at||input?.created_at||new Date().toISOString(),updated_at:new Date().toISOString()};
 }
 
 function normalizeCrmObservationInput(input, existing = {}) {
@@ -519,6 +577,7 @@ function crmChildSummary(child, visits) {
   const childVisits = visits.filter(visit => visit.child_id === child.id).sort((a, b) => `${b.visit_date}T${b.created_at || ''}`.localeCompare(`${a.visit_date}T${a.created_at || ''}`));
   return { ...child, visit_count: childVisits.length, last_visit: childVisits[0]?.visit_date || null };
 }
+function crmCompanionSummary(companion, {children,visits,child_companions}) { const linked=(child_companions||[]).filter(link=>link.companion_id===companion.id).map(link=>children.find(child=>child.id===link.child_id)).filter(Boolean).map(child=>crmChildSummary(child,visits));const history=visits.filter(visit=>visit.companion_id===companion.id).sort((a,b)=>`${b.visit_date}${b.created_at||''}`.localeCompare(`${a.visit_date}${a.created_at||''}`));return {...companion,children:linked,visit_count:history.length,last_visit:history[0]?.visit_date||null}; }
 
 const CALENDAR_COLUMNS = 'id,title,type,date,start_time,end_time,note,created_at,updated_at';
 const CALENDAR_TYPES = new Set(['open', 'event', 'private', 'closed']);
@@ -980,6 +1039,7 @@ async function handleApi(request, env, pathname) {
   if (pathname === '/api/admin/event-community/findings' || pathname.startsWith('/api/admin/event-community/findings/')) return handleEventCommunityFindings(request, env);
   if (pathname === '/api/admin/knowledge-candidates' || pathname.startsWith('/api/admin/knowledge-candidates/')) return handleKnowledgeCandidates(request, env);
   if (pathname === '/api/admin/crm' || pathname.startsWith('/api/admin/crm/')) return handleAdminCrm(request, env);
+  if (pathname === '/api/admin/experience-repertoire' || pathname.startsWith('/api/admin/experience-repertoire/')) return handleExperienceRepertoire(request, env);
   if (pathname === '/api/admin/monthly-report' || pathname.startsWith('/api/admin/monthly-report/')) return handleAdminMonthlyReport(request, env);
   if (pathname === '/api/admin/activity-observations' || pathname.startsWith('/api/admin/activity-observations/')) return handleActivityObservations(request, env);
   if (pathname === '/api/admin/calendar' || pathname.startsWith('/api/admin/calendar/')) return handleAdminCalendar(request, env);
