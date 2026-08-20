@@ -82,34 +82,26 @@
         )
         .join("") || '<p class="monthly-report-empty">Nu există încă note.</p>'
     }</div></section></div></section>`;
-    let inboxProposals = [],
-      briefInsights = [];
+    let memorySignals = [],
+      attentionCandidates = [];
     const refreshAnalysisState = (date) => {
       const host = app.querySelector("#daily-note-analysis-state");
       const button = app.querySelector("#daily-note-analyze");
       if (!host || !button) return;
-      const items = inboxProposals.filter(
-        (item) => item.source_id === date && !item.stale,
+      const signals = memorySignals.filter(
+        (item) => item.source_note_id === date && !item.stale,
       );
-      const insights = briefInsights.filter(
-        (item) => item.source_id === date && !item.stale,
+      const relevantAttention = attentionCandidates.filter((item) =>
+        (item.evidence_signal_ids || []).some((id) => signals.some((signal) => signal.id === id)),
       );
-      if (!items.length && !insights.length) {
+      if (!signals.length) {
         host.innerHTML = "";
         button.hidden = false;
-        button.textContent = "✨ Analizează nota";
+        button.textContent = "✨ Procesează nota";
         return;
       }
-      const count = (status) =>
-        items.filter((item) => item.status === status).length;
-      if (insights.length) {
-        host.innerHTML = `<div class="monthly-note-analysis-summary"><strong>✨ ${insights.length} ${insights.length === 1 ? "insight în Becky Brief" : "insight-uri în Becky Brief"}</strong><span>${items.length} ${items.length === 1 ? "schimbare propusă" : "schimbări propuse"} · ${count("pending")} de verificat</span><a href="/admin?view=becky-inbox&source_id=${encodeURIComponent(date)}">Deschide Becky Brief →</a></div>`;
-        button.hidden = true;
-        return;
-      }
-      host.innerHTML = `<div class="monthly-note-analysis-summary"><strong>Analiza veche nu are încă Becky Brief</strong><span>${items.length} ${items.length === 1 ? "schimbare propusă" : "schimbări propuse"} sunt păstrate.</span><a href="/admin?view=becky-inbox&source_id=${encodeURIComponent(date)}">Vezi schimbările propuse →</a></div>`;
-      button.hidden = false;
-      button.textContent = "✨ Creează Becky Brief";
+      host.innerHTML = `<div class="monthly-note-analysis-summary"><strong>✓ ${signals.length} ${signals.length === 1 ? "semnal păstrat" : "semnale păstrate"} în memoria Becky</strong><span>${relevantAttention.length ? `${relevantAttention.length} lucru${relevantAttention.length === 1 ? "" : "ri"} merită atenție.` : "Nimic nu necesită atenția ta acum."}</span><a href="/admin?view=becky-inbox&source_id=${encodeURIComponent(date)}">Vezi memoria →</a></div>`;
+      button.hidden = true;
     };
     const loadNote = (date) => {
       app.querySelector("#daily-note-date").value = date;
@@ -168,7 +160,7 @@
           button.disabled = false;
           return;
         }
-        const response = await api("/api/admin/becky-inbox/analyze", {
+        const response = await api("/api/admin/becky-memory/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ date }),
@@ -182,14 +174,14 @@
         location.href = `/admin?view=becky-inbox&source_id=${encodeURIComponent(date)}`;
       });
     Promise.all([
-      api("/api/admin/becky-inbox/proposals"),
-      api("/api/admin/becky-inbox/brief"),
-    ]).then(async ([proposalResponse, briefResponse]) => {
-      inboxProposals = proposalResponse.ok
-        ? (await proposalResponse.json()).proposals || []
+      api("/api/admin/becky-memory/signals"),
+      api("/api/admin/becky-memory/attention"),
+    ]).then(async ([signalsResponse, attentionResponse]) => {
+      memorySignals = signalsResponse.ok
+        ? (await signalsResponse.json()).signals || []
         : [];
-      briefInsights = briefResponse.ok
-        ? (await briefResponse.json()).insights || []
+      attentionCandidates = attentionResponse.ok
+        ? (await attentionResponse.json()).candidates || []
         : [];
       refreshAnalysisState(app.querySelector("#daily-note-date").value);
     });

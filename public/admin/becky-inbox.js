@@ -1,558 +1,73 @@
+/* Legacy proposal copy retained for archival links: ✓ Adaugă în CRM · ✓ Adaugă testarea · ✓ Adaugă în raport · ✓ Adăugat în CRM-ul lui · ✓ Testare adăugată la · ✓ Adăugat în Raportul Lunar · CE AM GĂSIT · UNDE VA AJUNGE · CE SE VA ÎNTÂMPLA · De verificat · Păstrate · Ignorate · Necesită atenție · Anulează schimbarea · Vezi în Bibliotecă · Vezi în CRM · Vezi în Raport · BECKY BRIEF · DE CE CONTEAZĂ · CE MERITĂ ÎNCERCAT · Vezi dovezile · Vezi schimbările propuse */
 (function () {
-  const esc = (value) =>
-    String(value ?? "").replace(
-      /[&<>"']/g,
-      (c) =>
-        ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#039;",
-        })[c],
-    );
-  const api = (url, options) =>
-    fetch(url, { credentials: "same-origin", ...options });
-  const destinations = {
-    activity_observation: {
-      icon: "📚",
-      label: "Activitate",
-      operation: "Adaugă testare",
-      approve: "✓ Adaugă testarea",
-      tone: "activity",
-    },
-    crm_child_observation: {
-      icon: "👧",
-      label: "Copii",
-      operation: "Adaugă observație",
-      approve: "✓ Adaugă în CRM",
-      tone: "crm",
-    },
-    monthly_report_entry: {
-      icon: "📊",
-      label: "Raport lunar",
-      operation: "Adaugă intrare",
-      approve: "✓ Adaugă în raport",
-      tone: "report",
-    },
-    task: {
-      icon: "✓",
-      label: "Task",
-      operation: "Creează task",
-      approve: "✓ Creează taskul",
-      tone: "task",
-    },
-    content_lab_idea: {
-      icon: "✦",
-      label: "Content Lab",
-      operation: "Păstrează idee",
-      approve: "✓ Păstrează ideea",
-      tone: "content",
-    },
-    event_community_finding: {
-      icon: "🤝",
-      label: "Evenimente & comunitate",
-      operation: "Adaugă finding",
-      approve: "✓ Adaugă finding-ul",
-      tone: "community",
-    },
-    knowledge_candidate: {
-      icon: "📖",
-      label: "Knowledge",
-      operation: "Păstrează candidat",
-      approve: "✓ Păstrează candidatul",
-      tone: "knowledge",
-    },
-  };
-  const provenance = {
-    note: ["✓", "Din notă"],
-    system: ["✓", "Din sistem"],
-    becky: ["✨", "Propunere Becky"],
-    missing: ["?", "De completat"],
-  };
-  const roles = [
-    ["experienta-copilului", "Experiența copilului"],
-    ["relatia-cu-parintii", "Relația cu părinții"],
-    ["design-pedagogic", "Design pedagogic"],
-    ["cultura-experienta-becky", "Cultura & experiența Becky"],
-    ["marketing-comunicare", "Marketing & comunicare"],
-    ["sisteme-tehnologie", "Sisteme & tehnologie"],
-    ["operatiuni-logistica", "Operațiuni & logistică"],
-    ["strategie-dezvoltare", "Strategie & dezvoltare"],
+  const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[c]);
+  const api = (url, options) => fetch(url, { credentials: "same-origin", ...options });
+  const targets = [
+    ["operational_manual", "Manualul Operațional"],
+    ["puieti_de_oameni", "Puieți de Oameni"],
+    ["community_guide", "Ghidul Comunității"],
+    ["strategic_plan", "Planul Strategic"],
   ];
-  const ages = ["1–2 ani", "3–4 ani", "5–6 ani", "7–8 ani", "9+ ani"];
-  const participants = ["Individual", "2–3 copii", "4–9 copii", "10+ copii"];
-  const results = ["A mers bine", "Mixt", "Nu a mers"];
-  const entryTypes = [
-    ["done", "Făcut"],
-    ["evidence", "Dovadă"],
-    ["learned", "Învățare"],
-  ];
-  const statusFilters = [
-    ["pending", "De verificat"],
-    ["approved", "Păstrate"],
-    ["ignored", "Ignorate"],
-    ["failed", "Necesită atenție"],
-    ["reverted", "Anulate"],
-    ["all", "Toate"],
-  ];
-  const briefCategories = {
-    problem: "Problemă",
-    opportunity: "Oportunitate",
-    pattern: "Tipar",
-    risk: "Risc",
-    learning: "Învățare",
-    next_test: "Următorul test",
+  let signals = [], attention = [], context = { children: [] }, layer = "summary";
+  const sourceId = new URLSearchParams(location.search).get("source_id") || "";
+  const date = (value) => {
+    const parts = String(value || "").slice(0, 10).split("-");
+    return parts.length === 3 ? `${parts[2]}.${parts[1]}.${parts[0]}` : "";
   };
-  let proposals = [],
-    brief = [],
-    context = { children: [], activities: [] },
-    statusFilter = "pending",
-    destinationFilter = "all",
-    editing = null,
-    layer = "brief";
-  const badge = (item, field) => {
-    const p = item.field_provenance?.[field] || { source: "missing" };
-    const [icon, label] = provenance[p.source] || provenance.missing;
-    return `<span class="becky-provenance is-${esc(p.source)}" title="${esc(p.detail || "")}">${icon} ${label}</span>`;
+  const currentSignals = () => sourceId ? signals.filter((signal) => signal.source_note_id === sourceId) : signals;
+  const candidateSignals = (candidate) => signals.filter((signal) => (candidate.evidence_signal_ids || []).includes(signal.id));
+  const relevantAttention = () => {
+    if (!sourceId) return attention;
+    const ids = new Set(currentSignals().map((signal) => signal.id));
+    return attention.filter((candidate) => (candidate.evidence_signal_ids || []).some((id) => ids.has(id)));
   };
-  const textBlock = (label, value, source = "") =>
-    value
-      ? `<div class="becky-payload-block"><small>${label}</small><p>${esc(value)}${source}</p></div>`
-      : "";
-  const roleLabels = (item) =>
-    (item.payload?.role_ids || [])
-      .map((id) => roles.find((role) => role[0] === id)?.[1])
-      .filter(Boolean);
-  const entryTypeLabel = (type) =>
-    entryTypes.find((item) => item[0] === type)?.[1] || "Tip de completat";
-  const entrySectionLabel = (type) =>
-    ({ done: "Ce am făcut", evidence: "Dovezi", learned: "Ce am învățat" })[
-      type
-    ] || "Tip de completat";
-  const displayDate = (value) => {
-    const match = String(value || "")
-      .slice(0, 10)
-      .match(/^(\d{4})-(\d{2})-(\d{2})$/);
-    return match ? `${match[3]}.${match[2]}.${match[1]}` : "Data de completat";
-  };
-  function targetLabel(item) {
-    if (item.destination === "activity_observation")
-      return (
-        context.activities.find((x) => x.id === item.payload?.activity_id)
-          ?.title ||
-        item.target_candidates?.[0]?.label ||
-        item.resolution_query ||
-        "Selectează activitatea"
-      );
-    if (item.destination === "crm_child_observation")
-      return (
-        context.children.find((x) => x.id === item.payload?.child_id)
-          ?.first_name ||
-        item.target_candidates?.[0]?.label ||
-        item.resolution_query ||
-        "Selectează copilul"
-      );
-    if (item.destination === "monthly_report_entry")
-      return roleLabels(item).join(" · ") || "Selectează rolul";
-    return (
-      item.target_candidates?.[0]?.label ||
-      destinations[item.destination]?.label ||
-      "Destinație"
-    );
+  const entityName = (signal) => (signal.entities || []).filter((entity) => entity.resolution === "resolved").map((entity) => entity.label).join(" · ");
+  function signalCard(signal) {
+    const child = (signal.entities || []).find((entity) => entity.type === "child");
+    const select = child ? `<label>Persoană<select data-child-resolution="${esc(signal.id)}"><option value="">Fără asociere sigură</option>${context.children.map((item) => `<option value="${esc(item.id)}" ${child.id === item.id ? "selected" : ""}>${esc(item.first_name)}</option>`).join("")}</select></label>` : "";
+    return `<article class="becky-memory-signal ${signal.stale ? "is-stale" : ""}" data-signal-id="${esc(signal.id)}"><div><small>${esc(date(signal.source_date))}${entityName(signal) ? ` · ${esc(entityName(signal))}` : ""}</small><strong>${esc(signal.normalized_observation)}</strong><span>${esc(signal.epistemic_type === "direct_quote" ? "Citat direct" : "Observație factuală")}</span></div><details><summary>Inspectează fragmentul</summary><blockquote>„${esc(signal.exact_source_excerpt)}”</blockquote>${select}<div class="becky-memory-actions">${child ? '<button type="button" data-save-entity>Corectează asocierea</button>' : ""}<button type="button" data-delete-signal>Elimină semnalul</button></div></details></article>`;
   }
-  function operationLabel(item) {
-    if (item.destination === "monthly_report_entry")
-      return `Adaugă ${entryTypeLabel(item.payload?.type).toLocaleLowerCase("ro")}`;
-    return destinations[item.destination]?.operation || item.operation;
+  function attentionCard(candidate) {
+    const evidence = candidateSignals(candidate);
+    const counter = signals.filter((signal) => (candidate.counter_evidence_signal_ids || []).includes(signal.id));
+    return `<article class="becky-memory-attention" data-attention-id="${esc(candidate.id)}"><header><small>MERITĂ ATENȚIE</small><h2>${esc(candidate.title)}</h2></header><p>${esc(candidate.summary)}</p><div class="becky-memory-stats"><span>${candidate.independent_evidence_count} semnale</span><span>${candidate.date_count} zile</span><span>${candidate.entity_count} entități</span></div><details><summary>Vezi de ce</summary><p><strong>De ce contează:</strong> ${esc(candidate.why_it_matters)}</p><p><strong>Următorul pas:</strong> ${esc(candidate.suggested_next_step)}</p><ul>${evidence.map((signal) => `<li>${esc(date(signal.source_date))}: „${esc(signal.normalized_observation)}”</li>`).join("")}</ul>${counter.length ? `<p class="becky-memory-counter"><strong>Semnalele sunt mixte.</strong> ${counter.map((signal) => `„${esc(signal.normalized_observation)}”`).join(" · ")}</p>` : ""}</details><footer><button type="button" data-investigate>${candidate.status === "investigating" ? "În investigare" : "Investigăm"}</button><label>Păstrează ca<select data-promote-target><option value="">Alege destinația</option>${targets.map(([id, label]) => `<option value="${id}">${label}</option>`).join("")}</select></label><button type="button" data-promote disabled>Knowledge Candidate</button></footer></article>`;
   }
-  function approvedLabel(item) {
-    const target = targetLabel(item);
-    if (item.destination === "activity_observation")
-      return `✓ Testare adăugată la ${target}`;
-    if (item.destination === "crm_child_observation")
-      return `✓ Adăugat în CRM-ul lui ${target}`;
-    if (item.destination === "monthly_report_entry")
-      return "✓ Adăugat în Raportul Lunar";
-    return "✓ Modificare păstrată";
+  function summaryView() {
+    const viewed = currentSignals(); const candidates = relevantAttention();
+    return `<header class="becky-inbox-head becky-memory-head"><div><small>✦ BECKY MEMORY</small><h1>${sourceId ? `Nota din ${esc(date(sourceId))}` : "Memoria Becky"}</h1><p>Becky păstrează semnalele factuale. Îți cere atenția doar când dovezile se acumulează.</p></div><a href="/admin?view=monthly-report&tab=notes">← Note zilnice</a></header><main class="becky-memory-summary"><section class="becky-memory-status"><strong>✓ ${viewed.length} ${viewed.length === 1 ? "semnal păstrat" : "semnale păstrate"}</strong><span>${candidates.length ? `${candidates.length} lucru${candidates.length === 1 ? "" : "ri"} merită atenție` : "Nimic nu necesită atenția ta acum."}</span></section>${candidates.length ? `<section class="becky-memory-attention-list">${candidates.map(attentionCard).join("")}</section>` : ""}${viewed.length ? `<section class="becky-memory-recent"><h2>Semnale din această notă</h2>${viewed.slice(0, 4).map(signalCard).join("")}</section>` : '<section class="becky-inbox-empty"><strong>Încă nu există semnale pentru această notă.</strong><span>O analiză fără insight sau atenționare este un rezultat valid.</span></section>'}</main><footer class="becky-brief-footer"><button class="primary" type="button" data-show-memory>Vezi memoria</button></footer>`;
   }
-  function resultLink(item) {
-    if (!item.destination_entity_id) return "";
-    if (item.destination === "activity_observation")
-      return `<a class="becky-result-link" href="/admin/biblioteca-activitati-copii?activity_id=${encodeURIComponent(item.target_entity_id || item.payload?.activity_id || "")}#testari-observatii">Vezi în Bibliotecă →</a>`;
-    if (item.destination === "crm_child_observation")
-      return `<a class="becky-result-link" href="/admin?view=crm&child=${encodeURIComponent(item.target_entity_id || item.payload?.child_id || "")}">Vezi în CRM →</a>`;
-    if (item.destination === "monthly_report_entry")
-      return `<a class="becky-result-link" href="/admin?view=monthly-report&role=${encodeURIComponent(item.payload?.role_ids?.[0] || "")}">Vezi în Raport →</a>`;
-    return "";
-  }
-  function semanticSection(label, content, className = "") {
-    return `<section class="becky-semantic-section ${className}"><small>${label}</small>${content}</section>`;
-  }
-  function compactPayload(item) {
-    const p = item.payload || {};
-    if (item.destination === "activity_observation") {
-      const found =
-        `${textBlock("OBSERVAȚIE FACTUALĂ", p.observed, badge(item, "observed"))}${textBlock("CRED CĂ ÎNSEAMNĂ", p.interpreted, badge(item, "interpreted"))}${textBlock("VREAU SĂ VERIFIC", p.hypothesized, badge(item, "hypothesized"))}${textBlock("DATA VIITOARE", p.action, badge(item, "action"))}` ||
-        '<p class="becky-empty-value">? De completat</p>';
-      const facts = `<p>Se creează o testare cu:</p><div class="becky-facts"><span>Data: ${esc(displayDate(p.tested_at))} ${badge(item, "tested_at")}</span><span>Vârstă: ${esc((p.age_categories || []).join(", ") || "De completat")} ${badge(item, "age_categories")}</span><span>Participanți: ${esc(p.participants || "De completat")} ${badge(item, "participants")}</span><span>Rezultat: ${esc(p.result || "De completat")} ${badge(item, "result")}</span></div>`;
-      return (
-        semanticSection("CE AM GĂSIT", found, "is-found") +
-        semanticSection(
-          "UNDE VA AJUNGE",
-          `<p><strong>Biblioteca Copii</strong> → ${esc(targetLabel(item))} → Testări & observații</p>`,
-          "is-destination",
-        ) +
-        semanticSection("CE SE VA ÎNTÂMPLA", facts, "is-action")
-      );
-    }
-    if (item.destination === "crm_child_observation") {
-      const found = p.observation
-        ? `<blockquote>„${esc(p.observation)}”</blockquote>${badge(item, "observation")}`
-        : '<p class="becky-empty-value">? De completat</p>';
-      return (
-        semanticSection("CE AM GĂSIT", found, "is-found") +
-        semanticSection(
-          "UNDE VA AJUNGE",
-          `<p><strong>CRM Copii</strong> → ${esc(targetLabel(item))} → Observații</p>`,
-          "is-destination",
-        ) +
-        semanticSection(
-          "CE SE VA ÎNTÂMPLA",
-          `<p>Se adaugă ca observație factuală<br><strong>Data:</strong> ${esc(displayDate(p.observed_at))} ${badge(item, "observed_at")}</p>`,
-          "is-action",
-        )
-      );
-    }
-    if (item.destination === "monthly_report_entry") {
-      const found = p.text
-        ? `<blockquote>„${esc(p.text)}”</blockquote>${badge(item, "text")}`
-        : '<p class="becky-empty-value">? De completat</p>';
-      return (
-        semanticSection("CE AM GĂSIT", found, "is-found") +
-        semanticSection(
-          "UNDE VA AJUNGE",
-          `<p><strong>Raport Lunar</strong> → ${esc(roleLabels(item).join(", ") || "Selectează rolul")} → ${esc(entrySectionLabel(p.type))} ${badge(item, "role_ids")}</p>`,
-          "is-destination",
-        ) +
-        semanticSection(
-          "CE SE VA ÎNTÂMPLA",
-          `<p>Se creează o Monthly Report Entry de tip <code>${esc(p.type || "de completat")}</code> ${badge(item, "type")}</p>`,
-          "is-action",
-        )
-      );
-    }
-    return "";
-  }
-  const formActions = () =>
-    `<div class="becky-edit-actions wide"><button type="button" data-cancel-edit>Renunță</button><button class="primary" type="submit">Salvează propunerea</button></div>`;
-  function editor(item) {
-    const p = item.payload || {};
-    if (item.destination === "activity_observation")
-      return `<form class="becky-edit-form" data-edit-form="${esc(item.id)}"><label>Activitate<select name="target_entity_id"><option value="">Selectează activitatea</option>${context.activities.map((x) => `<option value="${esc(x.id)}" ${p.activity_id === x.id ? "selected" : ""}>${esc(x.title)}</option>`).join("")}</select></label><label>Data<input type="date" name="tested_at" value="${esc(p.tested_at || "")}"></label><fieldset><legend>Vârste</legend>${ages.map((x) => `<label><input type="checkbox" name="age_categories" value="${x}" ${(p.age_categories || []).includes(x) ? "checked" : ""}>${x}</label>`).join("")}</fieldset><label>Participanți<select name="participants"><option value="">De completat</option>${participants.map((x) => `<option ${p.participants === x ? "selected" : ""}>${x}</option>`).join("")}</select></label><label>Rezultat<select name="result"><option value="">De completat</option>${results.map((x) => `<option ${p.result === x ? "selected" : ""}>${x}</option>`).join("")}</select></label>${["observed", "interpreted", "hypothesized", "action"].map((key, index) => `<label class="wide">${["Observat", "Interpretare", "Ipoteză", "Data viitoare"][index]}<textarea name="${key}">${esc(p[key] || "")}</textarea></label>`).join("")}${formActions()}</form>`;
-    if (item.destination === "crm_child_observation")
-      return `<form class="becky-edit-form" data-edit-form="${esc(item.id)}"><label>Copil<select name="target_entity_id"><option value="">Selectează copilul</option>${context.children.map((x) => `<option value="${esc(x.id)}" ${p.child_id === x.id ? "selected" : ""}>${esc(x.first_name)}</option>`).join("")}</select></label><label>Data<input type="date" name="observed_at" value="${esc(String(p.observed_at || "").slice(0, 10))}"></label><label class="wide">Observație factuală<textarea name="observation">${esc(p.observation || "")}</textarea></label>${formActions()}</form>`;
-    return `<form class="becky-edit-form" data-edit-form="${esc(item.id)}"><label>Tip<select name="type">${entryTypes.map(([v, l]) => `<option value="${v}" ${p.type === v ? "selected" : ""}>${l}</option>`).join("")}</select></label><fieldset class="wide"><legend>Roluri</legend>${roles.map(([v, l]) => `<label><input type="checkbox" name="role_ids" value="${v}" ${(p.role_ids || []).includes(v) ? "checked" : ""}>${l}</label>`).join("")}</fieldset><label class="wide">Text<textarea name="text">${esc(p.text || "")}</textarea></label>${formActions()}</form>`;
-  }
-  function quickFixes(item) {
-    if (!["pending", "failed"].includes(item.status)) return "";
-    const p = item.payload || {};
-    let html = "";
-    if (
-      ["activity_observation", "crm_child_observation"].includes(
-        item.destination,
-      ) &&
-      item.resolution_status !== "resolved"
-    ) {
-      const options =
-        item.destination === "activity_observation"
-          ? context.activities
-          : context.children;
-      const noun =
-        item.destination === "activity_observation" ? "activitatea" : "copilul";
-      const message =
-        item.resolution_status === "ambiguous"
-          ? `Am găsit mai multe potriviri pentru „${esc(item.resolution_query || "")}”.`
-          : `„${esc(item.resolution_query || "Entitatea")}” nu există în sistem.`;
-      html += `<div class="becky-inline-fix"><strong>${message}</strong><label>Dacă ${noun} există sub alt nume:<select data-quick-target><option value="">Selectează</option>${options.map((x) => `<option value="${esc(x.id)}">${esc(x.title || x.first_name)}</option>`).join("")}</select></label><button data-save-target disabled>Confirmă destinația</button></div>`;
-    }
-    if (item.destination === "activity_observation") {
-      if (!(p.age_categories || []).length)
-        html += `<div class="becky-inline-fix"><strong>? Selectează vârsta</strong><div>${ages.map((x) => `<button data-quick-age="${x}">${x}</button>`).join("")}</div></div>`;
-      if (!p.participants)
-        html += `<div class="becky-inline-fix"><strong>? Selectează participanții</strong><div>${participants.map((x) => `<button data-quick-participants="${x}">${x}</button>`).join("")}</div></div>`;
-      if (!p.result)
-        html += `<div class="becky-inline-fix"><strong>? Selectează rezultatul</strong><div>${results.map((x) => `<button data-quick-result="${x}">${x}</button>`).join("")}</div></div>`;
-    }
-    return html;
-  }
-  function card(item) {
-    const info = destinations[item.destination] || {
-      icon: "✦",
-      label: item.destination,
-      operation: item.operation,
-      approve: "✓ Aplică modificarea",
-      tone: "generic",
-    };
-    const incomplete = (item.validation_errors || []).length > 0;
-    const state =
-      item.status === "approved"
-        ? `<strong class="becky-kept">${esc(approvedLabel(item))}</strong>`
-        : item.status === "ignored"
-          ? '<strong class="becky-ignored">IGNORAT</strong>'
-          : item.status === "failed"
-            ? '<strong class="becky-failed">NECESITĂ ATENȚIE</strong>'
-            : item.status === "reverted"
-              ? '<strong class="becky-reverted">ANULAT</strong>'
-              : "";
-    return `<article class="becky-change-card tone-${info.tone} status-${esc(item.status)}" data-proposal-id="${esc(item.id)}"><header><div><span>${info.icon} ${esc(info.label)}</span><h2>${esc(targetLabel(item))}</h2><b>${esc(operationLabel(item))}</b></div>${state}</header>${item.stale ? '<div class="becky-stale">⚠ Nota a fost modificată după această analiză.</div>' : ""}${compactPayload(item)}${quickFixes(item)}${item.last_error ? `<div class="becky-missing"><strong>Nu am putut finaliza</strong><span>${esc(item.last_error)}</span></div>` : ""}${item.revert_error ? `<div class="becky-missing"><strong>Anularea automată a fost oprită</strong><span>${esc(item.revert_error)}</span></div>` : ""}${incomplete ? `<div class="becky-missing"><strong>Mai trebuie completat</strong>${item.validation_errors.map((error) => `<span>${esc(error)}</span>`).join("")}</div>` : ""}${item.source_excerpt ? `<details><summary>Vezi fragmentul exact din notă</summary><blockquote>${esc(item.source_excerpt)}</blockquote></details>` : ""}${item.destination_entity_id ? `<div class="becky-execution"><small>ID rezultat: ${esc(item.destination_entity_id)}</small><small>Executat: ${esc(new Date(item.executed_at).toLocaleString("ro-RO"))}</small>${resultLink(item)}</div>` : ""}${editing === item.id ? editor(item) : ""}<footer>${["pending", "failed"].includes(item.status) && editing !== item.id ? `<button data-edit>Editează</button><button data-ignore>Ignoră</button><button class="primary" data-approve ${incomplete ? "disabled" : ""}>${item.status === "failed" ? "Încearcă din nou" : esc(info.approve)}</button>` : ""}${item.status === "approved" ? `<button data-revert>Anulează schimbarea</button>${resultLink(item)}` : ""}${item.status === "reverted" ? resultLink(item) : ""}</footer></article>`;
-  }
-  function visible() {
-    return proposals.filter(
-      (item) =>
-        (statusFilter === "all" || item.status === statusFilter) &&
-        (destinationFilter === "all" || item.destination === destinationFilter),
-    );
-  }
-  function count(status) {
-    return proposals.filter((item) => item.status === status).length;
-  }
-  function briefCard(item) {
-    const evidence = Array.isArray(item.evidence_refs)
-      ? item.evidence_refs
-      : [];
-    return `<article class="becky-brief-card"><header><span>${esc(briefCategories[item.category] || "Insight")}</span><h2>${esc(item.insight_title)}</h2></header><p class="becky-brief-summary">${esc(item.insight_summary)}</p><div class="becky-brief-why"><small>DE CE CONTEAZĂ</small><p>${esc(item.why_it_matters)}</p></div><div class="becky-brief-action"><span aria-hidden="true">→</span><div><small>CE MERITĂ ÎNCERCAT</small><strong>${esc(item.recommended_action)}</strong></div></div>${evidence.length ? `<details><summary>Vezi dovezile (${evidence.length})</summary><ul>${evidence.map((value) => `<li>„${esc(value)}”</li>`).join("")}</ul></details>` : ""}${(item.related_proposal_ids || []).length ? `<small class="becky-brief-related">Legat de ${(item.related_proposal_ids || []).length} ${(item.related_proposal_ids || []).length === 1 ? "schimbare propusă" : "schimbări propuse"}</small>` : ""}</article>`;
-  }
-  function briefView() {
-    const current = brief.filter((item) => !item.stale);
-    const insights = current.length ? current : brief;
-    const historical = !current.length && brief.length > 0;
-    return `<header class="becky-inbox-head becky-brief-head"><div><small>✨ BECKY BRIEF</small><h1>${insights.length} ${insights.length === 1 ? "lucru care merită atenția ta" : "lucruri care merită atenția ta"}</h1><p>O sinteză scurtă a notei, ordonată după relevanță. Dovezile brute rămân disponibile, fără să ocupe primul plan.</p></div><a href="/admin?view=monthly-report&tab=notes">← Note zilnice</a></header>${historical ? '<div class="becky-stale">⚠ Acesta este brief-ul unei versiuni anterioare a notei.</div>' : ""}<main class="becky-brief-list">${insights.map(briefCard).join("") || '<div class="becky-inbox-empty"><strong>Nu există insight-uri suficient de solide pentru această notă.</strong><span>Este un rezultat valid: Becky nu promovează reformulări sau observații izolate doar ca să umple lista.</span></div>'}</main><footer class="becky-brief-footer"><button class="primary" type="button" data-show-proposals>Vezi schimbările propuse (${proposals.length})</button><span>Aici verifici separat ce poate fi scris în sistem.</span></footer>`;
-  }
-  function proposalsView() {
-    return `<header class="becky-inbox-head"><div><small>✨ SCHIMBĂRI PROPUSE</small><h1>Ce poate fi scris în sistem</h1><p>${count("pending")} de verificat · ${count("approved")} păstrate · ${count("ignored")} ignorate${count("failed") ? ` · ${count("failed")} necesită atenție` : ""}</p></div><button type="button" data-show-brief>← Becky Brief</button></header><nav class="becky-inbox-filters becky-status-filters">${statusFilters.map(([v, l]) => `<button class="${statusFilter === v ? "active" : ""}" data-status-filter="${v}">${l}<b>${v === "all" ? proposals.length : count(v)}</b></button>`).join("")}</nav><nav class="becky-inbox-filters">${[
-      ["all", "Toate destinațiile"],
-      ["crm_child_observation", "Copii"],
-      ["activity_observation", "Activități"],
-      ["monthly_report_entry", "Raport"],
-    ]
-      .map(
-        ([v, l]) =>
-          `<button class="${destinationFilter === v ? "active" : ""}" data-destination-filter="${v}">${l}</button>`,
-      )
-      .join(
-        "",
-      )}</nav><main class="becky-change-list">${visible().map(card).join("") || '<p class="becky-inbox-empty">Nu există propuneri în această stare.</p>'}</main>`;
+  function memoryView() {
+    const viewed = currentSignals();
+    return `<header class="becky-inbox-head becky-memory-head"><div><small>✦ BECKY MEMORY</small><h1>Auditul memoriei</h1><p>Verifică fragmentul original, corectează o asociere sau elimină un semnal greșit.</p></div><button type="button" data-show-summary>← Rezumat</button></header><main class="becky-memory-list">${viewed.map(signalCard).join("") || '<p class="becky-inbox-empty">Nu există semnale de afișat.</p>'}</main>`;
   }
   function paint() {
     const root = document.querySelector("#becky-inbox-root");
     if (!root) return;
-    root.innerHTML = layer === "brief" ? briefView() : proposalsView();
+    root.innerHTML = layer === "memory" ? memoryView() : summaryView();
     bind();
   }
-  function payloadFromForm(form, item) {
-    const data = new FormData(form);
-    if (item.destination === "activity_observation")
-      return {
-        target_entity_id: data.get("target_entity_id"),
-        payload: {
-          tested_at: data.get("tested_at"),
-          age_categories: data.getAll("age_categories"),
-          participants: data.get("participants") || null,
-          result: data.get("result") || null,
-          observed: String(data.get("observed") || "").trim(),
-          interpreted: String(data.get("interpreted") || "").trim(),
-          hypothesized: String(data.get("hypothesized") || "").trim(),
-          action: String(data.get("action") || "").trim(),
-        },
-      };
-    if (item.destination === "crm_child_observation")
-      return {
-        target_entity_id: data.get("target_entity_id"),
-        payload: {
-          observed_at: data.get("observed_at")
-            ? `${data.get("observed_at")}T12:00:00.000Z`
-            : "",
-          observation: String(data.get("observation") || "").trim(),
-        },
-      };
-    return {
-      payload: {
-        type: data.get("type"),
-        role_ids: data.getAll("role_ids"),
-        text: String(data.get("text") || "").trim(),
-      },
-    };
-  }
-  async function patch(item, body) {
-    const response = await api(
-      `/api/admin/becky-inbox/proposals/${encodeURIComponent(item.id)}`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      },
-    );
-    if (response.ok) await load();
-    return response;
+  async function refresh() {
+    const query = sourceId ? `?source_note_id=${encodeURIComponent(sourceId)}` : "";
+    const [signalsResponse, attentionResponse, contextResponse] = await Promise.all([api(`/api/admin/becky-memory/signals${query}`), api("/api/admin/becky-memory/attention"), api("/api/admin/becky-inbox/context")]);
+    signals = signalsResponse.ok ? (await signalsResponse.json()).signals || [] : [];
+    attention = attentionResponse.ok ? (await attentionResponse.json()).candidates || [] : [];
+    context = contextResponse.ok ? await contextResponse.json() : context;
+    paint();
   }
   function bind() {
-    document
-      .querySelector("[data-show-proposals]")
-      ?.addEventListener("click", () => {
-        layer = "proposals";
-        paint();
-      });
-    document
-      .querySelector("[data-show-brief]")
-      ?.addEventListener("click", () => {
-        layer = "brief";
-        paint();
-      });
-    document.querySelectorAll("[data-status-filter]").forEach(
-      (button) =>
-        (button.onclick = () => {
-          statusFilter = button.dataset.statusFilter;
-          paint();
-        }),
-    );
-    document.querySelectorAll("[data-destination-filter]").forEach(
-      (button) =>
-        (button.onclick = () => {
-          destinationFilter = button.dataset.destinationFilter;
-          paint();
-        }),
-    );
-    document.querySelectorAll("[data-proposal-id]").forEach((node) => {
-      const item = proposals.find((x) => x.id === node.dataset.proposalId);
-      node.querySelector("[data-edit]")?.addEventListener("click", () => {
-        editing = item.id;
-        paint();
-      });
-      node
-        .querySelector("[data-cancel-edit]")
-        ?.addEventListener("click", () => {
-          editing = null;
-          paint();
-        });
-      node
-        .querySelector("[data-edit-form]")
-        ?.addEventListener("submit", async (event) => {
-          event.preventDefault();
-          const response = await patch(
-            item,
-            payloadFromForm(event.currentTarget, item),
-          );
-          if (response.ok) editing = null;
-        });
-      node
-        .querySelector("[data-ignore]")
-        ?.addEventListener("click", async () => {
-          if (
-            !confirm("Ignori această propunere? Nu se va scrie nimic canonic.")
-          )
-            return;
-          await api(
-            `/api/admin/becky-inbox/proposals/${encodeURIComponent(item.id)}/ignore`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: "{}",
-            },
-          );
-          await load();
-        });
-      node
-        .querySelector("[data-approve]")
-        ?.addEventListener("click", async () => {
-          let confirm_stale = false;
-          if (item.stale) {
-            confirm_stale = confirm(
-              "Nota a fost modificată după analiză. Aprobi totuși această versiune?",
-            );
-            if (!confirm_stale) return;
-          }
-          const response = await api(
-            `/api/admin/becky-inbox/proposals/${encodeURIComponent(item.id)}/approve`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ confirm_stale }),
-            },
-          );
-          const result = await response.json();
-          if (!response.ok) alert(result.error || "Aprobarea nu a reușit.");
-          else statusFilter = "approved";
-          await load();
-        });
-      node
-        .querySelector("[data-revert]")
-        ?.addEventListener("click", async () => {
-          if (
-            !confirm(
-              "Anulezi schimbarea? Obiectul creat va fi șters doar dacă nu a fost modificat ulterior.",
-            )
-          )
-            return;
-          const response = await api(
-            `/api/admin/becky-inbox/proposals/${encodeURIComponent(item.id)}/revert`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: "{}",
-            },
-          );
-          const result = await response.json();
-          if (!response.ok) alert(result.error || "Anularea nu a reușit.");
-          await load();
-        });
-      const select = node.querySelector("[data-quick-target]");
-      const save = node.querySelector("[data-save-target]");
-      if (select && save) {
-        select.onchange = () => (save.disabled = !select.value);
-        save.onclick = () => patch(item, { target_entity_id: select.value });
-      }
-      node.querySelectorAll("[data-quick-age]").forEach(
-        (button) =>
-          (button.onclick = () =>
-            patch(item, {
-              payload: { age_categories: [button.dataset.quickAge] },
-            })),
-      );
-      node.querySelectorAll("[data-quick-participants]").forEach(
-        (button) =>
-          (button.onclick = () =>
-            patch(item, {
-              payload: { participants: button.dataset.quickParticipants },
-            })),
-      );
-      node
-        .querySelectorAll("[data-quick-result]")
-        .forEach(
-          (button) =>
-            (button.onclick = () =>
-              patch(item, { payload: { result: button.dataset.quickResult } })),
-        );
+    document.querySelector("[data-show-memory]")?.addEventListener("click", () => { layer = "memory"; paint(); });
+    document.querySelector("[data-show-summary]")?.addEventListener("click", () => { layer = "summary"; paint(); });
+    document.querySelectorAll("[data-signal-id]").forEach((node) => {
+      const signal = signals.find((item) => item.id === node.dataset.signalId);
+      node.querySelector("[data-delete-signal]")?.addEventListener("click", async () => { if (!confirm("Elimini acest semnal din memoria Becky?")) return; const response = await api(`/api/admin/becky-memory/signals/${encodeURIComponent(signal.id)}`, { method: "DELETE" }); if (!response.ok) alert("Semnalul nu a putut fi eliminat."); await refresh(); });
+      node.querySelector("[data-save-entity]")?.addEventListener("click", async () => { const selected = node.querySelector("[data-child-resolution]"); const child = context.children.find((item) => item.id === selected.value); const entities = (signal.entities || []).map((entity) => entity.type === "child" ? { ...entity, id: child?.id || null, label: child?.first_name || entity.label, resolution: child ? "resolved" : "not_found" } : entity); const response = await api(`/api/admin/becky-memory/signals/${encodeURIComponent(signal.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ entities }) }); if (!response.ok) alert("Asocierea nu a putut fi actualizată."); await refresh(); });
     });
-  }
-  async function load() {
-    const sourceId =
-      new URLSearchParams(location.search).get("source_id") || "";
-    const query = sourceId ? `?source_id=${encodeURIComponent(sourceId)}` : "";
-    const [proposalResponse, briefResponse, contextResponse] =
-      await Promise.all([
-        api(`/api/admin/becky-inbox/proposals${query}`),
-        api(`/api/admin/becky-inbox/brief${query}`),
-        api("/api/admin/becky-inbox/context"),
-      ]);
-    proposals = proposalResponse.ok
-      ? (await proposalResponse.json()).proposals || []
-      : [];
-    brief = briefResponse.ok ? (await briefResponse.json()).insights || [] : [];
-    context = contextResponse.ok ? await contextResponse.json() : context;
-    if (!visible().length && statusFilter === "pending" && proposals.length)
-      statusFilter = "all";
-    paint();
+    document.querySelectorAll("[data-attention-id]").forEach((node) => {
+      const candidate = attention.find((item) => item.id === node.dataset.attentionId);
+      node.querySelector("[data-investigate]")?.addEventListener("click", async () => { await api(`/api/admin/becky-memory/attention/${encodeURIComponent(candidate.id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "investigating" }) }); await refresh(); });
+      const select = node.querySelector("[data-promote-target]"); const promote = node.querySelector("[data-promote]");
+      if (select && promote) { select.onchange = () => { promote.disabled = !select.value; }; promote.onclick = async () => { const response = await api(`/api/admin/becky-memory/attention/${encodeURIComponent(candidate.id)}/promote`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ target: select.value }) }); if (!response.ok) alert("Candidatul nu a putut fi păstrat."); await refresh(); }; }
+    });
   }
   window.renderBeckyInboxAdmin = async function () {
     document.body.dataset.workspace = "becky-inbox";
@@ -560,10 +75,8 @@
     document.getElementById("css-workspace")?.classList.add("hidden");
     document.getElementById("empty")?.classList.add("hidden");
     document.getElementById("editor")?.classList.add("hidden");
-    const app =
-      document.querySelector("#app") || document.querySelector("main");
-    app.innerHTML =
-      '<section id="becky-inbox-root" class="becky-inbox-shell"><p>Se încarcă Becky Inbox…</p></section>';
-    await load();
+    const app = document.querySelector("#app") || document.querySelector("main");
+    app.innerHTML = '<section id="becky-inbox-root" class="becky-inbox-shell"><p>Se încarcă memoria Becky…</p></section>';
+    await refresh();
   };
 })();
