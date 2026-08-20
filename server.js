@@ -7,7 +7,7 @@ const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 3000);
 const DATA_FILE = path.join(ROOT, 'data', 'manual.json');
 const CSS_FILE = path.join(ROOT, 'data', 'custom.css');
-const WORKSPACES_FILE = path.join(ROOT, 'data', 'workspaces.json');
+const WORKSPACES_FILE = process.env.BECKY_WORKSPACES_FILE || path.join(ROOT, 'data', 'workspaces.json');
 const EVENT_SURVEY_FILE = path.join(ROOT, 'data', 'event-survey-responses.json');
 const EVENT_FUNNEL_FILE = path.join(ROOT, 'data', 'event-survey-funnel-events.json');
 const PLAYGROUND_SURVEY_FILE = path.join(ROOT, 'data', 'playground-survey-responses.json');
@@ -15,13 +15,16 @@ const PLAYGROUND_FUNNEL_FILE = path.join(ROOT, 'data', 'playground-survey-funnel
 const PLAYGROUND_RAFFLE_FILE = path.join(ROOT, 'data', 'playground-survey-raffle.json');
 const ADMIN_TASKS_FILE = path.join(ROOT, 'data', 'admin-tasks.json');
 const ADMIN_CALENDAR_FILE = path.join(ROOT, 'data', 'admin-calendar.json');
-const ADMIN_CRM_FILE = path.join(ROOT, 'data', 'admin-crm.json');
-const ADMIN_MONTHLY_REPORT_FILE = path.join(ROOT, 'data', 'admin-monthly-report.json');
-const ADMIN_ACTIVITY_OBSERVATIONS_FILE = path.join(ROOT, 'data', 'admin-activity-observations.json');
+const ADMIN_CRM_FILE = process.env.BECKY_CRM_FILE || path.join(ROOT, 'data', 'admin-crm.json');
+const ADMIN_MONTHLY_REPORT_FILE = process.env.BECKY_MONTHLY_REPORT_FILE || path.join(ROOT, 'data', 'admin-monthly-report.json');
+const ADMIN_ACTIVITY_OBSERVATIONS_FILE = process.env.BECKY_ACTIVITY_OBSERVATIONS_FILE || path.join(ROOT, 'data', 'admin-activity-observations.json');
 const ADMIN_CONTENT_LAB_IDEAS_FILE = path.join(ROOT, 'data', 'admin-content-lab-ideas.json');
 const ADMIN_EVENT_FINDINGS_FILE = path.join(ROOT, 'data', 'admin-event-community-findings.json');
 const ADMIN_KNOWLEDGE_CANDIDATES_FILE = path.join(ROOT, 'data', 'admin-knowledge-candidates.json');
+const ADMIN_BECKY_INBOX_FILE = process.env.BECKY_INBOX_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-inbox-proposals.json');
 const PUBLIC = path.join(ROOT, 'public');
+const beckyInboxCorePromise = import('./src/becky-inbox/core.mjs');
+const beckyInboxAnalyzePromise = import('./src/becky-inbox/analyze.mjs');
 
 const MONTHLY_REPORT_ROLES = [
   ['experienta-copilului', 'Experiența copilului'], ['relatia-cu-parintii', 'Relația cu părinții'],
@@ -55,6 +58,13 @@ function readContentLabIdeas() { try { const value = fs.existsSync(ADMIN_CONTENT
 function writeContentLabIdeas(items) { fs.mkdirSync(path.dirname(ADMIN_CONTENT_LAB_IDEAS_FILE), { recursive: true }); fs.writeFileSync(ADMIN_CONTENT_LAB_IDEAS_FILE, JSON.stringify(items, null, 2)); }
 function readJsonStore(file, label) { try { const value = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []; return Array.isArray(value) ? value : []; } catch { throw new Error(`Invalid ${label} store`); } }
 function writeJsonStore(file, items) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(items, null, 2)); }
+function readBeckyInbox() { return readJsonStore(ADMIN_BECKY_INBOX_FILE, 'Becky Inbox'); }
+function writeBeckyInbox(items) { writeJsonStore(ADMIN_BECKY_INBOX_FILE, items); }
+function localBeckyContext() {
+  const crm = readCrmStore(); const workspaces = readWorkspaces(); const childrenWorkspace = (workspaces.workspaces || []).find(item => item.id === 'children');
+  const activities = (childrenWorkspace?.activities || []).filter(item => item?.id && item?.title && item.title !== 'Activitate nouă').map(item => ({ id:item.id, title:item.title, age_categories:Array.isArray(item.ageCategories) ? item.ageCategories : item.age ? [item.age] : [] }));
+  return { children:crm.children.map(item => ({ id:item.id, first_name:item.first_name, age:item.age })), activities, roles:MONTHLY_REPORT_ROLES.map(([id,label]) => ({ id,label })) };
+}
 function normalizeEventFinding(input, existing = {}) {
   const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim(); const kind = String(input?.kind ?? existing.kind ?? '').trim(); const text = String(input?.text ?? existing.text ?? '').trim();
   const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null;
@@ -304,6 +314,7 @@ function readRequestJson(req, res, maxBytes, callback) {
     catch { send(res, 400, { error: 'Invalid request' }); }
   });
 }
+function readRequestJsonAsync(req, maxBytes) { return new Promise((resolve, reject) => { let raw=''; req.on('data', chunk => { raw += chunk; if (Buffer.byteLength(raw) > maxBytes) reject(Object.assign(new Error('Request too large'), { status:413 })); }); req.on('end', () => { try { resolve(JSON.parse(raw || '{}')); } catch { reject(Object.assign(new Error('Invalid request'), { status:400 })); } }); req.on('error', reject); }); }
 
 async function generateCarouselArtwork(apiKey, prompt, quality = 'medium', transparent = false) {
   if (!apiKey) throw Object.assign(new Error('OPENAI_API_KEY lipsește din mediul local'), { status: 503 });
@@ -415,7 +426,35 @@ function serve(res, pathname) {
   });
 }
 
-const server = http.createServer((req, res) => {
+async function buildLocalProposals(noteDate, noteText, rawProposals) {
+  const core = await beckyInboxCorePromise; const sourceHash = await core.sha256(noteText); const context = { ...localBeckyContext(), note_date:noteDate }; const existing = readBeckyInbox(); const created = [];
+  for (const raw of rawProposals) {
+    const resolved = core.resolveAiProposal(raw, context); if (!core.EXECUTABLE_DESTINATIONS.includes(resolved.destination)) continue;
+    const now = new Date().toISOString(); const draft = { id:crypto.randomUUID(), source_type:'daily_note', source_id:noteDate, source_version:sourceHash, source_hash:sourceHash, source_excerpt:resolved.source_excerpt, destination:resolved.destination, operation:resolved.operation || 'add', target_entity_type:resolved.target_entity_type, target_entity_id:resolved.target_entity_id, target_candidates:resolved.target_candidates, payload:resolved.payload, field_provenance:resolved.field_provenance, status:'pending', validation_errors:[], missing_fields:[], destination_entity_id:null, created_at:now, updated_at:now, executed_at:null, last_error:null };
+    draft.validation_errors = core.validateProposedChange(draft); draft.missing_fields = draft.validation_errors; draft.dedupe_key = await core.proposalDedupeKey(draft);
+    const duplicate = existing.find(item => item.dedupe_key === draft.dedupe_key); if (duplicate) { created.push(duplicate); continue; }
+    existing.push(draft); created.push(draft);
+  }
+  writeBeckyInbox(existing); return { proposals:created, source_hash:sourceHash };
+}
+async function updateLocalProposal(id, body) {
+  const core = await beckyInboxCorePromise; const items = readBeckyInbox(); const index = items.findIndex(item => item.id === id); if (index < 0) throw Object.assign(new Error('Propunerea nu a fost găsită'), { status:404 }); const current = items[index]; if (current.status === 'approved' || current.status === 'ignored') throw Object.assign(new Error('Propunerea nu mai poate fi editată'), { status:409 });
+  const context = localBeckyContext(); const next = { ...current, payload:{ ...current.payload, ...(body?.payload && typeof body.payload === 'object' ? body.payload : {}) }, updated_at:new Date().toISOString(), status:'pending', last_error:null };
+  if (body?.target_entity_id !== undefined) { next.target_entity_id = String(body.target_entity_id || '') || null; if (next.destination === 'activity_observation') next.payload.activity_id = next.target_entity_id; if (next.destination === 'crm_child_observation') next.payload.child_id = next.target_entity_id; const options = next.destination === 'activity_observation' ? context.activities : context.children; const found = options.find(item => item.id === next.target_entity_id); next.target_candidates = found ? [{ id:found.id, label:found.title || found.first_name }] : []; const key = next.destination === 'activity_observation' ? 'activity_id' : 'child_id'; next.field_provenance = { ...next.field_provenance, [key]:{ source:found?'system':'missing', detail:found?'Selectat și confirmat de utilizator':'Selectează o entitate validă' } }; }
+  next.validation_errors = core.validateProposedChange(next); next.missing_fields = next.validation_errors; items[index] = next; writeBeckyInbox(items); return next;
+}
+async function executeLocalProposal(id) {
+  const core = await beckyInboxCorePromise; const items = readBeckyInbox(); const index = items.findIndex(item => item.id === id); if (index < 0) throw Object.assign(new Error('Propunerea nu a fost găsită'), { status:404 }); const item = items[index];
+  if (item.status === 'approved') return item; if (item.status === 'ignored') throw Object.assign(new Error('Propunerea a fost ignorată'), { status:409 }); const errors = core.validateProposedChange(item); if (errors.length) throw Object.assign(new Error(errors[0]), { status:400, validation_errors:errors });
+  try { const payload = core.canonicalExecutionPayload(item); const destinationId=`becky-inbox-${item.id}`; let entity;
+    if (item.destination === 'activity_observation') { const values = readActivityObservations(); entity=values.find(value=>value.id===destinationId); if(!entity){entity = normalizeActivityObservation({ ...payload,id:destinationId }); values.push(entity); writeActivityObservations(values);} }
+    else if (item.destination === 'crm_child_observation') { const store = readCrmStore(); entity=store.observations.find(value=>value.id===destinationId); if(!entity){entity = normalizeCrmObservation({ ...payload,id:destinationId }, {}, new Set(store.children.map(child => child.id)), new Map(store.visits.map(visit => [visit.id, visit]))); store.observations.push(entity); writeCrmStore(store);} }
+    else if (item.destination === 'monthly_report_entry') { const report = readMonthlyReport(); entity=report.entries.find(value=>value.id===destinationId); if(!entity){entity = normalizeMonthlyReportEntry({ ...payload,id:destinationId }, {}, report.month_key); report.entries.push(entity); writeMonthlyReport(report);} }
+    item.status='approved'; item.destination_entity_id=entity.id; item.executed_at=new Date().toISOString(); item.updated_at=item.executed_at; item.last_error=null; item.validation_errors=[]; item.missing_fields=[]; items[index]=item; writeBeckyInbox(items); return item;
+  } catch (error) { item.status='failed'; item.last_error=String(error.message||'Execution failed'); item.updated_at=new Date().toISOString(); items[index]=item; writeBeckyInbox(items); throw error; }
+}
+
+const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
   if (req.method === 'GET' && url.pathname === '/api/runtime') return send(res, 200, {
     runtime: 'node-local',
@@ -425,6 +464,20 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/manual') return send(res, 200, readDocument());
   if (req.method === 'GET' && url.pathname === '/api/styles') return send(res, 200, { css: fs.existsSync(CSS_FILE) ? fs.readFileSync(CSS_FILE, 'utf8') : '' });
   if (req.method === 'GET' && url.pathname === '/api/workspaces') return send(res, 200, readWorkspaces());
+  if (url.pathname === '/api/admin/becky-inbox/context' && req.method === 'GET') return send(res, 200, localBeckyContext());
+  if (url.pathname === '/api/admin/becky-inbox/proposals' && req.method === 'GET') {
+    try { const core=await beckyInboxCorePromise; const report=readMonthlyReport(); const destination=String(url.searchParams.get('destination')||''); const status=String(url.searchParams.get('status')||''); const sourceId=String(url.searchParams.get('source_id')||''); let items=readBeckyInbox().filter(item=>(!destination||item.destination===destination)&&(!status||item.status===status)&&(!sourceId||item.source_id===sourceId)); const hashes=new Map(); for(const item of items){if(item.source_type==='daily_note'&&!hashes.has(item.source_id))hashes.set(item.source_id,await core.sha256(String(report.notes?.[item.source_id]||'')));} items=items.map(item=>({...item,stale:item.source_type==='daily_note'&&hashes.get(item.source_id)!==item.source_hash})).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at))); return send(res,200,{proposals:items}); } catch(error){return send(res,500,{error:error.message||'Becky Inbox indisponibil'});}
+  }
+  if (url.pathname === '/api/admin/becky-inbox/analyze' && req.method === 'POST') {
+    try { const body=await readRequestJsonAsync(req,100_000); const date=String(body?.date||''); const report=readMonthlyReport(); const noteText=String(report.notes?.[date]||'').trim(); if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!noteText)return send(res,400,{error:'Nota zilei nu există sau este goală.'}); const context=localBeckyContext(); let raw;
+      if(process.env.BECKY_INBOX_TEST_MODE==='1'&&Array.isArray(body.analysis_override))raw=body.analysis_override; else { const analyzer=await beckyInboxAnalyzePromise; raw=await analyzer.analyzeDailyNoteWithOpenAI({apiKey:localSecret('OPENAI_API_KEY'),model:localSecret('OPENAI_TEXT_MODEL')||'gpt-4.1-mini',noteDate:date,noteText,children:context.children,activities:context.activities,roles:context.roles}); }
+      const result=await buildLocalProposals(date,noteText,raw); return send(res,201,result);
+    } catch(error){return send(res,error.status||500,{error:error.message||'Nota nu a putut fi analizată.'});}
+  }
+  const beckyProposalMatch=url.pathname.match(/^\/api\/admin\/becky-inbox\/proposals\/([^/?]+)(?:\/(approve|ignore))?$/);
+  if(beckyProposalMatch&&req.method==='PATCH'&&!beckyProposalMatch[2]){try{return send(res,200,await updateLocalProposal(decodeURIComponent(beckyProposalMatch[1]),await readRequestJsonAsync(req,100_000)));}catch(error){return send(res,error.status||400,{error:error.message,validation_errors:error.validation_errors||[]});}}
+  if(beckyProposalMatch&&req.method==='POST'&&beckyProposalMatch[2]==='ignore'){try{const items=readBeckyInbox();const index=items.findIndex(item=>item.id===decodeURIComponent(beckyProposalMatch[1]));if(index<0)return send(res,404,{error:'Propunerea nu a fost găsită'});if(items[index].status==='approved')return send(res,409,{error:'Propunerea este deja aprobată'});items[index]={...items[index],status:'ignored',updated_at:new Date().toISOString(),last_error:null};writeBeckyInbox(items);return send(res,200,items[index]);}catch{return send(res,500,{error:'Propunerea nu a putut fi ignorată'});}}
+  if(beckyProposalMatch&&req.method==='POST'&&beckyProposalMatch[2]==='approve'){try{const body=await readRequestJsonAsync(req,10_000);const core=await beckyInboxCorePromise;const report=readMonthlyReport();const items=readBeckyInbox();const item=items.find(entry=>entry.id===decodeURIComponent(beckyProposalMatch[1]));if(!item)return send(res,404,{error:'Propunerea nu a fost găsită'});if(item.status==='approved')return send(res,200,item);const currentHash=await core.sha256(String(report.notes?.[item.source_id]||''));if(currentHash!==item.source_hash&&!Boolean(body.confirm_stale))return send(res,409,{error:'Nota a fost modificată. Confirmă aprobarea propunerii vechi.',stale:true});return send(res,200,await executeLocalProposal(item.id));}catch(error){return send(res,error.status||500,{error:error.message||'Aprobarea a eșuat',validation_errors:error.validation_errors||[]});}}
   if (url.pathname === '/api/admin/tasks' && req.method === 'GET') {
     try { return send(res, 200, { tasks: readAdminTasks() }); }
     catch { return send(res, 500, { error: 'Admin tasks unavailable' }); }
