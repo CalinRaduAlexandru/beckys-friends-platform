@@ -162,7 +162,7 @@ function experienceRepertoireActivities(workspaces) {
   const ranges = value => { const nums = String(value || '').match(/\d+/g)?.map(Number) || []; return nums.length > 1 ? [nums[0], nums[1]] : nums.length ? [nums[0], /\+/.test(value) ? 99 : nums[0]] : [0, 99]; };
   const counts = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, 0])); const previews = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, []]));
   for (const activity of activities) { const source = Array.isArray(activity.ageCategories) && activity.ageCategories.length ? activity.ageCategories : [activity.age]; for (const age of EXPERIENCE_REPERTOIRE_AGES) if (source.some(value => EXPERIENCE_REPERTOIRE_AGE_MAP[age].some(filter => { const [a,b]=ranges(value); const [c,d]=ranges(filter); return a<=d && b>=c; }))) { counts[age]++; if (previews[age].length < 3) previews[age].push({ id: activity.id, title: activity.title }); } }
-  return { activity_counts: counts, activity_previews: previews };
+  return { activity_counts: counts, activity_coverage: Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, { idea: counts[age], validated: 0 }])), activity_previews: previews };
 }
 async function handleActivityObservations(request, env) {
   await requireAdmin(request, env); const url = new URL(request.url);
