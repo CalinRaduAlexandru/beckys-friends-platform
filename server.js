@@ -22,6 +22,7 @@ const ADMIN_CONTENT_LAB_IDEAS_FILE = path.join(ROOT, 'data', 'admin-content-lab-
 const ADMIN_EVENT_FINDINGS_FILE = path.join(ROOT, 'data', 'admin-event-community-findings.json');
 const ADMIN_KNOWLEDGE_CANDIDATES_FILE = path.join(ROOT, 'data', 'admin-knowledge-candidates.json');
 const ADMIN_EXPERIENCE_REPERTOIRE_FILE = path.join(ROOT, 'data', 'admin-experience-repertoire.json');
+const EXPERIENCE_REPERTOIRE_SEED_FILE = path.join(ROOT, 'data', 'admin-experience-repertoire.seed.json');
 const ADMIN_BECKY_INBOX_FILE = process.env.BECKY_INBOX_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-inbox-proposals.json');
 const ADMIN_BECKY_BRIEF_FILE = process.env.BECKY_BRIEF_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-brief.json');
 const ADMIN_BECKY_MEMORY_FILE = process.env.BECKY_MEMORY_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-memory-signals.json');
@@ -68,18 +69,35 @@ function readContentLabIdeas() { try { const value = fs.existsSync(ADMIN_CONTENT
 function writeContentLabIdeas(items) { fs.mkdirSync(path.dirname(ADMIN_CONTENT_LAB_IDEAS_FILE), { recursive: true }); fs.writeFileSync(ADMIN_CONTENT_LAB_IDEAS_FILE, JSON.stringify(items, null, 2)); }
 function readJsonStore(file, label) { try { const value = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []; return Array.isArray(value) ? value : []; } catch { throw new Error(`Invalid ${label} store`); } }
 function writeJsonStore(file, items) { fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, JSON.stringify(items, null, 2)); }
-function readExperienceRepertoire() { return readJsonStore(ADMIN_EXPERIENCE_REPERTOIRE_FILE, 'experience repertoire'); }
+function readExperienceRepertoire() {
+  if (!fs.existsSync(ADMIN_EXPERIENCE_REPERTOIRE_FILE) && fs.existsSync(EXPERIENCE_REPERTOIRE_SEED_FILE)) {
+    try { const seed = JSON.parse(fs.readFileSync(EXPERIENCE_REPERTOIRE_SEED_FILE, 'utf8')); return Array.isArray(seed) ? seed : []; } catch { throw new Error('Invalid experience repertoire seed'); }
+  }
+  return readJsonStore(ADMIN_EXPERIENCE_REPERTOIRE_FILE, 'experience repertoire');
+}
+function normalizeExperienceRepertoireOverlay(input, existing = {}, itemId = null) {
+  const age_group = String(input?.age_group ?? existing.age_group ?? '').trim();
+  const validation_status = String(input?.validation_status ?? existing.validation_status ?? 'idea').trim();
+  const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null;
+  if (!EXPERIENCE_REPERTOIRE_AGES.includes(age_group) || !['idea', 'validated'].includes(validation_status)) throw new Error('Experience repertoire age overlay invalid');
+  const now = new Date().toISOString();
+  return { id: String(input?.id ?? existing.id ?? crypto.randomUUID()), item_id: itemId || input?.item_id || existing.item_id || null, age_group, validation_status, age_specific_note: nullable('age_specific_note'), restriction: nullable('restriction'), created_at: existing.created_at || input?.created_at || now, updated_at: now };
+}
 function normalizeExperienceRepertoire(input, existing = {}) {
-  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim(); const stage = String(input?.stage ?? existing.stage ?? '').trim(); const title = String(input?.title ?? existing.title ?? '').trim(); const description = String(input?.description ?? existing.description ?? '').trim(); const age_groups = Array.isArray(input?.age_groups ?? existing.age_groups) ? [...new Set((input?.age_groups ?? existing.age_groups).map(String).filter(value => EXPERIENCE_REPERTOIRE_AGES.includes(value)))] : []; const status = String(input?.status ?? existing.status ?? 'active').trim(); const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null; const source_type = nullable('source_type'); const source_id = nullable('source_id');
+  const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim(); const stage = String(input?.stage ?? existing.stage ?? '').trim(); const title = String(input?.title ?? existing.title ?? '').trim(); const description = String(input?.description ?? existing.description ?? '').trim(); const age_groups = Array.isArray(input?.age_groups ?? existing.age_groups) ? [...new Set((input?.age_groups ?? existing.age_groups).map(String).filter(value => EXPERIENCE_REPERTOIRE_AGES.includes(value)))] : []; const status = String(input?.status ?? existing.status ?? 'active').trim(); const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null; const source_type = nullable('source_type'); const source_id = nullable('source_id'); const family = nullable('family'); const fallback_item_id = nullable('fallback_item_id');
   if (!id || !EXPERIENCE_REPERTOIRE_STAGES.includes(stage) || !title || !age_groups.length || !['active', 'archived'].includes(status)) throw new Error('Experience repertoire invalid');
   if (title.length > 180 || description.length > 5000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw new Error('Experience repertoire too long');
-  const now = new Date().toISOString(); return { id, stage, title, description, age_groups, status, source_type, source_id, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+  const overlaysInput = Array.isArray(input?.age_overlays) ? input.age_overlays : (Array.isArray(existing.age_overlays) ? existing.age_overlays : []);
+  const age_overlays = age_groups.map(age => normalizeExperienceRepertoireOverlay(overlaysInput.find(item => item.age_group === age) || { age_group: age }, {}, id));
+  const now = new Date().toISOString(); return { id, stage, title, description, age_groups, status, family, fallback_item_id, age_overlays, source_type, source_id, created_at: existing.created_at || input?.created_at || now, updated_at: now };
 }
 function experienceRepertoireView(items) {
   const workspaces = readWorkspaces(); const childrenWorkspace = (workspaces.workspaces || []).find(item => item.id === 'children'); const activities = (childrenWorkspace?.activities || []).filter(item => item?.title && item.title !== 'Activitate nouă');
   const activityMatches = activity => { const source = Array.isArray(activity.ageCategories) && activity.ageCategories.length ? activity.ageCategories : [activity.age]; const ranges = value => { const nums = String(value || '').match(/\d+/g)?.map(Number) || []; return nums.length > 1 ? [nums[0], nums[1]] : nums.length ? [nums[0], /\+/.test(value) ? 99 : nums[0]] : [0, 99]; }; return EXPERIENCE_REPERTOIRE_AGE_LABELS.reduce((acc, [id]) => { const matches = EXPERIENCE_REPERTOIRE_AGE_MAP[id]; acc[id] = source.some(value => { const [a,b] = ranges(value); return matches.some(filter => { const [c,d] = ranges(filter); return a <= d && b >= c; }); }); return acc; }, {}); };
   const activity_counts = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, activities.filter(activity => activityMatches(activity)[age]).length]));
-  return { items: items.filter(item => item.status === 'active'), activity_counts, activity_previews: Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, activities.filter(activity => activityMatches(activity)[age]).slice(0, 3).map(item => ({ id: item.id, title: item.title }))])) };
+  const active = items.filter(item => item.status === 'active');
+  const coverage = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, Object.fromEntries(EXPERIENCE_REPERTOIRE_STAGES.map(stage => { const relevant = active.filter(item => item.stage === stage && item.age_groups?.includes(age)); return [stage, { idea: relevant.filter(item => (item.age_overlays || []).find(overlay => overlay.age_group === age)?.validation_status !== 'validated').length, validated: relevant.filter(item => (item.age_overlays || []).find(overlay => overlay.age_group === age)?.validation_status === 'validated').length }]; }))]));
+  return { items: active, activity_counts, activity_previews: Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, activities.filter(activity => activityMatches(activity)[age]).slice(0, 3).map(item => ({ id: item.id, title: item.title }))])), coverage };
 }
 function readBeckyInbox() { return readJsonStore(ADMIN_BECKY_INBOX_FILE, 'Becky Inbox'); }
 function writeBeckyInbox(items) { writeJsonStore(ADMIN_BECKY_INBOX_FILE, items); }
