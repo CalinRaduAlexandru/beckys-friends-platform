@@ -1,0 +1,646 @@
+import assert from "node:assert/strict";
+import { mkdtemp, writeFile, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { spawn } from "node:child_process";
+import {
+  participantBucket,
+  ageCategory,
+  sha256,
+  proposalDedupeKey,
+  validateProposedChange,
+  selectBriefInsights,
+} from "../src/becky-inbox/core.mjs";
+
+assert.equal(participantBucket(1), "Individual");
+assert.equal(participantBucket(3), "2–3 copii");
+assert.equal(participantBucket(5), "4–9 copii");
+assert.equal(participantBucket(11), "10+ copii");
+assert.equal(ageCategory(7), "7–8 ani");
+const base = {
+  source_type: "daily_note",
+  source_id: "2026-08-20",
+  source_hash: await sha256("nota"),
+  destination: "crm_child_observation",
+  operation: "add",
+  target_entity_id: "child-1",
+  payload: {
+    child_id: "child-1",
+    visit_id: null,
+    observed_at: "2026-08-20T12:00:00.000Z",
+    observation: "Fapt.",
+  },
+};
+assert.equal(
+  await proposalDedupeKey(base),
+  await proposalDedupeKey({ ...base, payload: { ...base.payload } }),
+);
+assert.deepEqual(validateProposedChange(base), []);
+assert.ok(
+  validateProposedChange({
+    ...base,
+    payload: { ...base.payload, child_id: null },
+  }).length,
+);
+const inboxUi = await readFile(
+  fileURLToPath(new URL("../public/admin/becky-inbox.js", import.meta.url)),
+  "utf8",
+);
+for (const label of [
+  "✓ Adaugă în CRM",
+  "✓ Adaugă testarea",
+  "✓ Adaugă în raport",
+  "✓ Adăugat în CRM-ul lui",
+  "✓ Testare adăugată la",
+  "✓ Adăugat în Raportul Lunar",
+])
+  assert.ok(inboxUi.includes(label), `Missing Becky Inbox UX label: ${label}`);
+for (const section of [
+  "CE AM GĂSIT",
+  "UNDE VA AJUNGE",
+  "CE SE VA ÎNTÂMPLA",
+  "De verificat",
+  "Păstrate",
+  "Ignorate",
+  "Necesită atenție",
+  "Anulează schimbarea",
+  "Vezi în Bibliotecă",
+  "Vezi în CRM",
+  "Vezi în Raport",
+])
+  assert.ok(
+    inboxUi.includes(section),
+    `Missing Becky Inbox trust UX label: ${section}`,
+  );
+for (const section of [
+  "BECKY BRIEF",
+  "DE CE CONTEAZĂ",
+  "CE MERITĂ ÎNCERCAT",
+  "Vezi dovezile",
+  "Vezi schimbările propuse",
+])
+  assert.ok(
+    inboxUi.includes(section),
+    `Missing Becky Brief UX label: ${section}`,
+  );
+
+const briefNote =
+  "Trei copii au plecat după 15 minute. Erdu a cerut să continue podul. Echipele mici au rămas implicate până la final.";
+const briefSeeds = [
+  [
+    "Implicarea scade în grupul mare",
+    "Trei copii au plecat după 15 minute.",
+    "Testează o rundă mai scurtă.",
+    "problem",
+    94,
+    0.92,
+  ],
+  [
+    "Continuitatea îl readuce pe Erdu",
+    "Erdu a cerut să continue podul.",
+    "Pregătește podul la următoarea vizită.",
+    "opportunity",
+    88,
+    0.87,
+  ],
+  [
+    "Grupurile mici susțin implicarea",
+    "Echipele mici au rămas implicate până la final.",
+    "Compară două echipe mici cu un singur grup.",
+    "next_test",
+    84,
+    0.81,
+  ],
+];
+const fifteenInsights = briefSeeds.flatMap(
+  ([title, evidence, action, category, relevance, confidence]) =>
+    Array.from({ length: 5 }, (_, index) => ({
+      insight_title: index ? `${title} — variantă ${index}` : title,
+      insight_summary: `${evidence} Acesta este același semnal formulat ușor diferit.`,
+      why_it_matters:
+        "Poate schimba felul în care este pregătită următoarea testare.",
+      recommended_action: action,
+      evidence_refs: [evidence],
+      category,
+      relevance_score: relevance - index,
+      confidence: confidence - index * 0.01,
+    })),
+);
+const compressedBrief = selectBriefInsights(fifteenInsights, {
+  note_text: briefNote,
+  proposals: [],
+});
+assert.equal(
+  compressedBrief.length,
+  3,
+  "15 observații redundante trebuie comprimate în 2–3 insight-uri",
+);
+assert.ok(
+  compressedBrief.every((item) =>
+    item.evidence_refs.every((ref) => briefNote.includes(ref)),
+  ),
+);
+
+const dir = await mkdtemp(join(tmpdir(), "becky-inbox-"));
+const files = {
+  crm: join(dir, "crm.json"),
+  report: join(dir, "report.json"),
+  activities: join(dir, "observations.json"),
+  workspaces: join(dir, "workspaces.json"),
+  inbox: join(dir, "inbox.json"),
+  brief: join(dir, "brief.json"),
+};
+await writeFile(
+  files.crm,
+  JSON.stringify(
+    {
+      children: [
+        {
+          id: "erdu-id",
+          first_name: "Erdu",
+          age: 7,
+          interests: "",
+          continuity: "",
+          created_at: "2026-08-01T00:00:00Z",
+          updated_at: "2026-08-01T00:00:00Z",
+        },
+        {
+          id: "alex-1",
+          first_name: "Alex",
+          age: 6,
+          interests: "",
+          continuity: "",
+          created_at: "2026-08-01T00:00:00Z",
+          updated_at: "2026-08-01T00:00:00Z",
+        },
+        {
+          id: "alex-2",
+          first_name: "Alex",
+          age: 8,
+          interests: "",
+          continuity: "",
+          created_at: "2026-08-01T00:00:00Z",
+          updated_at: "2026-08-01T00:00:00Z",
+        },
+      ],
+      visits: [],
+      observations: [],
+    },
+    null,
+    2,
+  ),
+);
+await writeFile(
+  files.report,
+  JSON.stringify(
+    {
+      month_key: "2026-08",
+      due_date: "2026-09-02",
+      notes: {},
+      entries: [],
+      roles: [],
+    },
+    null,
+    2,
+  ),
+);
+await writeFile(files.activities, "[]");
+await writeFile(files.inbox, "[]");
+await writeFile(files.brief, "[]");
+await writeFile(
+  files.workspaces,
+  JSON.stringify(
+    {
+      workspaces: [
+        {
+          id: "children",
+          activities: [
+            {
+              id: "treasure-id",
+              title: "Treasure Hunt",
+              ageCategories: ["7–8 ani"],
+            },
+            {
+              id: "duplicate-game-1",
+              title: "Joc dublu",
+              ageCategories: ["5–6 ani"],
+            },
+            {
+              id: "duplicate-game-2",
+              title: "Joc dublu",
+              ageCategories: ["7–8 ani"],
+            },
+          ],
+        },
+      ],
+    },
+    null,
+    2,
+  ),
+);
+const port = 3317;
+const child = spawn(process.execPath, ["server.js"], {
+  cwd: fileURLToPath(new URL("..", import.meta.url)),
+  env: {
+    ...process.env,
+    PORT: String(port),
+    BECKY_INBOX_TEST_MODE: "1",
+    BECKY_INBOX_STORE_FILE: files.inbox,
+    BECKY_BRIEF_STORE_FILE: files.brief,
+    BECKY_CRM_FILE: files.crm,
+    BECKY_MONTHLY_REPORT_FILE: files.report,
+    BECKY_ACTIVITY_OBSERVATIONS_FILE: files.activities,
+    BECKY_WORKSPACES_FILE: files.workspaces,
+  },
+  stdio: ["ignore", "pipe", "pipe"],
+});
+const baseUrl = `http://127.0.0.1:${port}`;
+for (let i = 0; i < 50; i++) {
+  try {
+    if ((await fetch(`${baseUrl}/api/runtime`)).ok) break;
+  } catch {}
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  if (i === 49) throw new Error("Test server did not start");
+}
+const request = async (path, options = {}) => {
+  const response = await fetch(baseUrl + path, {
+    headers: { "content-type": "application/json", ...(options.headers || {}) },
+    ...options,
+  });
+  const body = await response.json();
+  return { response, body };
+};
+try {
+  const note =
+    "Azi Erdu și încă patru copii au făcut Treasure Hunt. După 15 minute, trei au plecat, iar Erdu a spus că s-a plictisit. Cred că jocul devine repetitiv. Data viitoare încerc două echipe.";
+  await request("/api/admin/monthly-report/notes", {
+    method: "PATCH",
+    body: JSON.stringify({ date: "2026-08-20", text: note }),
+  });
+  const common = {
+    age_categories: ["7–8 ani"],
+    participant_count: 5,
+    participants: null,
+    result: "Mixt",
+    observed:
+      "După 15 minute, trei dintre cei cinci copii au părăsit activitatea.",
+    interpreted: "Activitatea pare repetitivă pentru grupuri mai mari.",
+    hypothesized: "Două echipe ar putea menține implicarea.",
+    action: "Testez cu două echipe.",
+    capacity: null,
+    observation: null,
+    month_key: null,
+    entry_date: null,
+    type: null,
+    text: null,
+    role_ids: [],
+  };
+  const raw = [
+    {
+      destination: "activity_observation",
+      operation: "add",
+      target_candidate: "Treasure Hunt",
+      child_candidates: ["Erdu"],
+      source_excerpt: "Azi Erdu și încă patru copii au făcut Treasure Hunt.",
+      epistemic_type: "mixed",
+      payload: common,
+      field_provenance: [
+        { field: "participants", source: "note", detail: "" },
+        { field: "result", source: "becky", detail: "" },
+        { field: "observed", source: "note", detail: "" },
+      ],
+    },
+    {
+      destination: "crm_child_observation",
+      operation: "add",
+      target_candidate: "Erdu",
+      child_candidates: ["Erdu"],
+      source_excerpt: "Erdu a spus că s-a plictisit",
+      epistemic_type: "observed",
+      payload: {
+        ...common,
+        observed: null,
+        interpreted: null,
+        hypothesized: null,
+        action: null,
+        observation:
+          "A spus că s-a plictisit după aproximativ 15 minute de activitate.",
+      },
+      field_provenance: [{ field: "observation", source: "note", detail: "" }],
+    },
+    {
+      destination: "monthly_report_entry",
+      operation: "add",
+      target_candidate: null,
+      child_candidates: [],
+      source_excerpt: "trei au plecat",
+      epistemic_type: "observed",
+      payload: {
+        ...common,
+        observed: null,
+        interpreted: null,
+        hypothesized: null,
+        action: null,
+        participant_count: null,
+        age_categories: [],
+        result: null,
+        type: "evidence",
+        text: "Testarea Treasure Hunt a evidențiat scăderea implicării după 15 minute.",
+        role_ids: ["design-pedagogic"],
+      },
+      field_provenance: [
+        { field: "type", source: "becky", detail: "" },
+        { field: "text", source: "becky", detail: "" },
+        { field: "role_ids", source: "becky", detail: "" },
+      ],
+    },
+    {
+      destination: "crm_child_observation",
+      operation: "add",
+      target_candidate: "Alex",
+      child_candidates: ["Alex"],
+      source_excerpt: "Alex a observat ceva",
+      epistemic_type: "observed",
+      payload: {
+        ...common,
+        observed: null,
+        interpreted: null,
+        hypothesized: null,
+        action: null,
+        observation: "A formulat o observație factuală.",
+      },
+      field_provenance: [{ field: "observation", source: "note", detail: "" }],
+    },
+    {
+      destination: "activity_observation",
+      operation: "add",
+      target_candidate: "Joc necunoscut",
+      child_candidates: [],
+      source_excerpt: "un joc",
+      epistemic_type: "observed",
+      payload: {
+        ...common,
+        age_categories: [],
+        participant_count: null,
+        result: null,
+        observed: "Copiii au folosit un joc.",
+      },
+      field_provenance: [{ field: "observed", source: "note", detail: "" }],
+    },
+    {
+      destination: "activity_observation",
+      operation: "add",
+      target_candidate: "Joc dublu",
+      child_candidates: [],
+      source_excerpt: "jocul dublu",
+      epistemic_type: "observed",
+      payload: {
+        ...common,
+        age_categories: ["7–8 ani"],
+        observed: "Copiii au testat jocul.",
+      },
+      field_provenance: [{ field: "observed", source: "note", detail: "" }],
+    },
+  ];
+  const rawBrief = [
+    {
+      insight_title: "Implicarea scade după primul sfert de oră",
+      insight_summary:
+        "Plecarea a trei copii indică un prag clar de implicare pentru configurația testată.",
+      why_it_matters:
+        "Pragul poate ghida durata și structura următoarei testări.",
+      recommended_action:
+        "Testează două runde de câte 10 minute și compară câți copii rămân implicați.",
+      evidence_refs: ["După 15 minute, trei au plecat"],
+      category: "problem",
+      relevance_score: 95,
+      confidence: 0.9,
+    },
+    {
+      insight_title: "Două echipe merită testate",
+      insight_summary:
+        "Nota conține deja o alternativă concretă pentru reducerea repetitivității.",
+      why_it_matters: "Este o schimbare mică și măsurabilă.",
+      recommended_action:
+        "Testează aceeași activitate în două echipe și notează implicarea la minutul 15.",
+      evidence_refs: ["Data viitoare încerc două echipe."],
+      category: "next_test",
+      relevance_score: 86,
+      confidence: 0.78,
+    },
+    {
+      insight_title: "Reformulare slabă",
+      insight_summary: "Acesta nu este susținut de notă.",
+      why_it_matters: "Nu contează.",
+      recommended_action: "Nu face nimic.",
+      evidence_refs: ["Fragment inventat."],
+      category: "learning",
+      relevance_score: 80,
+      confidence: 0.8,
+    },
+  ];
+  const first = await request("/api/admin/becky-inbox/analyze", {
+    method: "POST",
+    body: JSON.stringify({
+      date: "2026-08-20",
+      analysis_override: raw,
+      brief_override: rawBrief,
+    }),
+  });
+  assert.equal(first.response.status, 201);
+  assert.equal(first.body.proposals.length, 6);
+  assert.equal(first.body.insights.length, 2);
+  const ids = first.body.proposals.map((item) => item.id);
+  const briefIds = first.body.insights.map((item) => item.id);
+  const persistedBrief = await request(
+    "/api/admin/becky-inbox/brief?source_id=2026-08-20",
+  );
+  assert.deepEqual(
+    persistedBrief.body.insights.map((item) => item.id),
+    briefIds,
+  );
+  assert.equal(JSON.parse(await readFile(files.brief, "utf8")).length, 2);
+  const edited = await request(`/api/admin/becky-inbox/proposals/${ids[4]}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      payload: { observed: "Observație revizuită de utilizator." },
+    }),
+  });
+  assert.equal(edited.response.status, 200);
+  const second = await request("/api/admin/becky-inbox/analyze", {
+    method: "POST",
+    body: JSON.stringify({
+      date: "2026-08-20",
+      analysis_override: raw,
+      brief_override: rawBrief,
+    }),
+  });
+  assert.deepEqual(
+    second.body.proposals.map((item) => item.id),
+    ids,
+  );
+  assert.deepEqual(
+    second.body.insights.map((item) => item.id),
+    briefIds,
+  );
+  assert.equal(
+    second.body.proposals[4].payload.observed,
+    "Observație revizuită de utilizator.",
+  );
+  assert.equal(JSON.parse(await readFile(files.inbox, "utf8")).length, 6);
+  assert.equal(JSON.parse(await readFile(files.brief, "utf8")).length, 2);
+  const [activity, crm, monthly, ambiguousChild, missing, ambiguousActivity] =
+    first.body.proposals;
+  assert.equal(activity.payload.participants, "4–9 copii");
+  assert.equal(activity.field_provenance.participants.source, "becky");
+  assert.equal(activity.resolution_status, "resolved");
+  assert.equal(ambiguousChild.target_entity_id, null);
+  assert.equal(ambiguousChild.resolution_status, "ambiguous");
+  assert.ok(ambiguousChild.validation_errors.length);
+  assert.equal(missing.target_entity_id, null);
+  assert.equal(missing.resolution_status, "not_found");
+  assert.equal(missing.source_excerpt, "");
+  assert.equal(missing.field_provenance.participants.source, "missing");
+  assert.ok(missing.validation_errors.length);
+  assert.equal(ambiguousActivity.target_entity_id, null);
+  assert.equal(ambiguousActivity.target_candidates.length, 2);
+  assert.equal(ambiguousActivity.resolution_status, "ambiguous");
+  assert.ok(ambiguousActivity.validation_errors.length);
+  for (const proposal of [activity, crm, monthly]) {
+    const approved = await request(
+      `/api/admin/becky-inbox/proposals/${proposal.id}/approve`,
+      { method: "POST", body: "{}" },
+    );
+    assert.equal(approved.response.status, 200);
+    assert.equal(approved.body.status, "approved");
+    assert.ok(approved.body.destination_entity_id);
+  }
+  const repeated = await request(
+    `/api/admin/becky-inbox/proposals/${activity.id}/approve`,
+    { method: "POST", body: "{}" },
+  );
+  assert.equal(repeated.response.status, 200);
+  assert.ok(repeated.body.destination_verified_at);
+  assert.equal(JSON.parse(await readFile(files.activities, "utf8")).length, 1);
+  assert.equal(
+    JSON.parse(await readFile(files.crm, "utf8")).observations.length,
+    1,
+  );
+  assert.equal(
+    JSON.parse(await readFile(files.report, "utf8")).entries.length,
+    1,
+  );
+  const activityRead = await request(
+    `/api/admin/activity-observations?activity_id=treasure-id`,
+  );
+  assert.equal(
+    activityRead.body.observations[0].id,
+    repeated.body.destination_entity_id,
+  );
+  for (const proposal of [activity, crm, monthly]) {
+    const reverted = await request(
+      `/api/admin/becky-inbox/proposals/${proposal.id}/revert`,
+      { method: "POST", body: "{}" },
+    );
+    assert.equal(reverted.response.status, 200);
+    assert.equal(reverted.body.status, "reverted");
+    assert.ok(reverted.body.reverted_at);
+  }
+  assert.equal(JSON.parse(await readFile(files.activities, "utf8")).length, 0);
+  assert.equal(
+    JSON.parse(await readFile(files.crm, "utf8")).observations.length,
+    0,
+  );
+  assert.equal(
+    JSON.parse(await readFile(files.report, "utf8")).entries.length,
+    0,
+  );
+  const history = await request(
+    "/api/admin/becky-inbox/proposals?source_id=2026-08-20",
+  );
+  assert.equal(
+    history.body.proposals.filter((item) => item.status === "reverted").length,
+    3,
+  );
+  const ignored = await request(
+    `/api/admin/becky-inbox/proposals/${ambiguousChild.id}/ignore`,
+    { method: "POST", body: "{}" },
+  );
+  assert.equal(ignored.body.status, "ignored");
+  assert.equal(
+    JSON.parse(await readFile(files.crm, "utf8")).observations.length,
+    0,
+  );
+  const laterNote = "Erdu a cerut din nou Treasure Hunt.";
+  await request("/api/admin/monthly-report/notes", {
+    method: "PATCH",
+    body: JSON.stringify({ date: "2026-08-21", text: laterNote }),
+  });
+  const laterRaw = [
+    {
+      destination: "crm_child_observation",
+      operation: "add",
+      target_candidate: "Erdu",
+      child_candidates: ["Erdu"],
+      source_excerpt: laterNote,
+      epistemic_type: "observed",
+      payload: {
+        ...common,
+        age_categories: [],
+        participant_count: null,
+        participants: null,
+        result: null,
+        observed: null,
+        interpreted: null,
+        hypothesized: null,
+        action: null,
+        observation: "A cerut din nou Treasure Hunt.",
+      },
+      field_provenance: [{ field: "observation", source: "note", detail: "" }],
+    },
+  ];
+  const later = await request("/api/admin/becky-inbox/analyze", {
+    method: "POST",
+    body: JSON.stringify({ date: "2026-08-21", analysis_override: laterRaw }),
+  });
+  const laterProposal = later.body.proposals[0];
+  const laterApproved = await request(
+    `/api/admin/becky-inbox/proposals/${laterProposal.id}/approve`,
+    { method: "POST", body: "{}" },
+  );
+  assert.equal(laterApproved.body.status, "approved");
+  const changed = await request(
+    `/api/admin/crm/observations/${laterApproved.body.destination_entity_id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ observation: "Editată ulterior în CRM." }),
+    },
+  );
+  assert.equal(changed.response.status, 200);
+  const blockedUndo = await request(
+    `/api/admin/becky-inbox/proposals/${laterProposal.id}/revert`,
+    { method: "POST", body: "{}" },
+  );
+  assert.equal(blockedUndo.response.status, 409);
+  assert.match(blockedUndo.body.error, /modificat/);
+  assert.equal(
+    JSON.parse(await readFile(files.crm, "utf8")).observations.length,
+    1,
+  );
+  await request("/api/admin/monthly-report/notes", {
+    method: "PATCH",
+    body: JSON.stringify({ date: "2026-08-20", text: note + " Editată." }),
+  });
+  const listed = await request(
+    "/api/admin/becky-inbox/proposals?source_id=2026-08-20",
+  );
+  assert.ok(listed.body.proposals.every((item) => item.stale === true));
+  const staleBrief = await request(
+    "/api/admin/becky-inbox/brief?source_id=2026-08-20",
+  );
+  assert.ok(staleBrief.body.insights.every((item) => item.stale === true));
+  console.log("Becky Inbox core and local vertical-slice checks passed.");
+} finally {
+  child.kill("SIGTERM");
+}

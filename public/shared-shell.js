@@ -1,8 +1,8 @@
 (() => {
   const headerMarkup = `
     <a class="brand-lockup" href="/" aria-label="Becky’s Garden — acasă">
-      <img class="nav-logo-full" src="/assets/logo_sun.png" alt="Becky’s Garden">
-      <img class="nav-logo" src="/assets/logo_sun.png" alt="Becky’s Garden">
+      <img class="nav-logo-full" src="/assets/logo/new_logo_horizontal.png" alt="Becky’s Garden">
+      <img class="nav-logo" src="/assets/logo/new_logo_horizontal.png" alt="Becky’s Garden">
       <img class="brand-heart" src="/assets/heart_little.png" alt="">
       <span>Becky’s Garden</span>
       <img class="brand-heart" src="/assets/heart_little.png" alt="">

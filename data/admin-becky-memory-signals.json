@@ -1,0 +1,738 @@
+[
+  {
+    "id": "34ff9151-d6b1-4760-af65-257eb32ba0d8",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_date": "2026-08-18",
+    "exact_source_excerpt": "De când a intrat Erdu, mă aștepta cu privirea să urc cu ea.",
+    "normalized_observation": "Erdu a așteptat cu privirea să urc cu ea imediat ce a intrat.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Erdu",
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "așteptare",
+      "interacțiune copil-adult"
+    ],
+    "age_categories": [
+      "7"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T13:17:37.877Z",
+    "updated_at": "2026-08-20T13:17:37.877Z",
+    "dedupe_key": "dfaf2ced7d335b1d76972df905b3fb6e82d37cb48ed8216964fe37f7d60abf48",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-34ff9151-d6b1-4760-af65-257eb32ba0d8",
+        "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "auto_stored_at": "2026-08-20T13:17:37.880Z",
+        "destination_updated_at": "2026-08-20T13:17:37.879Z"
+      }
+    ]
+  },
+  {
+    "id": "f57c8604-493f-424b-9499-6a03c0e781c5",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_date": "2026-08-18",
+    "exact_source_excerpt": "Ne-am jucat ceva împreună până când a venit și Carla.",
+    "normalized_observation": "Am jucat împreună cu Erdu până a venit Carla.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Erdu",
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "resolution": "resolved"
+      },
+      {
+        "type": "child",
+        "label": "Carla",
+        "id": "9cea2ff1-4c92-480c-87a0-dcdd262d5fae",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "joacă"
+    ],
+    "age_categories": [
+      "7",
+      "8"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T13:17:37.880Z",
+    "updated_at": "2026-08-20T13:17:37.880Z",
+    "dedupe_key": "438aa961701f75485900975daf6c66cfe27419dfc7b0634ce0f56e15df6cc907",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-f57c8604-493f-424b-9499-6a03c0e781c5",
+        "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "auto_stored_at": "2026-08-20T13:17:37.881Z",
+        "destination_updated_at": "2026-08-20T13:17:37.881Z"
+      }
+    ]
+  },
+  {
+    "id": "c461b6a0-3d07-48a5-a3cc-7b055790b57a",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_date": "2026-08-18",
+    "exact_source_excerpt": "Am fost împărțit de câteva ori am coborat la Carla să ne jucam dar Erdu venea să îmi ceara atenția.",
+    "normalized_observation": "Am alternat atenția între Carla și Erdu, Erdu cerându-mi atenția când eram cu Carla.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Carla",
+        "id": "9cea2ff1-4c92-480c-87a0-dcdd262d5fae",
+        "resolution": "resolved"
+      },
+      {
+        "type": "child",
+        "label": "Erdu",
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "atenție",
+      "joacă"
+    ],
+    "age_categories": [
+      "7",
+      "8"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "9cea2ff1-4c92-480c-87a0-dcdd262d5fae",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T13:17:37.881Z",
+    "updated_at": "2026-08-20T13:17:37.881Z",
+    "dedupe_key": "df5f74fb442bfdae10d19a963b59ad7dab80c8c4b21b338066bc9e00a17c658f",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-c461b6a0-3d07-48a5-a3cc-7b055790b57a",
+        "child_id": "9cea2ff1-4c92-480c-87a0-dcdd262d5fae",
+        "auto_stored_at": "2026-08-20T13:17:37.882Z",
+        "destination_updated_at": "2026-08-20T13:17:37.881Z"
+      }
+    ]
+  },
+  {
+    "id": "c064d911-81f3-4a49-be08-27e0e57bfc06",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_date": "2026-08-18",
+    "exact_source_excerpt": "Am invitat-o să se joace cu noi, nu a vrut și m-am întors la ea să nu se simtă singură...",
+    "normalized_observation": "Erdu a refuzat să se alăture jocului cu Carla și am stat cu ea pentru a nu se simți singură.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Erdu",
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "resolution": "resolved"
+      },
+      {
+        "type": "child",
+        "label": "Carla",
+        "id": "9cea2ff1-4c92-480c-87a0-dcdd262d5fae",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "inclusivitate",
+      "emoții"
+    ],
+    "age_categories": [
+      "7",
+      "8"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T13:17:37.882Z",
+    "updated_at": "2026-08-20T13:17:37.882Z",
+    "dedupe_key": "facc786321922e54bb237a14150cdb6d6d3811b2c8ccc87adfbbff21ec164efc",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-c064d911-81f3-4a49-be08-27e0e57bfc06",
+        "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "auto_stored_at": "2026-08-20T13:17:37.883Z",
+        "destination_updated_at": "2026-08-20T13:17:37.883Z"
+      }
+    ]
+  },
+  {
+    "id": "db27a694-c26e-4398-b03b-b7d19538b33f",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_date": "2026-08-18",
+    "exact_source_excerpt": "Am tot încercat să îi zic lui Erdu că poate vom cumpăra noi bureți până mai vine și că voi pregăti jocuri... nu a părut prea impresionată.",
+    "normalized_observation": "Erdu nu a fost impresionată de promisiunile mele legate de noi jocuri și materiale.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Erdu",
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "anticipare",
+      "interes copii"
+    ],
+    "age_categories": [
+      "7"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T13:17:37.883Z",
+    "updated_at": "2026-08-20T13:17:37.883Z",
+    "dedupe_key": "2061c01cc14992298a74c08f3aba7760f4cd2d381fdec74f5b551fe658699c2e",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-db27a694-c26e-4398-b03b-b7d19538b33f",
+        "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "auto_stored_at": "2026-08-20T13:17:37.883Z",
+        "destination_updated_at": "2026-08-20T13:17:37.883Z"
+      }
+    ]
+  },
+  {
+    "id": "bb9b445c-d22c-40bd-ba80-1b9ab8a066c8",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_date": "2026-08-18",
+    "exact_source_excerpt": "Am vorbit de originea numelui și pana data viitoare trebuie să caut să îi spun.",
+    "normalized_observation": "Am discutat despre originea numelui Erdu, intenționând să îi spun mai multe data viitoare.",
+    "epistemic_type": "activity_evidence",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Erdu",
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "identitate",
+      "comunicare"
+    ],
+    "age_categories": [
+      "7"
+    ],
+    "possible_canonical_context": [],
+    "confidence": 0.85,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T13:17:37.883Z",
+    "updated_at": "2026-08-20T13:17:37.883Z",
+    "dedupe_key": "5b7796bd5f8d6ab1d51a39c73e78ffd0de88f82e0180de2633b94d5cac719185"
+  },
+  {
+    "id": "cf6468e2-3296-4d98-ba6a-c0c086e2e49a",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_date": "2026-08-18",
+    "exact_source_excerpt": "Nu am testat salutul Becky deși ar fi fost util să demarez procesul de testare cu diferite vârste.",
+    "normalized_observation": "Salutul Becky nu a fost testat încă cu copiii.",
+    "epistemic_type": "observed",
+    "entities": [],
+    "topics": [
+      "ritualuri",
+      "interacțiune"
+    ],
+    "age_categories": [],
+    "possible_canonical_context": [],
+    "confidence": 0.85,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T13:17:37.884Z",
+    "updated_at": "2026-08-20T13:17:37.884Z",
+    "dedupe_key": "5d6a47554903052b35bb67bc53402def8f028b3186791a92e573d92dc00de43c"
+  },
+  {
+    "id": "85a25d52-685e-4676-aaeb-1ec1516c418e",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_date": "2026-08-18",
+    "exact_source_excerpt": "Am simțit lipsa jocurilor de mișcare pentru copii 6ani+.",
+    "normalized_observation": "Există o lipsă simțită de jocuri de mișcare pentru copiii de 6 ani și peste.",
+    "epistemic_type": "observed",
+    "entities": [],
+    "topics": [
+      "jocuri de mișcare",
+      "grupe de vârstă"
+    ],
+    "age_categories": [
+      "6+"
+    ],
+    "possible_canonical_context": [],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T13:17:37.884Z",
+    "updated_at": "2026-08-20T13:17:37.884Z",
+    "dedupe_key": "5a97c1303d584d996fd13c68fc245630668b1f581e3a153adc3c94b4be4e2036"
+  },
+  {
+    "id": "d8969fbb-ba58-433c-8967-051d83586b6a",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-20",
+    "source_version": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_hash": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_date": "2026-08-20",
+    "exact_source_excerpt": "Simt că nu ar fi o investiție prea mare o rampă pe ambele capete.",
+    "normalized_observation": "Sugestie de instalare a unei rampe pe ambele capete ale zonei de bar.",
+    "epistemic_type": "observed",
+    "entities": [],
+    "topics": [
+      "siguranța copilului",
+      "infrastructură"
+    ],
+    "age_categories": [],
+    "possible_canonical_context": [],
+    "confidence": 0.8,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T14:00:48.706Z",
+    "updated_at": "2026-08-20T14:00:48.706Z",
+    "dedupe_key": "16fdd6ec9e9a596a5169cb353e4cff27997ba0a6c9f67bf081c390e7dc5d5cc9"
+  },
+  {
+    "id": "6a9a7757-e00c-49a2-933d-d82ef4fc1048",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-20",
+    "source_version": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_hash": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_date": "2026-08-20",
+    "exact_source_excerpt": "Părinții ar aprecia această grijă la detaliul acesta, sunt convins.",
+    "normalized_observation": "Considerație că părinții ar aprecia o grijă mare pentru detalii privind siguranța.",
+    "epistemic_type": "observed",
+    "entities": [],
+    "topics": [
+      "percepția părinților",
+      "siguranță"
+    ],
+    "age_categories": [],
+    "possible_canonical_context": [],
+    "confidence": 0.7,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T14:00:48.707Z",
+    "updated_at": "2026-08-20T14:00:48.707Z",
+    "dedupe_key": "5de9e211e4456cee4944a574a6952b19288e5ab3e0b59e165cc156da561cda5b"
+  },
+  {
+    "id": "c5484657-63c8-4f26-b395-635b17398231",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-20",
+    "source_version": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_hash": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_date": "2026-08-20",
+    "exact_source_excerpt": "Mă uit rupt de realitate la Iancu care are în jur de doi ani și nu știu ce să îi propun mamei.",
+    "normalized_observation": "Moment de indecizie privind ce activitate să propun mamei pentru Iancu, copil de aproximativ 2 ani.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Iancu",
+        "id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "interacțiune adult-copil",
+      "planificare activități"
+    ],
+    "age_categories": [
+      "2"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T14:00:48.707Z",
+    "updated_at": "2026-08-20T14:00:48.707Z",
+    "dedupe_key": "8aebff713ac376bf0a7469ffc5439299fc9b3ae79e96e252c4d0c2b4d3517967",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-c5484657-63c8-4f26-b395-635b17398231",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "auto_stored_at": "2026-08-20T14:00:48.707Z",
+        "destination_updated_at": "2026-08-20T14:00:48.707Z"
+      }
+    ]
+  },
+  {
+    "id": "04d75d9b-b662-497a-8d8c-463ffa32c655",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-20",
+    "source_version": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_hash": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_date": "2026-08-20",
+    "exact_source_excerpt": "Aș vrea să nu mă simt neputincios.",
+    "normalized_observation": "Sentiment personal de neputință în a propune activități pentru Iancu.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Iancu",
+        "id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "emoții adult"
+    ],
+    "age_categories": [
+      "2"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T14:00:48.707Z",
+    "updated_at": "2026-08-20T14:00:48.707Z",
+    "dedupe_key": "59961cae8bf0d37800b556734c0eb34a0d3e142c063acaf4a6dacf6cf9cff1a5",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-04d75d9b-b662-497a-8d8c-463ffa32c655",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "auto_stored_at": "2026-08-20T14:00:48.708Z",
+        "destination_updated_at": "2026-08-20T14:00:48.707Z"
+      }
+    ]
+  },
+  {
+    "id": "747d3195-5701-4a43-a641-12edb137adb1",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-20",
+    "source_version": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_hash": "29daceef7dd85b3246c339b636a79ddb1f73f2a0e33f0bc0a33d443762e8d063",
+    "source_date": "2026-08-20",
+    "exact_source_excerpt": "Eventual pe luni... 16 luni, 24 luni... ce ar trebui să știe, cum pot să ajut aceste lucruri.",
+    "normalized_observation": "Planificarea documentării dezvoltării pe luni pentru copii mici, precum 16 și 24 luni.",
+    "epistemic_type": "observed",
+    "entities": [],
+    "topics": [
+      "dezvoltare copii",
+      "documentare"
+    ],
+    "age_categories": [
+      "1–2"
+    ],
+    "possible_canonical_context": [],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T14:00:48.708Z",
+    "updated_at": "2026-08-20T14:00:48.708Z",
+    "dedupe_key": "ea0823cdba2a79a52f876902fc1634c105f3f6c9cb1d0579595fa263bb2bc8a8"
+  },
+  {
+    "id": "af65b1ea-5745-4bcd-baa2-6d4ea2dbd2ad",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-20",
+    "source_version": "a0aa44bd914f01f5debfbb9bf61bdec9008f545927c76868ade70c067cf0ac6a",
+    "source_hash": "a0aa44bd914f01f5debfbb9bf61bdec9008f545927c76868ade70c067cf0ac6a",
+    "source_date": "2026-08-20",
+    "exact_source_excerpt": "Mă uit rupt de realitate la Iancu care are în jur de doi ani și nu știu ce să îi propun mamei.",
+    "normalized_observation": "Există un moment de indecizie privind ce activitate să propun mamei pentru Iancu, copil de aproximativ 2 ani.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Iancu",
+        "id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "planificare activități"
+    ],
+    "age_categories": [
+      "2"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 1,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T14:47:05.532Z",
+    "updated_at": "2026-08-20T14:47:05.532Z",
+    "dedupe_key": "b7104b37e9c82c5aeef680e5c08a5f9b5df993da88608cdf099ec3ab1ffb3e23",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-af65b1ea-5745-4bcd-baa2-6d4ea2dbd2ad",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "auto_stored_at": "2026-08-20T14:47:05.533Z",
+        "destination_updated_at": "2026-08-20T14:47:05.532Z"
+      }
+    ]
+  },
+  {
+    "id": "cf9c4f39-87d1-4264-8254-13a1c71a2a7d",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-20",
+    "source_version": "5f4a6f3defa3418cdd0fa79c6718ac318fb7de4127813d7c11dc19f731c80994",
+    "source_hash": "5f4a6f3defa3418cdd0fa79c6718ac318fb7de4127813d7c11dc19f731c80994",
+    "source_date": "2026-08-20",
+    "exact_source_excerpt": "Iancu a căzut alergând în zona de bar.",
+    "normalized_observation": "Iancu a căzut în timp ce alerga în zona de bar.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Iancu",
+        "id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "siguranță copii"
+    ],
+    "age_categories": [
+      "2"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 1,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T15:22:29.983Z",
+    "updated_at": "2026-08-20T15:22:29.983Z",
+    "dedupe_key": "7795e18ae37f7d2da4ee59e6387b7cfdc91d317594f1a29073c19b990c551df8",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-cf9c4f39-87d1-4264-8254-13a1c71a2a7d",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "auto_stored_at": "2026-08-20T15:22:29.985Z",
+        "destination_updated_at": "2026-08-20T15:22:29.984Z"
+      }
+    ]
+  },
+  {
+    "id": "206137c9-c489-4d4a-a060-ed57f2e8b6b2",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-20",
+    "source_version": "5f4a6f3defa3418cdd0fa79c6718ac318fb7de4127813d7c11dc19f731c80994",
+    "source_hash": "5f4a6f3defa3418cdd0fa79c6718ac318fb7de4127813d7c11dc19f731c80994",
+    "source_date": "2026-08-20",
+    "exact_source_excerpt": "Copilul și-a dorit să rămână aici pe toată durata celor două ore și nu a vrut să plece.",
+    "normalized_observation": "Iancu a dorit să rămână pe toată durata activității de două ore și a refuzat să plece.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Iancu",
+        "id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "atitudine copii",
+      "participare activități"
+    ],
+    "age_categories": [
+      "2"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 1,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T15:22:29.985Z",
+    "updated_at": "2026-08-20T15:22:29.985Z",
+    "dedupe_key": "e66a25c623d23190dc2118bb8fdd47c918631e121d8e4ed0e75b8c795fa4e8ef",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-206137c9-c489-4d4a-a060-ed57f2e8b6b2",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "auto_stored_at": "2026-08-20T15:22:29.986Z",
+        "destination_updated_at": "2026-08-20T15:22:29.986Z"
+      }
+    ]
+  },
+  {
+    "id": "c4e79f77-b4e2-4bb2-992c-796a7c005a7e",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-20",
+    "source_version": "5f4a6f3defa3418cdd0fa79c6718ac318fb7de4127813d7c11dc19f731c80994",
+    "source_hash": "5f4a6f3defa3418cdd0fa79c6718ac318fb7de4127813d7c11dc19f731c80994",
+    "source_date": "2026-08-20",
+    "exact_source_excerpt": "Mă uit rupt de realitate la Iancu care are în jur de doi ani și nu știu ce să îi propun mamei.",
+    "normalized_observation": "Autorul nu știe ce activități să propună mamei pentru copilul Iancu, în jur de 2 ani.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Iancu",
+        "id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "resolution": "resolved"
+      }
+    ],
+    "topics": [
+      "planificare activități",
+      "vârste mici"
+    ],
+    "age_categories": [
+      "2"
+    ],
+    "possible_canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "eligibility": "auto_store"
+      }
+    ],
+    "confidence": 1,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-20T15:22:29.987Z",
+    "updated_at": "2026-08-20T15:22:29.987Z",
+    "dedupe_key": "a3f37d57f2655c1968a0f3aedc55c38bd89d16061ac97f61bd5a21e4afa237df",
+    "canonical_context": [
+      {
+        "destination": "crm_child_observation",
+        "destination_entity_id": "memory-signal-c4e79f77-b4e2-4bb2-992c-796a7c005a7e",
+        "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+        "auto_stored_at": "2026-08-20T15:22:29.987Z",
+        "destination_updated_at": "2026-08-20T15:22:29.987Z"
+      }
+    ]
+  }
+]

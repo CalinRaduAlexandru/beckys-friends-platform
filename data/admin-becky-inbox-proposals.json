@@ -1,0 +1,1183 @@
+[
+  {
+    "id": "3ffbf42e-c125-452c-bfd7-3b51598a257f",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Cea cu mingea pot să zic că a fost clar o metodă de dezvoltare a motricității grosiere pentru că fetița Carla chiar nu putea la început să se așeze pe minge si ușor-ușor creierașul ei s-a adaptat mișcării și velocității mingii.",
+    "destination": "activity_observation",
+    "operation": "add",
+    "target_entity_type": "activity",
+    "target_entity_id": "activity-6f0e43cd",
+    "target_candidates": [
+      {
+        "id": "activity-6f0e43cd",
+        "label": "Prinde mingea cu șezutul!"
+      }
+    ],
+    "payload": {
+      "activity_id": "activity-6f0e43cd",
+      "tested_at": "2026-08-18",
+      "age_categories": [
+        "5–6 ani",
+        "7–8 ani"
+      ],
+      "participants": "2–3 copii",
+      "result": "A mers bine",
+      "observed": "Carla nu putea la început să se așeze pe minge și s-a adaptat mișcării și velocității mingii.",
+      "interpreted": "",
+      "hypothesized": "",
+      "action": "",
+      "capacity": "",
+      "behaviors": []
+    },
+    "field_provenance": {
+      "tested_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "activity_id": {
+        "source": "system",
+        "detail": "Selectat și confirmat de utilizator"
+      },
+      "age_categories": {
+        "source": "note",
+        "detail": ""
+      },
+      "participants": {
+        "source": "note",
+        "detail": ""
+      },
+      "result": {
+        "source": "becky",
+        "detail": ""
+      },
+      "observed": {
+        "source": "note",
+        "detail": ""
+      },
+      "interpreted": {
+        "source": "missing",
+        "detail": ""
+      },
+      "hypothesized": {
+        "source": "missing",
+        "detail": ""
+      },
+      "action": {
+        "source": "missing",
+        "detail": ""
+      },
+      "capacity": {
+        "source": "missing",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:26:48.944Z",
+    "updated_at": "2026-08-20T11:35:39.205Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "8ef699563986506ed1f41045f64843d9380de6eddef6d19e1558179acd3b544f"
+  },
+  {
+    "id": "34fd4486-04df-4e65-b009-b089139937e7",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "De când a intrat Erdu, mă aștepta cu privirea să urc cu ea.",
+    "destination": "crm_child_observation",
+    "operation": "add",
+    "target_entity_type": "crm_child",
+    "target_entity_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+    "target_candidates": [
+      {
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "label": "Erdu"
+      }
+    ],
+    "payload": {
+      "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "visit_id": null,
+      "observed_at": "2026-08-18T12:00:00.000Z",
+      "observation": "Erdu a demonstrat așteptare prin privire la sosirea mea."
+    },
+    "field_provenance": {
+      "child_id": {
+        "source": "system",
+        "detail": "Copil identificat fără ambiguitate"
+      },
+      "observed_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "observation": {
+        "source": "note",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:26:48.945Z",
+    "updated_at": "2026-08-20T11:26:48.945Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "cacb9c66a60f7c5750d54e52c7c451a243dcd51c9bf331e8c680b53d75d775e5"
+  },
+  {
+    "id": "d475e04a-a15e-4164-9061-459cb33bb9c6",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "De câteva ori a zis „M-am plictisit în camera asta\".",
+    "destination": "crm_child_observation",
+    "operation": "add",
+    "target_entity_type": "crm_child",
+    "target_entity_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+    "target_candidates": [
+      {
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "label": "Erdu"
+      }
+    ],
+    "payload": {
+      "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "visit_id": null,
+      "observed_at": "2026-08-18T12:00:00.000Z",
+      "observation": "Declarație directă a copilului despre sentimentul de plictiseală într-un spațiu anume."
+    },
+    "field_provenance": {
+      "child_id": {
+        "source": "system",
+        "detail": "Copil identificat fără ambiguitate"
+      },
+      "observed_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "observation": {
+        "source": "note",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:26:48.946Z",
+    "updated_at": "2026-08-20T11:26:48.946Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "ba1a300008758312dc6c46644f03e6cd236882812a4bcd6ebca869516c2ca253"
+  },
+  {
+    "id": "2850c623-c935-4a7a-9906-99a0ef018b14",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Antonia l-a chemat la leagăn pe tatăl ei și el a părut deranjat.",
+    "destination": "crm_child_observation",
+    "operation": "add",
+    "target_entity_type": "crm_child",
+    "target_entity_id": "ba155388-b489-4e40-b1a1-c5579cbc3250",
+    "target_candidates": [
+      {
+        "id": "ba155388-b489-4e40-b1a1-c5579cbc3250",
+        "label": "Antonia (sora Carla) 4 ani"
+      }
+    ],
+    "payload": {
+      "child_id": "ba155388-b489-4e40-b1a1-c5579cbc3250",
+      "visit_id": null,
+      "observed_at": "2026-08-18T12:00:00.000Z",
+      "observation": "Observație a interacțiunii dintre Antonia și tatăl ei."
+    },
+    "field_provenance": {
+      "child_id": {
+        "source": "system",
+        "detail": "Copil identificat fără ambiguitate"
+      },
+      "observed_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "observation": {
+        "source": "note",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:26:48.946Z",
+    "updated_at": "2026-08-20T11:26:48.946Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "4d2d33e0af4d373916a978215cd9ca98827ababa39daf4e6aa3aecbaacf2cbae"
+  },
+  {
+    "id": "57205a3c-b968-4ccf-9cca-f72601320160",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Este necesară o mai bună organizare a jocurilor cu lego pentru a facilita implicarea copiilor, precum și dezvoltarea unor jocuri noi de mișcare pentru copiii 6 ani +.",
+    "destination": "monthly_report_entry",
+    "operation": "add",
+    "target_entity_type": "monthly_report",
+    "target_entity_id": null,
+    "target_candidates": [],
+    "payload": {
+      "month_key": "2026-08",
+      "entry_date": "2026-08-18",
+      "type": "done",
+      "text": "S-au observat momente de plictiseală și deficiențe în organizarea activităților care trebuie abordate pentru o experiență optimă.",
+      "role_ids": [
+        "experienta-copilului",
+        "design-pedagogic"
+      ],
+      "source_type": "daily_note",
+      "source_id": "2026-08-18"
+    },
+    "field_provenance": {
+      "entry_date": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "type": {
+        "source": "becky",
+        "detail": ""
+      },
+      "text": {
+        "source": "becky",
+        "detail": ""
+      },
+      "role_ids": {
+        "source": "becky",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:26:48.946Z",
+    "updated_at": "2026-08-20T11:26:48.946Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "8570d48d2c97a5bad1bbb4cf791e9d15fdfe39ccb5e05eab087256271bcb5a02"
+  },
+  {
+    "id": "695c6ad4-18fe-45e9-81da-105c1f19451b",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Cea cu mingea pot să zic că a fost clar o metodă de dezvoltare a motricității grosiere pentru că fetița Carla chiar nu putea la început să se așeze pe minge si ușor-ușor creierașul ei s-a adaptat mișcării și velocității mingii.",
+    "destination": "activity_observation",
+    "operation": "add",
+    "target_entity_type": "activity",
+    "target_entity_id": "activity-6f0e43cd",
+    "target_candidates": [
+      {
+        "id": "activity-6f0e43cd",
+        "label": "Prinde mingea cu șezutul!"
+      }
+    ],
+    "payload": {
+      "activity_id": "activity-6f0e43cd",
+      "tested_at": "2026-08-18",
+      "age_categories": [
+        "5–6 ani",
+        "7–8 ani"
+      ],
+      "participants": "4–9 copii",
+      "result": "A mers bine",
+      "observed": "Carla nu putea la început să se așeze pe minge, dar s-a adaptat mișcării și velocității mingii.",
+      "interpreted": "",
+      "hypothesized": "",
+      "action": "",
+      "capacity": "",
+      "behaviors": []
+    },
+    "field_provenance": {
+      "tested_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "activity_id": {
+        "source": "system",
+        "detail": "Activitate identificată fără ambiguitate"
+      },
+      "age_categories": {
+        "source": "note",
+        "detail": ""
+      },
+      "participants": {
+        "source": "note",
+        "detail": ""
+      },
+      "result": {
+        "source": "becky",
+        "detail": ""
+      },
+      "observed": {
+        "source": "note",
+        "detail": ""
+      },
+      "interpreted": {
+        "source": "missing",
+        "detail": ""
+      },
+      "hypothesized": {
+        "source": "missing",
+        "detail": ""
+      },
+      "action": {
+        "source": "missing",
+        "detail": ""
+      },
+      "capacity": {
+        "source": "missing",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:26:54.872Z",
+    "updated_at": "2026-08-20T11:26:54.872Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "01beb45565c62aff72bade9a6fc8061ddba025ffe18d0ceb5df638214ed0e384"
+  },
+  {
+    "id": "0011010d-dd89-437a-a366-e48629d7bd93",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "De când a intrat Erdu, mă aștepta cu privirea să urc cu ea.",
+    "destination": "crm_child_observation",
+    "operation": "add",
+    "target_entity_type": "crm_child",
+    "target_entity_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+    "target_candidates": [
+      {
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "label": "Erdu"
+      }
+    ],
+    "payload": {
+      "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "visit_id": null,
+      "observed_at": "2026-08-18T12:00:00.000Z",
+      "observation": "Erdu îl aștepta cu privirea să urce cu ea la sosire."
+    },
+    "field_provenance": {
+      "child_id": {
+        "source": "system",
+        "detail": "Copil identificat fără ambiguitate"
+      },
+      "observed_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "observation": {
+        "source": "note",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:26:54.873Z",
+    "updated_at": "2026-08-20T11:26:54.873Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "5a526193e05c02e5cd53a59f5697f3e96b89737f73cab6a01ed822800f3583de"
+  },
+  {
+    "id": "2e3723fd-ea1c-4a9e-bf43-bc57089dcc41",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "De câteva ori a zis „M-am plictisit în camera asta\".",
+    "destination": "crm_child_observation",
+    "operation": "add",
+    "target_entity_type": "crm_child",
+    "target_entity_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+    "target_candidates": [
+      {
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "label": "Erdu"
+      }
+    ],
+    "payload": {
+      "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "visit_id": null,
+      "observed_at": "2026-08-18T12:00:00.000Z",
+      "observation": "Erdu a spus \"M-am plictisit în camera asta\" de mai multe ori."
+    },
+    "field_provenance": {
+      "child_id": {
+        "source": "system",
+        "detail": "Copil identificat fără ambiguitate"
+      },
+      "observed_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "observation": {
+        "source": "note",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:26:54.873Z",
+    "updated_at": "2026-08-20T11:26:54.873Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "1195ce629a14203950b6608c88e2f0c9f76cb31884863a3f631e29fc054413e5"
+  },
+  {
+    "id": "fa815a7a-633f-4179-b367-598d1fdfa65e",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Una peste alta s-au simțit foarte bine copiii și ne-am jucat foarte multe jocuri împreună. Chiar și șezutul pe minge și a funcționat bine cu cele două fetițe, chiar și Ștefan (colegul meu din stafful Becky, practic are același rol ca mine), s-a pus să se joace cu noi.",
+    "destination": "monthly_report_entry",
+    "operation": "add",
+    "target_entity_type": "monthly_report",
+    "target_entity_id": null,
+    "target_candidates": [],
+    "payload": {
+      "month_key": "2026-08",
+      "entry_date": "2026-08-18",
+      "type": "done",
+      "text": "",
+      "role_ids": [
+        "experienta-copilului",
+        "design-pedagogic",
+        "cultura-experienta-becky",
+        "strategie-dezvoltare"
+      ],
+      "source_type": "daily_note",
+      "source_id": "2026-08-18"
+    },
+    "field_provenance": {
+      "entry_date": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "type": {
+        "source": "becky",
+        "detail": ""
+      },
+      "text": {
+        "source": "missing",
+        "detail": ""
+      },
+      "role_ids": {
+        "source": "becky",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [
+      "Completează textul intrării."
+    ],
+    "missing_fields": [
+      "Completează textul intrării."
+    ],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:26:54.873Z",
+    "updated_at": "2026-08-20T11:26:54.873Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "72b2318d7a814c2b67d0a5c8413a4bf7ae1c17be51f9754a5649597bed37e17f"
+  },
+  {
+    "id": "beae4bc0-9152-454a-bb7b-9791a63e8fd9",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Cea cu mingea pot să zic că a fost clar o metodă de dezvoltare a motricității grosiere pentru că fetița Carla chiar nu putea la început să se așeze pe minge si ușor-ușor creierașul ei s-a adaptat mișcării și velocității mingii.",
+    "destination": "activity_observation",
+    "operation": "add",
+    "target_entity_type": "activity",
+    "target_entity_id": "activity-6f0e43cd",
+    "target_candidates": [
+      {
+        "id": "activity-6f0e43cd",
+        "label": "Prinde mingea cu șezutul!"
+      }
+    ],
+    "payload": {
+      "activity_id": "activity-6f0e43cd",
+      "tested_at": "2026-08-18",
+      "age_categories": [
+        "7–8 ani"
+      ],
+      "participants": "4–9 copii",
+      "result": "A mers bine",
+      "observed": "Carla, care nu putea la început să se așeze pe minge, s-a adaptat progresiv mișcării și vitezei mingii folosind activitatea 'Prinde mingea cu șezutul!'",
+      "interpreted": "",
+      "hypothesized": "",
+      "action": "",
+      "capacity": "",
+      "behaviors": []
+    },
+    "field_provenance": {
+      "tested_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "activity_id": {
+        "source": "system",
+        "detail": "Activitate identificată fără ambiguitate"
+      },
+      "age_categories": {
+        "source": "note",
+        "detail": ""
+      },
+      "participants": {
+        "source": "note",
+        "detail": ""
+      },
+      "result": {
+        "source": "becky",
+        "detail": ""
+      },
+      "observed": {
+        "source": "note",
+        "detail": ""
+      },
+      "interpreted": {
+        "source": "missing",
+        "detail": ""
+      },
+      "hypothesized": {
+        "source": "missing",
+        "detail": ""
+      },
+      "action": {
+        "source": "missing",
+        "detail": ""
+      },
+      "capacity": {
+        "source": "missing",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:33:51.379Z",
+    "updated_at": "2026-08-20T11:33:51.379Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "552f724cf5255d34ea3ae6650dd8e7dcccd4a1b704b83344bd42949e28886f1f"
+  },
+  {
+    "id": "9b26acbb-0cdd-4051-83f3-1dee27ec0e77",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "De când a intrat Erdu, mă aștepta cu privirea să urc cu ea. ... De câteva ori a zis 'M-am plictisit în camera asta', ceea ce este un plus... înseamnă că era conștientă că sunt alte zone unde putem merge și face noi lucruri.",
+    "destination": "crm_child_observation",
+    "operation": "add",
+    "target_entity_type": "crm_child",
+    "target_entity_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+    "target_candidates": [
+      {
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "label": "Erdu"
+      }
+    ],
+    "payload": {
+      "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "visit_id": null,
+      "observed_at": "2026-08-18T12:00:00.000Z",
+      "observation": "Erdu a exprimat verbal că s-a plictisit în camera respectivă, conștientă de existența altor zone de joacă."
+    },
+    "field_provenance": {
+      "child_id": {
+        "source": "system",
+        "detail": "Copil identificat fără ambiguitate"
+      },
+      "observed_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "observation": {
+        "source": "note",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:33:51.380Z",
+    "updated_at": "2026-08-20T11:33:51.380Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "26ac676a8dcf39d37a58b327eb0adfa47be547bf8950e8043b0179757b783f1c"
+  },
+  {
+    "id": "3885331b-e1b9-49b9-89f3-7448af8bd23f",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Una peste alta s-au simțit foarte bine copiii și ne-am jucat foarte multe jocuri împreună. ... Am simțit lipsa jocurilor de mișcare pentru copii 6ani+. ... Valoarea Becky nu este foarte clară... dar sigur a fost unic modul în care le-am deschis ușa și i-am condus până la ușă cu zâmbetul pe buze și sincer fericit de timpul alături de ei.",
+    "destination": "monthly_report_entry",
+    "operation": "add",
+    "target_entity_type": "monthly_report",
+    "target_entity_id": null,
+    "target_candidates": [],
+    "payload": {
+      "month_key": "2026-08",
+      "entry_date": "2026-08-18",
+      "type": "done",
+      "text": "",
+      "role_ids": [
+        "experienta-copilului",
+        "design-pedagogic",
+        "cultura-experienta-becky"
+      ],
+      "source_type": "daily_note",
+      "source_id": "2026-08-18"
+    },
+    "field_provenance": {
+      "entry_date": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "type": {
+        "source": "becky",
+        "detail": ""
+      },
+      "text": {
+        "source": "missing",
+        "detail": ""
+      },
+      "role_ids": {
+        "source": "becky",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [
+      "Completează textul intrării."
+    ],
+    "missing_fields": [
+      "Completează textul intrării."
+    ],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:33:51.380Z",
+    "updated_at": "2026-08-20T11:33:51.380Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "cd94b08093407ac3828159d1aced4cd36b5ef0145e57748672079547d293c476"
+  },
+  {
+    "id": "439cfbbc-2acb-440a-956d-7bfcd6cf7ff7",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Cea cu mingea pot să zic că a fost clar o metodă de dezvoltare a motricității grosiere pentru că fetița Carla chiar nu putea la început să se așeze pe minge si ușor-ușor creierașul ei s-a adaptat mișcării și velocității mingii.",
+    "destination": "activity_observation",
+    "operation": "add",
+    "target_entity_type": "activity",
+    "target_entity_id": "activity-6f0e43cd",
+    "target_candidates": [
+      {
+        "id": "activity-6f0e43cd",
+        "label": "Prinde mingea cu șezutul!"
+      }
+    ],
+    "payload": {
+      "activity_id": "activity-6f0e43cd",
+      "tested_at": "2026-08-18",
+      "age_categories": [
+        "5–6 ani",
+        "7–8 ani"
+      ],
+      "participants": "2–3 copii",
+      "result": "A mers bine",
+      "observed": "Carla a învățat să se așeze pe minge și să se adapteze la mișcare și viteză.",
+      "interpreted": "",
+      "hypothesized": "",
+      "action": "",
+      "capacity": "",
+      "behaviors": []
+    },
+    "field_provenance": {
+      "tested_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "activity_id": {
+        "source": "system",
+        "detail": "Activitate identificată fără ambiguitate"
+      },
+      "age_categories": {
+        "source": "note",
+        "detail": ""
+      },
+      "participants": {
+        "source": "note",
+        "detail": ""
+      },
+      "result": {
+        "source": "becky",
+        "detail": ""
+      },
+      "observed": {
+        "source": "note",
+        "detail": ""
+      },
+      "interpreted": {
+        "source": "missing",
+        "detail": ""
+      },
+      "hypothesized": {
+        "source": "missing",
+        "detail": ""
+      },
+      "action": {
+        "source": "missing",
+        "detail": ""
+      },
+      "capacity": {
+        "source": "missing",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:41:55.019Z",
+    "updated_at": "2026-08-20T11:41:55.019Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "1594fc48ee12434e5be3852c208136f4218ba05f0861272f2279c2499ffcb767"
+  },
+  {
+    "id": "98d29942-d417-41c0-b215-e61ae58c811f",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Ne-am jucat lego dar simt că vreau să intru să le organizez puțin pentru că multă muncă este să cauți prin teancul de lego care este deja ansamblat... poate le place copiilor asta, nu am reusit sa vad de la Erdu dacă o deranjează sau îi e indiferent.",
+    "destination": "activity_observation",
+    "operation": "add",
+    "target_entity_type": "activity",
+    "target_entity_id": null,
+    "target_candidates": [],
+    "payload": {
+      "activity_id": null,
+      "tested_at": "2026-08-18",
+      "age_categories": [
+        "5–6 ani",
+        "7–8 ani"
+      ],
+      "participants": "2–3 copii",
+      "result": "Mixt",
+      "observed": "Copiii s-au jucat cu lego.",
+      "interpreted": "Lego este dezorganizat și este posibil să afecteze focusul copiilor, dar acest lucru nu este confirmat.",
+      "hypothesized": "O organizare mai bună a lego ar putea crește concentrarea și interesul copiilor.",
+      "action": "Se intenționează organizarea lego pentru următoarele întâlniri.",
+      "capacity": "",
+      "behaviors": []
+    },
+    "field_provenance": {
+      "tested_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "activity_id": {
+        "source": "missing",
+        "detail": "Activitatea este ambiguă sau nu există"
+      },
+      "age_categories": {
+        "source": "note",
+        "detail": ""
+      },
+      "participants": {
+        "source": "note",
+        "detail": ""
+      },
+      "result": {
+        "source": "becky",
+        "detail": ""
+      },
+      "observed": {
+        "source": "note",
+        "detail": ""
+      },
+      "interpreted": {
+        "source": "note",
+        "detail": ""
+      },
+      "hypothesized": {
+        "source": "becky",
+        "detail": ""
+      },
+      "action": {
+        "source": "note",
+        "detail": ""
+      },
+      "capacity": {
+        "source": "missing",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [
+      "Selectează activitatea."
+    ],
+    "missing_fields": [
+      "Selectează activitatea."
+    ],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:41:55.020Z",
+    "updated_at": "2026-08-20T11:41:55.020Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "5de871d34d207e13c9f9f68f9427d00029a7032d70f74e02ce3ecd9ba22b9597"
+  },
+  {
+    "id": "cd161adc-2067-4953-9caf-b71ac3683328",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "De câteva ori a zis “M-am plictisit”, deși uneori Erdu zicea “M-am plictisit în camera asta”, ceea ce este un plus...",
+    "destination": "crm_child_observation",
+    "operation": "add",
+    "target_entity_type": "crm_child",
+    "target_entity_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+    "target_candidates": [
+      {
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "label": "Erdu"
+      }
+    ],
+    "payload": {
+      "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "visit_id": null,
+      "observed_at": "2026-08-18T12:00:00.000Z",
+      "observation": "Expresie verbală spontana a copilului privind starea sa de plictiseală."
+    },
+    "field_provenance": {
+      "child_id": {
+        "source": "system",
+        "detail": "Copil identificat fără ambiguitate"
+      },
+      "observed_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "observation": {
+        "source": "note",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:41:55.020Z",
+    "updated_at": "2026-08-20T11:41:55.020Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "f055759e8f5d24a4dc74a9aa5e6c5a55cbd1b6da4caf66947831d3f24e6ae9f8"
+  },
+  {
+    "id": "57b326e8-3614-4b5a-b14e-38b84acc4dbf",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Una peste alta s-au simțit foarte bine copiii și ne-am jucat foarte multe jocuri împreună... Chiar și șezutul pe minge a funcționat bine cu cele două fetițe... A fost o senzație constantă de bună dispoziție și implicare...",
+    "destination": "monthly_report_entry",
+    "operation": "add",
+    "target_entity_type": "monthly_report",
+    "target_entity_id": null,
+    "target_candidates": [],
+    "payload": {
+      "month_key": "2026-08",
+      "entry_date": "2026-08-18",
+      "type": null,
+      "text": "",
+      "role_ids": [
+        "experienta-copilului",
+        "cultura-experienta-becky",
+        "strategie-dezvoltare"
+      ],
+      "source_type": "daily_note",
+      "source_id": "2026-08-18"
+    },
+    "field_provenance": {
+      "entry_date": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "type": {
+        "source": "missing",
+        "detail": ""
+      },
+      "text": {
+        "source": "missing",
+        "detail": ""
+      },
+      "role_ids": {
+        "source": "becky",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [
+      "Alege tipul intrării.",
+      "Completează textul intrării."
+    ],
+    "missing_fields": [
+      "Alege tipul intrării.",
+      "Completează textul intrării."
+    ],
+    "destination_entity_id": null,
+    "created_at": "2026-08-20T11:41:55.020Z",
+    "updated_at": "2026-08-20T11:41:55.020Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "00935473be11f05ecf525d37e5555c3e15a590b05aac05694ee81e30019a8157"
+  },
+  {
+    "id": "0a684d47-cc92-47c4-967d-bcd682f0a12b",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "Cea cu mingea pot să zic că a fost clar o metodă de dezvoltare a motricității grosiere pentru că fetița Carla chiar nu putea la început să se așeze pe minge si ușor-ușor creierașul ei s-a adaptat mișcării și velocității mingii.",
+    "destination": "activity_observation",
+    "operation": "add",
+    "target_entity_type": "activity",
+    "target_entity_id": "activity-6f0e43cd",
+    "target_candidates": [
+      {
+        "id": "activity-6f0e43cd",
+        "label": "Prinde mingea cu șezutul!"
+      }
+    ],
+    "resolution_status": "resolved",
+    "resolution_query": "Prinde mingea cu șezutul!",
+    "payload": {
+      "activity_id": "activity-6f0e43cd",
+      "tested_at": "2026-08-18",
+      "age_categories": [
+        "5–6 ani",
+        "7–8 ani"
+      ],
+      "participants": "2–3 copii",
+      "result": "A mers bine",
+      "observed": "Carla la început nu putea să se așeze pe minge, dar a reușit să se adapteze la mișcarea și viteza mingii încetul cu încetul.",
+      "interpreted": "",
+      "hypothesized": "",
+      "action": "",
+      "capacity": "",
+      "behaviors": []
+    },
+    "field_provenance": {
+      "tested_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "activity_id": {
+        "source": "system",
+        "detail": "Selectat și confirmat de utilizator"
+      },
+      "age_categories": {
+        "source": "note",
+        "detail": "Categoria de vârstă apare explicit în notă"
+      },
+      "participants": {
+        "source": "missing",
+        "detail": "Selectează numărul participanților"
+      },
+      "result": {
+        "source": "becky",
+        "detail": ""
+      },
+      "observed": {
+        "source": "note",
+        "detail": ""
+      },
+      "interpreted": {
+        "source": "missing",
+        "detail": ""
+      },
+      "hypothesized": {
+        "source": "missing",
+        "detail": ""
+      },
+      "action": {
+        "source": "missing",
+        "detail": ""
+      },
+      "capacity": {
+        "source": "missing",
+        "detail": ""
+      }
+    },
+    "status": "approved",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": "becky-inbox-0a684d47-cc92-47c4-967d-bcd682f0a12b",
+    "destination_verified_at": "2026-08-20T12:40:28.155Z",
+    "destination_entity_updated_at": "2026-08-20T12:40:28.154Z",
+    "reverted_at": null,
+    "revert_error": null,
+    "created_at": "2026-08-20T12:38:29.395Z",
+    "updated_at": "2026-08-20T12:40:28.155Z",
+    "executed_at": "2026-08-20T12:40:28.155Z",
+    "last_error": null,
+    "dedupe_key": "dbd82f3680ea67ad9162360d90585eb83947e3be1effaeadfe9f5d51e30dfc79"
+  },
+  {
+    "id": "c4d922a5-5c81-4b25-ac37-d351acf1e6cc",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "",
+    "destination": "crm_child_observation",
+    "operation": "add",
+    "target_entity_type": "crm_child",
+    "target_entity_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+    "target_candidates": [
+      {
+        "id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+        "label": "Erdu"
+      }
+    ],
+    "resolution_status": "resolved",
+    "resolution_query": "Erdu",
+    "payload": {
+      "child_id": "48b0912a-83ab-4088-91fa-270dd8aeaf86",
+      "visit_id": null,
+      "observed_at": "2026-08-18T12:00:00.000Z",
+      "observation": "Erdu a exprimat nemulțumirea legată de plictiseala în camera în care se afla."
+    },
+    "field_provenance": {
+      "child_id": {
+        "source": "system",
+        "detail": "Copil identificat fără ambiguitate"
+      },
+      "observed_at": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "observation": {
+        "source": "missing",
+        "detail": "Fragmentul nu a putut fi verificat în nota sursă"
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "destination_verified_at": null,
+    "destination_entity_updated_at": null,
+    "reverted_at": null,
+    "revert_error": null,
+    "created_at": "2026-08-20T12:38:29.395Z",
+    "updated_at": "2026-08-20T12:38:29.395Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "1227143736f0afcd594e2a45d45a6d83a3d8e98b54a8056d6afde0eedb4ece49"
+  },
+  {
+    "id": "3cbfdf61-370c-4610-8328-1ceaa88782a6",
+    "source_type": "daily_note",
+    "source_id": "2026-08-18",
+    "source_version": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_hash": "a90bb36c4d71205e3244db67e762546751ec4c40ddb1f3d8e7c975886538613c",
+    "source_excerpt": "",
+    "destination": "monthly_report_entry",
+    "operation": "add",
+    "target_entity_type": "monthly_report",
+    "target_entity_id": null,
+    "target_candidates": [],
+    "resolution_status": "resolved",
+    "resolution_query": null,
+    "payload": {
+      "month_key": "2026-08",
+      "entry_date": "2026-08-18",
+      "type": "done",
+      "text": "Raport lunar privind interacțiunea și activitățile cu copiii, observații asupra materialelor și sugestii de îmbunătățire.",
+      "role_ids": [
+        "experienta-copilului",
+        "design-pedagogic",
+        "operatiuni-logistica"
+      ],
+      "source_type": "daily_note",
+      "source_id": "2026-08-18"
+    },
+    "field_provenance": {
+      "entry_date": {
+        "source": "system",
+        "detail": "Data notei"
+      },
+      "type": {
+        "source": "becky",
+        "detail": ""
+      },
+      "text": {
+        "source": "becky",
+        "detail": ""
+      },
+      "role_ids": {
+        "source": "becky",
+        "detail": ""
+      }
+    },
+    "status": "pending",
+    "validation_errors": [],
+    "missing_fields": [],
+    "destination_entity_id": null,
+    "destination_verified_at": null,
+    "destination_entity_updated_at": null,
+    "reverted_at": null,
+    "revert_error": null,
+    "created_at": "2026-08-20T12:38:29.396Z",
+    "updated_at": "2026-08-20T12:38:29.396Z",
+    "executed_at": null,
+    "last_error": null,
+    "dedupe_key": "1a54db46b19ff85789b1ea44d3895b44667aeb2b2a9f00bbc3f0bf2a05aaa9b3"
+  }
+]

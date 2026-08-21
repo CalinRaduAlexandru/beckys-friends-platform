@@ -1,3 +1,8 @@
+import { EXECUTABLE_DESTINATIONS, resolveAiProposal, validateProposedChange, proposalDedupeKey, canonicalExecutionPayload, selectBriefInsights, sha256 } from './becky-inbox/core.mjs';
+import { analyzeDailyNoteWithOpenAI } from './becky-inbox/analyze.mjs';
+import { resolveMemorySignal, isSpeculativeMemorySignal, isTaskCandidateMemorySignal, memorySignalDedupeKey, memorySignalContentMatches, selectAttentionCandidates, historicEvidenceContext } from './becky-memory/core.mjs';
+import { analyzeDailyNoteForMemory } from './becky-memory/analyze.mjs';
+
 const ROUTES = new Map([
   ['/', '/coming-soon.html'],
   ['/admin', '/admin/index.html'],
@@ -92,6 +97,293 @@ async function supabaseRequest(env, path, init = {}) {
 }
 
 const ADMIN_TASK_COLUMNS = 'id,area,title,detail,owner,priority,sort_order,created_at,updated_at';
+const CONTENT_LAB_IDEA_TYPES = ['growth_story', 'behind_the_scenes', 'authority_expertise', 'reusable_insight'];
+const CONTENT_LAB_IDEA_STATUSES = ['active', 'archived'];
+const CONTENT_LAB_IDEA_COLUMNS = 'id,idea_type,title,core_thought,status,source_type,source_id,created_at,updated_at';
+const EVENT_FINDING_KINDS = ['observation', 'feedback', 'component_idea', 'hypothesis', 'pilot_result'];
+const EVENT_FINDING_COLUMNS = 'id,kind,text,event_ref,concept_ref,source_type,source_id,created_at,updated_at';
+const KNOWLEDGE_CANDIDATE_TARGETS = ['operational_manual', 'puieti_de_oameni', 'community_guide', 'strategic_plan'];
+const KNOWLEDGE_CANDIDATE_STATUSES = ['proposed', 'approved', 'rejected'];
+const KNOWLEDGE_CANDIDATE_COLUMNS = 'id,target,text,status,source_type,source_id,created_at,updated_at';
+const BECKY_INBOX_COLUMNS = 'id,source_type,source_id,source_version,source_hash,source_excerpt,destination,operation,target_entity_type,target_entity_id,target_candidates,resolution_status,resolution_query,payload,field_provenance,status,validation_errors,missing_fields,destination_entity_id,destination_verified_at,destination_entity_updated_at,reverted_at,revert_error,dedupe_key,created_at,updated_at,executed_at,last_error';
+const BECKY_BRIEF_COLUMNS = 'id,source_type,source_id,source_version,source_hash,insight_title,insight_summary,why_it_matters,recommended_action,evidence_refs,category,relevance_score,confidence,rank_score,related_proposal_ids,sort_order,created_at,updated_at';
+const BECKY_MEMORY_COLUMNS = 'id,source_type,source_note_id,source_version,source_hash,source_date,exact_source_excerpt,normalized_observation,epistemic_type,entities,topics,age_categories,possible_canonical_context,canonical_context,confidence,provenance,dedupe_key,created_at,updated_at';
+const BECKY_ATTENTION_COLUMNS = 'id,fingerprint,title,summary,why_it_matters,suggested_next_step,evidence_signal_ids,counter_evidence_signal_ids,topics,age_categories,relevance_score,confidence,independent_evidence_count,date_count,entity_count,reason_for_attention,status,knowledge_candidate_id,created_at,updated_at';
+const MONTHLY_REPORT_ROLES = [
+  ['experienta-copilului', 'Experiența copilului'], ['relatia-cu-parintii', 'Relația cu părinții'], ['design-pedagogic', 'Design pedagogic'], ['cultura-experienta-becky', 'Cultura & experiența Becky'], ['marketing-comunicare', 'Marketing & comunicare'], ['sisteme-tehnologie', 'Sisteme & tehnologie'], ['operatiuni-logistica', 'Operațiuni & logistică'], ['strategie-dezvoltare', 'Strategie & dezvoltare']
+];
+const MONTHLY_REPORT_SECTION_KEYS = ['scope', 'objectives', 'metrics', 'done', 'evidence', 'learned', 'next_step'];
+const MONTHLY_REPORT_STATUSES = ['În parametri', 'Necesită atenție', 'În urmă', 'Fără suficiente date'];
+const MONTHLY_REPORT_COLUMNS = 'id,month_key,label,status,scope,objectives,metrics,done,evidence,learned,next_step,sort_order,created_at,updated_at';
+const MONTHLY_REPORT_ENTRY_TYPES = ['done', 'evidence', 'learned'];
+const MONTHLY_REPORT_ENTRY_COLUMNS = 'id,month_key,entry_date,type,text,role_ids,source_type,source_id,created_at,updated_at';
+const EXPERIENCE_REPERTOIRE_STAGES = ['welcome', 'surprise_connect', 'next_visit_thread', 'memorable_close'];
+const EXPERIENCE_REPERTOIRE_AGES = ['age_2', 'age_3', 'age_4_5', 'age_6_7', 'age_8_plus'];
+const EXPERIENCE_REPERTOIRE_AGE_MAP = { age_2: ['1–2 ani'], age_3: ['3–4 ani'], age_4_5: ['5–6 ani'], age_6_7: ['7–8 ani'], age_8_plus: ['9+ ani'] };
+const EXPERIENCE_REPERTOIRE_COLUMNS = 'id,stage,title,description,age_groups,status,family,fallback_item_id,source_type,source_id,created_at,updated_at';
+const PEDAGOGIC_AGES = ['1–2 ani','3–4 ani','5–6 ani','7–8 ani','9+ ani'];
+const PEDAGOGIC_PARTICIPANTS = ['Individual','2–3 copii','4–9 copii','10+ copii'];
+const PEDAGOGIC_CATEGORIES = ['Gândește','Simte','Colaborează','Devine independent','Creează','Se mișcă'];
+const BECKY_THEMED_COLUMNS = 'id,title,subtitle,age_categories,participant_categories,duration_categories,category,skills,implementation,materials,steps,rules,facilitator,easier,harder,caution,reflection,status,created_at,updated_at';
+const ACTIVITY_OBSERVATION_COLUMNS = 'id,activity_id,tested_at,age_categories,participants,result,observed,interpreted,hypothesized,action,capacity,behavior_observed,behaviors,created_at,updated_at';
+const ACTIVITY_PARTICIPANTS = ['Individual', '2–3 copii', '4–9 copii', '10+ copii'];
+const ACTIVITY_RESULTS = ['A mers bine', 'Mixt', 'Nu a mers'];
+function normalizeContentLabIdeaInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const idea_type = String(input?.idea_type || existing.idea_type || '').trim(); const title = String(input?.title ?? existing.title ?? '').trim(); const core_thought = String(input?.core_thought ?? existing.core_thought ?? input?.text ?? existing.text ?? '').trim(); const status = String(input?.status || existing.status || 'active').trim(); const source_type = input?.source_type === null ? null : String(input?.source_type ?? existing.source_type ?? '').trim() || null; const source_id = input?.source_id === null ? null : String(input?.source_id ?? existing.source_id ?? '').trim() || null;
+  if (!id || !CONTENT_LAB_IDEA_TYPES.includes(idea_type) || !core_thought || !CONTENT_LAB_IDEA_STATUSES.includes(status)) throw Object.assign(new Error('Content Lab idea invalid'), { status: 400 });
+  if (title.length > 500 || core_thought.length > 10000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw Object.assign(new Error('Content Lab idea too long'), { status: 400 });
+  return { id, idea_type, title, core_thought, status, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+function normalizeEventFindingInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const kind = String(input?.kind || existing.kind || '').trim(); const text = String(input?.text ?? existing.text ?? '').trim(); const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null;
+  const event_ref = nullable('event_ref'); const concept_ref = nullable('concept_ref'); const source_type = nullable('source_type'); const source_id = nullable('source_id');
+  if (!id || !EVENT_FINDING_KINDS.includes(kind) || !text) throw Object.assign(new Error('Event finding invalid'), { status: 400 });
+  if (text.length > 10000 || [event_ref, concept_ref, source_type, source_id].some((value, index) => value && value.length > (index < 2 ? 300 : index === 2 ? 100 : 200))) throw Object.assign(new Error('Event finding too long'), { status: 400 });
+  return { id, kind, text, event_ref, concept_ref, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+function normalizeKnowledgeCandidateInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const target = String(input?.target || existing.target || '').trim(); const text = String(input?.text ?? existing.text ?? '').trim(); const status = String(input?.status || existing.status || 'proposed').trim(); const source_type = input?.source_type === null ? null : String(input?.source_type ?? existing.source_type ?? '').trim() || null; const source_id = input?.source_id === null ? null : String(input?.source_id ?? existing.source_id ?? '').trim() || null;
+  if (!id || !KNOWLEDGE_CANDIDATE_TARGETS.includes(target) || !KNOWLEDGE_CANDIDATE_STATUSES.includes(status) || !text) throw Object.assign(new Error('Knowledge candidate invalid'), { status: 400 });
+  if (text.length > 10000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw Object.assign(new Error('Knowledge candidate too long'), { status: 400 });
+  return { id, target, text, status, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+function normalizeActivityObservationInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const activity_id = String(input?.activity_id || existing.activity_id || '').trim(); const tested_at = String(input?.tested_at || existing.tested_at || '').trim(); const age_categories = Array.isArray(input?.age_categories ?? existing.age_categories) ? (input.age_categories ?? existing.age_categories).map(String) : []; const participants = String(input?.participants || existing.participants || '').trim(); const result = String(input?.result || existing.result || '').trim(); const observed = String(input?.observed ?? existing.observed ?? '').trim();
+  if (!id || !activity_id || !/^\d{4}-\d{2}-\d{2}$/.test(tested_at) || !ACTIVITY_PARTICIPANTS.includes(participants) || !ACTIVITY_RESULTS.includes(result) || !observed) throw Object.assign(new Error('Activity observation invalid'), { status: 400 });
+  const behaviors = Array.isArray(input?.behaviors ?? existing.behaviors) ? (input?.behaviors ?? existing.behaviors).map(item => ({ label: String(item?.label || '').trim(), status: ['Da','Parțial','Nu'].includes(item?.status) ? item.status : '' })).filter(item => item.label) : [];
+  return { id, activity_id, tested_at, age_categories, participants, result, observed, interpreted: String(input?.interpreted ?? existing.interpreted ?? '').trim(), hypothesized: String(input?.hypothesized ?? existing.hypothesized ?? '').trim(), action: String(input?.action ?? existing.action ?? '').trim(), capacity: String(input?.capacity ?? existing.capacity ?? '').trim(), behavior_observed: input?.behavior_observed === null || input?.behavior_observed === undefined ? (existing.behavior_observed ?? null) : Boolean(input.behavior_observed), behaviors, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+function normalizeExperienceRepertoireInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const stage = String(input?.stage || existing.stage || '').trim(); const title = String(input?.title || existing.title || '').trim(); const description = String(input?.description ?? existing.description ?? '').trim(); const age_groups = Array.isArray(input?.age_groups ?? existing.age_groups) ? [...new Set((input.age_groups ?? existing.age_groups).map(String).filter(value => EXPERIENCE_REPERTOIRE_AGES.includes(value)))] : []; const status = String(input?.status || existing.status || 'active').trim(); const nullable = key => input?.[key] === null ? null : String(input?.[key] ?? existing[key] ?? '').trim() || null; const source_type = nullable('source_type'); const source_id = nullable('source_id'); const family = nullable('family'); const fallback_item_id = nullable('fallback_item_id');
+  if (!id || !EXPERIENCE_REPERTOIRE_STAGES.includes(stage) || !title || !age_groups.length || !['active', 'archived'].includes(status)) throw Object.assign(new Error('Experience repertoire invalid'), { status: 400 });
+  if (title.length > 180 || description.length > 5000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw Object.assign(new Error('Experience repertoire too long'), { status: 400 });
+  const overlaysInput = Array.isArray(input?.age_overlays) ? input.age_overlays : (Array.isArray(existing.age_overlays) ? existing.age_overlays : []);
+  const age_overlays = age_groups.map(age => { const item = overlaysInput.find(overlay => overlay.age_group === age) || {}; const validation_status = ['idea','validated'].includes(String(item.validation_status || 'idea')) ? String(item.validation_status || 'idea') : 'idea'; return { age_group: age, validation_status, age_specific_note: item.age_specific_note ? String(item.age_specific_note).trim() : null, restriction: item.restriction ? String(item.restriction).trim() : null }; });
+  return { id, stage, title, description, age_groups, status, family, fallback_item_id, age_overlays, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+function normalizeBeckyThemedActivityInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const text = key => String(input?.[key] ?? existing[key] ?? '').trim(); const list = key => [...new Set((Array.isArray(input?.[key] ?? existing[key]) ? (input?.[key] ?? existing[key]) : []).map(String).map(value => value.trim()).filter(Boolean))]; const age_categories = list('age_categories').filter(value => PEDAGOGIC_AGES.includes(value)); const participant_categories = list('participant_categories').filter(value => PEDAGOGIC_PARTICIPANTS.includes(value)); const validations = (Array.isArray(input?.validations ?? existing.validations) ? (input?.validations ?? existing.validations) : []).map(value => ({ age_category: String(value?.age_category || '').trim(), participant_category: String(value?.participant_category || '').trim(), validation_status: ['idea','validated'].includes(value?.validation_status) ? value.validation_status : 'idea' })).filter(value => age_categories.includes(value.age_category) && participant_categories.includes(value.participant_category));
+  const item = { id, title: text('title'), subtitle: text('subtitle'), age_categories, participant_categories, duration_categories: list('duration_categories'), category: text('category'), skills: text('skills'), implementation: text('implementation'), materials: text('materials'), steps: text('steps'), rules: text('rules'), facilitator: text('facilitator'), easier: text('easier'), harder: text('harder'), caution: text('caution'), reflection: text('reflection'), status: text('status') || 'active', validations, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+  if (!id || !item.title || !item.age_categories.length || !item.participant_categories.length || !PEDAGOGIC_CATEGORIES.includes(item.category) || !item.implementation || !['active','archived'].includes(item.status)) throw Object.assign(new Error('Becky themed activity invalid'), { status: 400 });
+  return item;
+}
+function experienceRepertoireActivities(workspaces) {
+  const childrenWorkspace = (workspaces.workspaces || []).find(item => item.id === 'children'); const activities = (childrenWorkspace?.activities || []).filter(item => item?.title && item.title !== 'Activitate nouă');
+  const ranges = value => { const nums = String(value || '').match(/\d+/g)?.map(Number) || []; return nums.length > 1 ? [nums[0], nums[1]] : nums.length ? [nums[0], /\+/.test(value) ? 99 : nums[0]] : [0, 99]; };
+  const counts = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, 0])); const previews = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, []]));
+  for (const activity of activities) { const source = Array.isArray(activity.ageCategories) && activity.ageCategories.length ? activity.ageCategories : [activity.age]; for (const age of EXPERIENCE_REPERTOIRE_AGES) if (source.some(value => EXPERIENCE_REPERTOIRE_AGE_MAP[age].some(filter => { const [a,b]=ranges(value); const [c,d]=ranges(filter); return a<=d && b>=c; }))) { counts[age]++; if (previews[age].length < 3) previews[age].push({ id: activity.id, title: activity.title }); } }
+  return { activity_counts: counts, activity_coverage: Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, { idea: counts[age], validated: 0 }])), activity_previews: previews };
+}
+function pedagogicActivityAges(activity) { const source = Array.isArray(activity.ageCategories) && activity.ageCategories.length ? activity.ageCategories : [activity.age]; const range = value => { const nums = String(value || '').match(/\d+/g)?.map(Number) || []; return nums.length > 1 ? [nums[0], nums[1]] : nums.length ? [nums[0], /\+/.test(String(value)) ? 99 : nums[0]] : [0, 99]; }; return PEDAGOGIC_AGES.filter(filter => source.some(value => { const [a,b] = range(value); const [c,d] = range(filter); return a <= d && b >= c; })); }
+function pedagogicActivityParticipants(activity) { const explicit = Array.isArray(activity.participantCategories) ? activity.participantCategories : []; if (explicit.length) return PEDAGOGIC_PARTICIPANTS.filter(value => explicit.includes(value)); const text = String(activity.participants || activity.group || '').toLowerCase(); if (/individual|1\s*copil/.test(text)) return ['Individual']; if (/grup\s*mare|10\+|7\+/.test(text)) return ['10+ copii']; if (/grup\s*mediu|4\s*[-–]\s*6/.test(text)) return ['4–9 copii']; if (/grup\s*mic|2\s*[-–]\s*3/.test(text)) return ['2–3 copii']; return []; }
+function pedagogicCoverage(workspaces, themed) { const children = (workspaces.workspaces || []).find(item => item.id === 'children'); const library = (children?.activities || []).filter(item => item?.title && item.title !== 'Activitate nouă'); const build = (activities, source) => PEDAGOGIC_AGES.map(age => ({ age, cells: PEDAGOGIC_PARTICIPANTS.map(participant => ({ participant, domains: PEDAGOGIC_CATEGORIES.map(category => { const relevant = activities.filter(activity => (source === 'library' ? pedagogicActivityAges(activity).includes(age) && pedagogicActivityParticipants(activity).includes(participant) && (activity.category || 'Gândește') === category : activity.age_categories.includes(age) && activity.participant_categories.includes(participant) && activity.category === category)); const validated = source === 'library' ? 0 : relevant.filter(activity => (activity.validations || []).some(value => value.age_category === age && value.participant_category === participant && value.validation_status === 'validated')).length; return { category, ideas: relevant.length, validated }; }) })) })); return { library: build(library, 'library'), themed: build(themed.filter(item => item.status === 'active'), 'themed'), themed_activities: themed.filter(item => item.status === 'active'), library_activities: library.map(item => ({ id:item.id,title:item.title,category:item.category || 'Gândește',age_categories:pedagogicActivityAges(item),participant_categories:pedagogicActivityParticipants(item),implementation:item.difficulty || '' })) }; }
+async function handleActivityObservations(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET') { const activityId = String(url.searchParams.get('activity_id') || '').trim(); const filter = activityId ? `&activity_id=eq.${encodeURIComponent(activityId)}` : ''; const response = await supabaseRequest(env, `/rest/v1/admin_activity_observations?select=${ACTIVITY_OBSERVATION_COLUMNS}${filter}&order=tested_at.desc,created_at.desc`); return json({ observations: await response.json() }); }
+  assertSameOrigin(request); const match = url.pathname.match(/^\/api\/admin\/activity-observations\/([^/?]+)$/);
+  if (request.method === 'POST') { const item = normalizeActivityObservationInput(await readJson(request, 100_000)); const response = await supabaseRequest(env, '/rest/v1/admin_activity_observations?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201); }
+  if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+  const id = decodeURIComponent(match[1]); if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+  if (request.method === 'PATCH') { const body = await readJson(request, 100_000); const currentResponse = await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}&select=${ACTIVITY_OBSERVATION_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Testarea nu a fost găsită' }, 404); const item = normalizeActivityObservationInput({ ...current, ...body, id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+async function handleExperienceRepertoire(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET' && url.pathname === '/api/admin/experience-repertoire') { const [itemsResponse, overlaysResponse, workspaces] = await Promise.all([supabaseRequest(env, `/rest/v1/admin_experience_repertoire_items?select=${EXPERIENCE_REPERTOIRE_COLUMNS}&order=updated_at.desc`), supabaseRequest(env, '/rest/v1/admin_experience_repertoire_age_overlays?select=id,item_id,age_group,validation_status,age_specific_note,restriction,created_at,updated_at'), getDocument(env, 'workspaces')]); const items = (await itemsResponse.json()).filter(item => item.status === 'active'); const overlays = await overlaysResponse.json(); const byItem = new Map(); for (const overlay of overlays) { if (!byItem.has(overlay.item_id)) byItem.set(overlay.item_id, []); byItem.get(overlay.item_id).push(overlay); } for (const item of items) item.age_overlays = byItem.get(item.id) || []; const coverage = Object.fromEntries(EXPERIENCE_REPERTOIRE_AGES.map(age => [age, Object.fromEntries(EXPERIENCE_REPERTOIRE_STAGES.map(stage => { const relevant = items.filter(item => item.stage === stage && item.age_groups?.includes(age)); return [stage, { idea: relevant.filter(item => (item.age_overlays || []).find(overlay => overlay.age_group === age)?.validation_status !== 'validated').length, validated: relevant.filter(item => (item.age_overlays || []).find(overlay => overlay.age_group === age)?.validation_status === 'validated').length }]; }))])); const activities = experienceRepertoireActivities(workspaces); return json({ items, coverage, ...activities }); }
+  assertSameOrigin(request); const itemMatch = url.pathname.match(/^\/api\/admin\/experience-repertoire\/([^/?]+)$/);
+  if (request.method === 'POST' && url.pathname === '/api/admin/experience-repertoire') { const item = normalizeExperienceRepertoireInput(await readJson(request, 40_000)); const { age_overlays, ...itemRow } = item; const response = await supabaseRequest(env, '/rest/v1/admin_experience_repertoire_items?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(itemRow) }); const saved = (await response.json())[0]; if (age_overlays.length) await supabaseRequest(env, '/rest/v1/admin_experience_repertoire_age_overlays', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(age_overlays.map(overlay => ({ ...overlay, item_id: saved.id }))) }); return json({ ...saved, age_overlays }, 201); }
+  if (!itemMatch) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' }); const id = decodeURIComponent(itemMatch[1]);
+  if (request.method === 'DELETE') { const response = await supabaseRequest(env, `/rest/v1/admin_experience_repertoire_items?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ status: 'archived', updated_at: new Date().toISOString() }) }); return json((await response.json())[0] || { ok: true }); }
+  if (request.method === 'PATCH') { const currentResponse = await supabaseRequest(env, `/rest/v1/admin_experience_repertoire_items?id=eq.${encodeURIComponent(id)}&select=${EXPERIENCE_REPERTOIRE_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Ideea nu a fost găsită' }, 404); const currentOverlaysResponse = await supabaseRequest(env, `/rest/v1/admin_experience_repertoire_age_overlays?item_id=eq.${encodeURIComponent(id)}&select=id,item_id,age_group,validation_status,age_specific_note,restriction,created_at,updated_at`); const currentOverlays = await currentOverlaysResponse.json(); const body = await readJson(request, 40_000); const item = normalizeExperienceRepertoireInput({ ...current, ...body, age_overlays: body.age_overlays ?? currentOverlays, id }, current); const { age_overlays, ...itemRow } = item; const response = await supabaseRequest(env, `/rest/v1/admin_experience_repertoire_items?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(itemRow) }); await supabaseRequest(env, `/rest/v1/admin_experience_repertoire_age_overlays?item_id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); if (age_overlays.length) await supabaseRequest(env, '/rest/v1/admin_experience_repertoire_age_overlays', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(age_overlays.map(overlay => ({ item_id: id, age_group: overlay.age_group, validation_status: overlay.validation_status, age_specific_note: overlay.age_specific_note, restriction: overlay.restriction }))) }); return json({ ...(await response.json())[0], age_overlays }); }
+  return json({ error: 'Method not allowed' }, 405);
+}
+async function handleBeckyThemedActivities(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET' && url.pathname === '/api/admin/pedagogic-coverage') { const [workspaces, activitiesResponse, validationsResponse, libraryValidationsResponse] = await Promise.all([getDocument(env, 'workspaces'), supabaseRequest(env, `/rest/v1/admin_becky_themed_activities?select=${BECKY_THEMED_COLUMNS}&status=eq.active`), supabaseRequest(env, '/rest/v1/admin_becky_themed_activity_validations?select=id,activity_id,age_category,participant_category,validation_status'), supabaseRequest(env, '/rest/v1/admin_children_activity_validations?select=id,activity_id,age_category,participant_category,validation_status')]); const activities = await activitiesResponse.json(); const validations = await validationsResponse.json(); const libraryValidations = await libraryValidationsResponse.json(); const byId = new Map(); for (const validation of validations) { if (!byId.has(validation.activity_id)) byId.set(validation.activity_id, []); byId.get(validation.activity_id).push(validation); } for (const item of activities) item.validations = byId.get(item.id) || []; const children = (workspaces.workspaces || []).find(item => item.id === 'children'); for (const item of (children?.activities || [])) item.validations = libraryValidations.filter(value => value.activity_id === item.id); return json(pedagogicCoverage(workspaces, activities)); }
+  if (request.method === 'POST' && url.pathname === '/api/admin/children-activity-validations') { const body = await readJson(request, 20_000); const activity_id = String(body?.activity_id || '').trim(); const age_category = String(body?.age_category || '').trim(); const participant_category = String(body?.participant_category || '').trim(); const validation_status = String(body?.validation_status || '').trim(); if (!activity_id || !PEDAGOGIC_AGES.includes(age_category) || !PEDAGOGIC_PARTICIPANTS.includes(participant_category) || !['idea','validated'].includes(validation_status)) return json({ error:'Validare invalidă' },400); const id = crypto.randomUUID(); const response = await supabaseRequest(env, '/rest/v1/admin_children_activity_validations?on_conflict=activity_id,age_category,participant_category', { method:'POST', headers:{ Prefer:'resolution=merge-duplicates,return=representation' }, body:JSON.stringify({ id, activity_id, age_category, participant_category, validation_status, updated_at:new Date().toISOString() }) }); return json((await response.json())[0] || { id, activity_id, age_category, participant_category, validation_status }); }
+  if (request.method === 'GET' && url.pathname === '/api/admin/becky-themed-activities') { const [activitiesResponse, validationsResponse] = await Promise.all([supabaseRequest(env, `/rest/v1/admin_becky_themed_activities?select=${BECKY_THEMED_COLUMNS}&status=eq.active&order=updated_at.desc`), supabaseRequest(env, '/rest/v1/admin_becky_themed_activity_validations?select=id,activity_id,age_category,participant_category,validation_status')]); const activities = await activitiesResponse.json(); const validations = await validationsResponse.json(); for (const item of activities) item.validations = validations.filter(value => value.activity_id === item.id); return json({ activities }); }
+  assertSameOrigin(request); const match = url.pathname.match(/^\/api\/admin\/becky-themed-activities\/([^/?]+)$/);
+  if (request.method === 'POST' && url.pathname === '/api/admin/becky-themed-activities') { const item = normalizeBeckyThemedActivityInput(await readJson(request, 100_000)); const { validations, ...row } = item; const response = await supabaseRequest(env, '/rest/v1/admin_becky_themed_activities?on_conflict=id', { method:'POST', headers:{ Prefer:'return=representation' }, body:JSON.stringify(row) }); const saved = (await response.json())[0]; if (validations.length) await supabaseRequest(env, '/rest/v1/admin_becky_themed_activity_validations', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(validations.map(value => ({ ...value, activity_id:saved.id }))) }); return json({ ...saved, validations }, 201); }
+  if (!match || !['PATCH','DELETE'].includes(request.method)) return json({ error:'Method not allowed' },405,{Allow:'GET, POST, PATCH, DELETE'}); const id = decodeURIComponent(match[1]);
+  if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_becky_themed_activities?id=eq.${encodeURIComponent(id)}`, { method:'PATCH', headers:{ Prefer:'return=minimal' }, body:JSON.stringify({ status:'archived', updated_at:new Date().toISOString() }) }); return json({ ok:true }); }
+  const currentResponse = await supabaseRequest(env, `/rest/v1/admin_becky_themed_activities?id=eq.${encodeURIComponent(id)}&select=${BECKY_THEMED_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error:'Activitatea tematică nu a fost găsită' },404); const currentValidationsResponse = await supabaseRequest(env, `/rest/v1/admin_becky_themed_activity_validations?activity_id=eq.${encodeURIComponent(id)}&select=id,activity_id,age_category,participant_category,validation_status`); const body = await readJson(request,100_000); const item = normalizeBeckyThemedActivityInput({ ...current, ...body, validations: body.validations ?? await currentValidationsResponse.json(), id }, current); const { validations, ...row } = item; const response = await supabaseRequest(env, `/rest/v1/admin_becky_themed_activities?id=eq.${encodeURIComponent(id)}`, { method:'PATCH', headers:{ Prefer:'return=representation' }, body:JSON.stringify(row) }); await supabaseRequest(env, `/rest/v1/admin_becky_themed_activity_validations?activity_id=eq.${encodeURIComponent(id)}`, { method:'DELETE' }); if (validations.length) await supabaseRequest(env, '/rest/v1/admin_becky_themed_activity_validations', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify(validations.map(value => ({ activity_id:id, ...value }))) }); return json({ ...(await response.json())[0], validations });
+}
+function monthlyReportDefaults() {
+  const now = new Date().toISOString();
+  return MONTHLY_REPORT_ROLES.map(([id, label], sort_order) => ({ id, month_key: '2026-08', label, status: 'Fără suficiente date', scope: '', objectives: '', metrics: '', done: '', evidence: '', learned: '', next_step: '', sort_order, created_at: now, updated_at: now }));
+}
+function monthlyRoleView(row) { return { id: row.id, label: row.label, status: row.status, sort_order: row.sort_order, created_at: row.created_at, updated_at: row.updated_at, notes: row.notes && typeof row.notes === 'object' ? row.notes : {}, sections: Object.fromEntries(MONTHLY_REPORT_SECTION_KEYS.map(key => [key, row[key] || ''])) }; }
+function normalizeMonthlyReportEntryInput(input, existing = {}, monthKey = '2026-08') {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim(); const month_key = String(input?.month_key || existing.month_key || monthKey).trim(); const entry_date = String(input?.entry_date || existing.entry_date || '').trim(); const type = String(input?.type || existing.type || '').trim(); const text = String(input?.text ?? existing.text ?? '').trim(); const role_ids = Array.isArray(input?.role_ids ?? existing.role_ids) ? [...new Set((input.role_ids ?? existing.role_ids).map(String).map(value => value.trim()).filter(Boolean))] : []; const source_type = input?.source_type === null ? null : String(input?.source_type ?? existing.source_type ?? '').trim() || null; const source_id = input?.source_id === null ? null : String(input?.source_id ?? existing.source_id ?? '').trim() || null;
+  const validRoles = new Set(MONTHLY_REPORT_ROLES.map(([roleId]) => roleId));
+  if (!id || !/^\d{4}-\d{2}$/.test(month_key) || !/^\d{4}-\d{2}-\d{2}$/.test(entry_date) || !MONTHLY_REPORT_ENTRY_TYPES.includes(type) || !text || !role_ids.length || role_ids.some(roleId => !validRoles.has(roleId))) throw Object.assign(new Error('Monthly report entry invalid'), { status: 400 });
+  if (text.length > 5000 || (source_type && source_type.length > 100) || (source_id && source_id.length > 200)) throw Object.assign(new Error('Monthly report entry too long'), { status: 400 });
+  return { id, month_key, entry_date, type, text, role_ids, source_type, source_id, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+async function handleAdminMonthlyReport(request, env) {
+  await requireAdmin(request, env);
+  const url = new URL(request.url);
+  if (request.method === 'GET' && url.pathname === '/api/admin/monthly-report') {
+    const [response, notesResponse] = await Promise.all([supabaseRequest(env, `/rest/v1/admin_monthly_report_roles?select=${MONTHLY_REPORT_COLUMNS}&order=sort_order.asc`), supabaseRequest(env, '/rest/v1/admin_monthly_report_notes?select=note_date,note&order=note_date.desc')]);
+    const rows = await response.json(); const noteRows = await notesResponse.json();
+    const byId = new Map(rows.map(row => [row.id, row]));
+    return json({ report: { month_key: '2026-08', due_date: '2026-09-02', notes: Object.fromEntries(noteRows.map(row => [row.note_date, row.note])), roles: monthlyReportDefaults().map(def => monthlyRoleView(byId.get(def.id) || def)) } });
+  }
+  if (request.method === 'PATCH' && url.pathname === '/api/admin/monthly-report/notes') {
+    const body = await readJson(request, 200_000); const date = String(body?.date || '').trim(); const text = String(body?.text || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return json({ error: 'Notă invalidă' }, 400);
+    if (text) await supabaseRequest(env, '/rest/v1/admin_monthly_report_notes?on_conflict=note_date', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify({ note_date: date, note: text, updated_at: new Date().toISOString() }) });
+    else await supabaseRequest(env, `/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(date)}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  if (request.method === 'GET' && url.pathname === '/api/admin/monthly-report/entries') {
+    const monthKey = String(url.searchParams.get('month_key') || '2026-08').trim(); const roleId = String(url.searchParams.get('role_id') || '').trim();
+    if (!/^\d{4}-\d{2}$/.test(monthKey) || (roleId && !MONTHLY_REPORT_ROLES.some(([id]) => id === roleId))) return json({ error: 'Filtru invalid' }, 400);
+    const response = await supabaseRequest(env, `/rest/v1/admin_monthly_report_entries?select=${MONTHLY_REPORT_ENTRY_COLUMNS}&month_key=eq.${encodeURIComponent(monthKey)}&order=entry_date.desc,created_at.desc`); let entries = await response.json();
+    if (roleId) entries = entries.filter(entry => Array.isArray(entry.role_ids) && entry.role_ids.includes(roleId));
+    return json({ entries });
+  }
+  assertSameOrigin(request);
+  const monthlyEntryMatch = url.pathname.match(/^\/api\/admin\/monthly-report\/entries\/([^/?]+)$/);
+  if (request.method === 'POST' && url.pathname === '/api/admin/monthly-report/entries') {
+    const item = normalizeMonthlyReportEntryInput(await readJson(request, 40_000)); const response = await supabaseRequest(env, '/rest/v1/admin_monthly_report_entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201);
+  }
+  if (monthlyEntryMatch && ['PATCH', 'DELETE'].includes(request.method)) {
+    const id = decodeURIComponent(monthlyEntryMatch[1]);
+    if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_monthly_report_entries?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+    const currentResponse = await supabaseRequest(env, `/rest/v1/admin_monthly_report_entries?id=eq.${encodeURIComponent(id)}&select=${MONTHLY_REPORT_ENTRY_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Intrarea nu a fost găsită' }, 404); const item = normalizeMonthlyReportEntryInput({ ...current, ...await readJson(request, 40_000), id }, current, current.month_key); const response = await supabaseRequest(env, `/rest/v1/admin_monthly_report_entries?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]);
+  }
+  const match = url.pathname.match(/^\/api\/admin\/monthly-report\/roles\/([^/?]+)$/);
+  if (request.method === 'PATCH' && match) {
+    const id = decodeURIComponent(match[1]);
+    const body = await readJson(request, 40_000);
+    const allowed = new Set(MONTHLY_REPORT_SECTION_KEYS);
+    const update = { updated_at: new Date().toISOString() };
+    if (body?.status !== undefined) { const status = String(body.status); if (!MONTHLY_REPORT_STATUSES.includes(status)) return json({ error: 'Status invalid' }, 400); update.status = status; }
+    for (const key of MONTHLY_REPORT_SECTION_KEYS) if (body?.sections?.[key] !== undefined) { const value = String(body.sections[key] || '').trim(); if (value.length > 5000) return json({ error: 'Secțiune prea lungă' }, 400); update[key] = value; }
+    if (Object.keys(update).length === 1) return json({ error: 'Nicio modificare' }, 400);
+    const response = await supabaseRequest(env, `/rest/v1/admin_monthly_report_roles?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(update) });
+    const rows = await response.json();
+    if (!rows.length) return json({ error: 'Rolul nu a fost găsit' }, 404);
+    return json({ role: monthlyRoleView(rows[0]) });
+  }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, PATCH' });
+}
+
+async function handleContentLabIdeas(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET') {
+    const status = String(url.searchParams.get('status') || '').trim(); if (status && !CONTENT_LAB_IDEA_STATUSES.includes(status)) return json({ error: 'Filtru invalid' }, 400);
+    const filter = status ? `&status=eq.${encodeURIComponent(status)}` : '';
+    const response = await supabaseRequest(env, `/rest/v1/admin_content_lab_ideas?select=${CONTENT_LAB_IDEA_COLUMNS}${filter}&order=updated_at.desc,created_at.desc`); return json({ ideas: await response.json() });
+  }
+  assertSameOrigin(request);
+  if (request.method === 'POST') { const item = normalizeContentLabIdeaInput(await readJson(request, 40_000)); const response = await supabaseRequest(env, '/rest/v1/admin_content_lab_ideas?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201); }
+  const match = url.pathname.match(/^\/api\/admin\/content-lab\/ideas\/([^/?]+)$/); if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' }); const id = decodeURIComponent(match[1]);
+  if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_content_lab_ideas?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+  if (request.method === 'PATCH') { const currentResponse = await supabaseRequest(env, `/rest/v1/admin_content_lab_ideas?id=eq.${encodeURIComponent(id)}&select=${CONTENT_LAB_IDEA_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Ideea nu a fost găsită' }, 404); const item = normalizeContentLabIdeaInput({ ...current, ...await readJson(request, 40_000), id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_content_lab_ideas?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+
+async function productionBeckyContext(env) {
+  const [childrenResponse, workspaces] = await Promise.all([supabaseRequest(env, `/rest/v1/crm_children?select=id,first_name,age&order=first_name.asc`), getDocument(env, 'workspaces')]);
+  const childrenWorkspace = (workspaces.workspaces || []).find(item => item.id === 'children'); const activities = (childrenWorkspace?.activities || []).filter(item => item?.id && item?.title && item.title !== 'Activitate nouă').map(item => ({ id:item.id,title:item.title,age_categories:Array.isArray(item.ageCategories)?item.ageCategories:item.age?[item.age]:[] }));
+  return { children:await childrenResponse.json(),activities,roles:MONTHLY_REPORT_ROLES.map(([id,label])=>({id,label})) };
+}
+function beckyDestinationTable(item) {
+  if(item.destination==='activity_observation')return ['admin_activity_observations',ACTIVITY_OBSERVATION_COLUMNS];
+  if(item.destination==='crm_child_observation')return ['crm_child_observations',CRM_OBSERVATION_COLUMNS];
+  if(item.destination==='monthly_report_entry')return ['admin_monthly_report_entries',MONTHLY_REPORT_ENTRY_COLUMNS];
+  throw Object.assign(new Error('Destinația nu este executabilă în V1.'),{status:400});
+}
+async function readProductionDestination(env,item,id=item.destination_entity_id){if(!id)return null;const [table,columns]=beckyDestinationTable(item);const response=await supabaseRequest(env,`/rest/v1/${table}?id=eq.${encodeURIComponent(id)}&select=${columns}`);return (await response.json())[0]||null;}
+async function deleteProductionDestination(env,item,id){const [table]=beckyDestinationTable(item);await supabaseRequest(env,`/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`,{method:'DELETE'});return !(await readProductionDestination(env,item,id));}
+async function activeProductionMemorySignals(env) {
+  const response=await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?select=${BECKY_MEMORY_COLUMNS}&order=source_date.asc,created_at.asc`);const signals=await response.json();const hashes=new Map();for(const signal of signals){if(!hashes.has(signal.source_note_id)){const noteResponse=await supabaseRequest(env,`/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(signal.source_note_id)}&select=note`);hashes.set(signal.source_note_id,await sha256(String((await noteResponse.json())[0]?.note||'')));}}const active=signals.filter(signal=>hashes.get(signal.source_note_id)===signal.source_hash&&!isSpeculativeMemorySignal(signal.exact_source_excerpt)&&!isSpeculativeMemorySignal(signal.normalized_observation));const unique=[];for(const signal of active){if(!unique.some(item=>memorySignalContentMatches(item,signal)))unique.push(signal);}return unique.map(signal=>({...signal,task_candidate:isTaskCandidateMemorySignal(signal.normalized_observation)}));
+}
+async function productionMemoryContext(env) {
+  const [signals,crmResponse,activityResponse,knowledgeResponse,entryResponse]=await Promise.all([activeProductionMemorySignals(env),supabaseRequest(env,`/rest/v1/crm_child_observations?select=${CRM_OBSERVATION_COLUMNS}&order=observed_at.desc&limit=40`),supabaseRequest(env,`/rest/v1/admin_activity_observations?select=${ACTIVITY_OBSERVATION_COLUMNS}&order=tested_at.desc&limit=40`),supabaseRequest(env,`/rest/v1/admin_knowledge_candidates?select=${KNOWLEDGE_CANDIDATE_COLUMNS}&order=updated_at.desc&limit=20`),supabaseRequest(env,`/rest/v1/admin_monthly_report_entries?select=${MONTHLY_REPORT_ENTRY_COLUMNS}&type=eq.evidence&order=entry_date.desc&limit=30`)]);return historicEvidenceContext({signals,crmObservations:await crmResponse.json(),activityObservations:await activityResponse.json(),knowledgeCandidates:await knowledgeResponse.json(),monthlyEntries:await entryResponse.json()});
+}
+async function autoStoreProductionMemorySignal(env, signal) {
+  const target=(signal.possible_canonical_context||[]).find(item=>item.destination==='crm_child_observation'&&item.eligibility==='auto_store');if(!target)return signal;const id=`memory-signal-${signal.id}`;const existingResponse=await supabaseRequest(env,`/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(id)}&select=${CRM_OBSERVATION_COLUMNS}`);let entity=(await existingResponse.json())[0];if(!entity){entity=normalizeCrmObservationInput({id,child_id:target.child_id,visit_id:null,observed_at:`${signal.source_date}T12:00:00.000Z`,observation:signal.normalized_observation});const inserted=await supabaseRequest(env,'/rest/v1/crm_child_observations',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(entity)});entity=(await inserted.json())[0];}else if(entity.child_id!==target.child_id){const corrected=normalizeCrmObservationInput({...entity,child_id:target.child_id,visit_id:null});const response=await supabaseRequest(env,`/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(corrected)});entity=(await response.json())[0];}signal.canonical_context=[{destination:'crm_child_observation',destination_entity_id:entity.id,child_id:entity.child_id,auto_stored_at:new Date().toISOString(),destination_updated_at:entity.updated_at||entity.created_at}];return signal;
+}
+async function buildProductionMemory(env,date,noteText,rawSignals,rawCandidates) {
+  const sourceHash=await sha256(noteText);const context=await productionBeckyContext(env);const created=[];
+  const noteSignalsResponse=await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?source_note_id=eq.${encodeURIComponent(date)}&select=${BECKY_MEMORY_COLUMNS}&order=created_at.asc`);const noteSignals=await noteSignalsResponse.json();
+  for(const raw of Array.isArray(rawSignals)?rawSignals:[]){const resolved=resolveMemorySignal(raw,{...context,note_text:noteText});if(!resolved)continue;const now=new Date().toISOString();const draft={id:crypto.randomUUID(),source_type:'daily_note',source_note_id:date,source_version:sourceHash,source_hash:sourceHash,source_date:date,...resolved,canonical_context:[],created_at:now,updated_at:now};draft.dedupe_key=await memorySignalDedupeKey(draft);const duplicate=noteSignals.find(item=>memorySignalContentMatches(item,draft));if(duplicate){const updated={...duplicate,source_version:sourceHash,source_hash:sourceHash,updated_at:now};await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?id=eq.${encodeURIComponent(duplicate.id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({source_version:sourceHash,source_hash:sourceHash,updated_at:now})});Object.assign(duplicate,updated);created.push(updated);continue;}await autoStoreProductionMemorySignal(env,draft);const inserted=await supabaseRequest(env,'/rest/v1/admin_becky_memory_signals',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(draft)});const saved=(await inserted.json())[0];noteSignals.push(saved);created.push(saved);}
+  const active=await activeProductionMemorySignals(env);const selected=selectAttentionCandidates(rawCandidates,{signals:active,noteDate:date});const candidates=[];
+  for(const candidate of selected){const previousResponse=await supabaseRequest(env,`/rest/v1/admin_becky_attention_candidates?fingerprint=eq.${encodeURIComponent(candidate.fingerprint)}&select=${BECKY_ATTENTION_COLUMNS}&limit=20`);const previous=(await previousResponse.json()).find(item=>JSON.stringify([...(item.evidence_signal_ids||[])].sort())===JSON.stringify([...candidate.evidence_signal_ids].sort()));const now=new Date().toISOString();const item={id:previous?.id||crypto.randomUUID(),status:previous?.status||'active',knowledge_candidate_id:previous?.knowledge_candidate_id||null,...candidate,created_at:previous?.created_at||now,updated_at:now};const response=await supabaseRequest(env,previous?`/rest/v1/admin_becky_attention_candidates?id=eq.${encodeURIComponent(previous.id)}`:'/rest/v1/admin_becky_attention_candidates',{method:previous?'PATCH':'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(item)});candidates.push((await response.json())[0]);}
+  return {signals:created,attention_candidates:candidates,source_hash:sourceHash};
+}
+async function handleBeckyMemory(request, env) {
+  await requireAdmin(request,env);const url=new URL(request.url);
+  if(request.method==='GET'&&url.pathname==='/api/admin/becky-memory/signals'){const sourceId=String(url.searchParams.get('source_note_id')||'');let signals=await activeProductionMemorySignals(env);if(sourceId)signals=signals.filter(item=>item.source_note_id===sourceId);return json({signals:signals.sort((a,b)=>`${b.source_date}${b.created_at}`.localeCompare(`${a.source_date}${a.created_at}`))});}
+  if(request.method==='GET'&&url.pathname==='/api/admin/becky-memory/attention'){const response=await supabaseRequest(env,`/rest/v1/admin_becky_attention_candidates?select=${BECKY_ATTENTION_COLUMNS}&status=in.(active,investigating)&order=updated_at.desc`);return json({candidates:await response.json()});}
+  assertSameOrigin(request);
+  if(request.method==='POST'&&url.pathname==='/api/admin/becky-memory/analyze'){const body=await readJson(request,100_000);const date=String(body?.date||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return json({error:'Data notei este invalidă.'},400);const noteResponse=await supabaseRequest(env,`/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(date)}&select=note`);const noteText=String((await noteResponse.json())[0]?.note||'').trim();if(!noteText)return json({error:'Nota zilei nu există sau este goală.'},400);const context=await productionBeckyContext(env);const historicContext=await productionMemoryContext(env);const analysis=await analyzeDailyNoteForMemory({apiKey:env.OPENAI_API_KEY,model:env.OPENAI_TEXT_MODEL||'gpt-4.1-mini',noteDate:date,noteText,children:context.children,activities:context.activities,historicContext});return json(await buildProductionMemory(env,date,noteText,analysis.memory_signals,analysis.attention_candidates),201);}
+  const signalMatch=url.pathname.match(/^\/api\/admin\/becky-memory\/signals\/([^/?]+)$/);
+  if(signalMatch&&['PATCH','DELETE'].includes(request.method)){
+    const id=decodeURIComponent(signalMatch[1]);const currentResponse=await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?id=eq.${encodeURIComponent(id)}&select=${BECKY_MEMORY_COLUMNS}`);const current=(await currentResponse.json())[0];if(!current)return json({error:'Semnalul nu a fost găsit'},404);
+    if(request.method==='DELETE'){
+      const auto=(current.canonical_context||[]).find(item=>item.destination==='crm_child_observation');
+      if(auto){const destination=await readProductionDestination(env,{destination:'crm_child_observation'},auto.destination_entity_id);if(destination&&(destination.updated_at||destination.created_at)===auto.destination_updated_at)await supabaseRequest(env,`/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(auto.destination_entity_id)}`,{method:'DELETE'});}
+      await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?id=eq.${encodeURIComponent(id)}`,{method:'DELETE'});return json({ok:true});
+    }
+    const body=await readJson(request,20_000);if(!Array.isArray(body.entities))return json({error:'Entitățile sunt invalide'},400);
+    const entities=body.entities.map(item=>({type:item?.type==='activity'?'activity':'child',id:item?.id?String(item.id):null,label:String(item?.label||'').trim(),resolution:['resolved','ambiguous','not_found'].includes(item?.resolution)?item.resolution:'not_found'}));
+    const child=entities.find(item=>item.type==='child'&&item.resolution==='resolved'&&item.id);const next={...current,entities,possible_canonical_context:child&&['observed','direct_quote'].includes(current.epistemic_type)?[{destination:'crm_child_observation',child_id:child.id,eligibility:'auto_store'}]:[],canonical_context:current.canonical_context||[],updated_at:new Date().toISOString()};
+    await autoStoreProductionMemorySignal(env,next);const response=await supabaseRequest(env,`/rest/v1/admin_becky_memory_signals?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(next)});return json((await response.json())[0]);
+  }
+  const attentionMatch=url.pathname.match(/^\/api\/admin\/becky-memory\/attention\/([^/?]+)(?:\/(promote))?$/);if(attentionMatch&&request.method==='PATCH'){const body=await readJson(request,20_000);if(!['active','investigating','dismissed'].includes(body.status))return json({error:'Status invalid'},400);const response=await supabaseRequest(env,`/rest/v1/admin_becky_attention_candidates?id=eq.${encodeURIComponent(decodeURIComponent(attentionMatch[1]))}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status:body.status,updated_at:new Date().toISOString()})});return json((await response.json())[0]);}
+  if(attentionMatch&&attentionMatch[2]==='promote'&&request.method==='POST'){const body=await readJson(request,20_000);if(!KNOWLEDGE_CANDIDATE_TARGETS.includes(body.target))return json({error:'Target invalid'},400);const response=await supabaseRequest(env,`/rest/v1/admin_becky_attention_candidates?id=eq.${encodeURIComponent(decodeURIComponent(attentionMatch[1]))}&select=${BECKY_ATTENTION_COLUMNS}`);const candidate=(await response.json())[0];if(!candidate)return json({error:'Candidatul nu a fost găsit'},404);const knowledge=normalizeKnowledgeCandidateInput({target:body.target,text:`${candidate.title}\n\n${candidate.summary}\n\nDe ce merită investigat: ${candidate.why_it_matters}\n\nValidare sugerată: ${candidate.suggested_next_step}`,status:'proposed',source_type:'becky_memory_attention',source_id:candidate.id});const inserted=await supabaseRequest(env,'/rest/v1/admin_knowledge_candidates',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(knowledge)});const saved=await inserted.json();await supabaseRequest(env,`/rest/v1/admin_becky_attention_candidates?id=eq.${encodeURIComponent(candidate.id)}`,{method:'PATCH',body:JSON.stringify({status:'promoted',knowledge_candidate_id:saved[0]?.id||null,updated_at:new Date().toISOString()})});return json({knowledge_candidate:saved[0]},201);}
+  return json({error:'Method not allowed'},405);
+}
+async function handleBeckyInbox(request, env) {
+  await requireAdmin(request, env); const url=new URL(request.url);
+  if(request.method==='GET'&&url.pathname==='/api/admin/becky-inbox/brief'){const sourceId=String(url.searchParams.get('source_id')||'');const sourceVersion=String(url.searchParams.get('source_version')||'');const filter=`${sourceId?`&source_id=eq.${encodeURIComponent(sourceId)}`:''}${sourceVersion?`&source_version=eq.${encodeURIComponent(sourceVersion)}`:''}`;const response=await supabaseRequest(env,`/rest/v1/admin_becky_brief_insights?select=${BECKY_BRIEF_COLUMNS}${filter}&order=sort_order.asc,created_at.desc`);let insights=await response.json();const noteDates=[...new Set(insights.filter(item=>item.source_type==='daily_note').map(item=>item.source_id))];const currentHashes=new Map();for(const date of noteDates){const noteResponse=await supabaseRequest(env,`/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(date)}&select=note`);const note=(await noteResponse.json())[0]?.note||'';currentHashes.set(date,await sha256(note));}return json({insights:insights.map(item=>({...item,stale:item.source_type==='daily_note'&&currentHashes.get(item.source_id)!==item.source_hash}))});}
+  if(request.method==='GET'&&url.pathname==='/api/admin/becky-inbox/context')return json(await productionBeckyContext(env));
+  if(request.method==='GET'&&url.pathname==='/api/admin/becky-inbox/proposals'){
+    const destination=String(url.searchParams.get('destination')||'');const status=String(url.searchParams.get('status')||'');const sourceId=String(url.searchParams.get('source_id')||'');const filter=`${destination?`&destination=eq.${encodeURIComponent(destination)}`:''}${status?`&status=eq.${encodeURIComponent(status)}`:''}${sourceId?`&source_id=eq.${encodeURIComponent(sourceId)}`:''}`;const response=await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?select=${BECKY_INBOX_COLUMNS}${filter}&order=created_at.desc`);let items=await response.json();const noteDates=[...new Set(items.filter(item=>item.source_type==='daily_note').map(item=>item.source_id))];const currentHashes=new Map();for(const date of noteDates){const noteResponse=await supabaseRequest(env,`/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(date)}&select=note`);const note=(await noteResponse.json())[0]?.note||'';currentHashes.set(date,await sha256(note));}return json({proposals:items.map(item=>({...item,stale:item.source_type==='daily_note'&&currentHashes.get(item.source_id)!==item.source_hash}))});
+  }
+  assertSameOrigin(request);
+  if(request.method==='POST'&&url.pathname==='/api/admin/becky-inbox/analyze'){
+    const body=await readJson(request,100_000);const date=String(body?.date||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return json({error:'Data notei este invalidă.'},400);const noteResponse=await supabaseRequest(env,`/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(date)}&select=note`);const noteText=String((await noteResponse.json())[0]?.note||'').trim();if(!noteText)return json({error:'Nota zilei nu există sau este goală.'},400);const context=await productionBeckyContext(env);const analysis=await analyzeDailyNoteWithOpenAI({apiKey:env.OPENAI_API_KEY,model:env.OPENAI_TEXT_MODEL||'gpt-4.1-mini',noteDate:date,noteText,children:context.children,activities:context.activities,roles:context.roles});const sourceHash=await sha256(noteText);const proposals=[];
+    for(const candidate of analysis.proposals||[]){const resolved=resolveAiProposal(candidate,{...context,note_date:date,note_text:noteText});if(!EXECUTABLE_DESTINATIONS.includes(resolved.destination))continue;const now=new Date().toISOString();const item={id:crypto.randomUUID(),source_type:'daily_note',source_id:date,source_version:sourceHash,source_hash:sourceHash,source_excerpt:resolved.source_excerpt,destination:resolved.destination,operation:resolved.operation||'add',target_entity_type:resolved.target_entity_type,target_entity_id:resolved.target_entity_id,target_candidates:resolved.target_candidates,resolution_status:resolved.resolution_status,resolution_query:resolved.resolution_query,payload:resolved.payload,field_provenance:resolved.field_provenance,status:'pending',validation_errors:[],missing_fields:[],destination_entity_id:null,destination_verified_at:null,destination_entity_updated_at:null,reverted_at:null,revert_error:null,created_at:now,updated_at:now,executed_at:null,last_error:null};item.validation_errors=validateProposedChange(item);item.missing_fields=item.validation_errors;item.dedupe_key=await proposalDedupeKey(item);const duplicateResponse=await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?dedupe_key=eq.${encodeURIComponent(item.dedupe_key)}&select=${BECKY_INBOX_COLUMNS}&limit=1`);const duplicate=(await duplicateResponse.json())[0];if(duplicate){proposals.push(duplicate);continue;}const inserted=await supabaseRequest(env,'/rest/v1/admin_becky_inbox_proposals',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(item)});proposals.push((await inserted.json())[0]);}
+    const existingBriefResponse=await supabaseRequest(env,`/rest/v1/admin_becky_brief_insights?source_id=eq.${encodeURIComponent(date)}&source_hash=eq.${encodeURIComponent(sourceHash)}&select=${BECKY_BRIEF_COLUMNS}&order=sort_order.asc`);let insights=await existingBriefResponse.json();if(!insights.length){const selected=selectBriefInsights(analysis.insights||[],{note_text:noteText,proposals});const now=new Date().toISOString();const rows=selected.map((item,index)=>({id:crypto.randomUUID(),source_type:'daily_note',source_id:date,source_version:sourceHash,source_hash:sourceHash,...item,sort_order:index,created_at:now,updated_at:now}));if(rows.length){const inserted=await supabaseRequest(env,'/rest/v1/admin_becky_brief_insights',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(rows)});insights=await inserted.json();}}
+    return json({proposals,insights,source_hash:sourceHash},201);
+  }
+  const match=url.pathname.match(/^\/api\/admin\/becky-inbox\/proposals\/([^/?]+)(?:\/(approve|ignore|revert))?$/);if(!match)return json({error:'Method not allowed'},405);const id=decodeURIComponent(match[1]);const currentResponse=await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?id=eq.${encodeURIComponent(id)}&select=${BECKY_INBOX_COLUMNS}`);const current=(await currentResponse.json())[0];if(!current)return json({error:'Propunerea nu a fost găsită'},404);
+  if(request.method==='PATCH'&&!match[2]){if(['approved','ignored','reverted'].includes(current.status))return json({error:'Propunerea nu mai poate fi editată'},409);const body=await readJson(request,100_000);const context=await productionBeckyContext(env);const next={...current,payload:{...current.payload,...(body?.payload||{})},status:'pending',last_error:null,updated_at:new Date().toISOString()};if(body?.target_entity_id!==undefined){next.target_entity_id=String(body.target_entity_id||'')||null;if(next.destination==='activity_observation')next.payload.activity_id=next.target_entity_id;if(next.destination==='crm_child_observation')next.payload.child_id=next.target_entity_id;const options=next.destination==='activity_observation'?context.activities:context.children;const found=options.find(item=>item.id===next.target_entity_id);next.target_candidates=found?[{id:found.id,label:found.title||found.first_name}]:[];next.resolution_status=found?'resolved':'not_found';const key=next.destination==='activity_observation'?'activity_id':'child_id';next.field_provenance={...next.field_provenance,[key]:{source:found?'system':'missing',detail:found?'Selectat și confirmat de utilizator':'Selectează o entitate validă'}};}next.validation_errors=validateProposedChange(next);next.missing_fields=next.validation_errors;const response=await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(next)});return json((await response.json())[0]);}
+  if(request.method==='POST'&&match[2]==='ignore'){if(['approved','reverted'].includes(current.status))return json({error:'Propunerea nu mai poate fi ignorată'},409);const response=await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({status:'ignored',updated_at:new Date().toISOString(),last_error:null})});return json((await response.json())[0]);}
+  if(request.method==='POST'&&match[2]==='revert'){if(current.status==='reverted')return json(current);if(current.status!=='approved'||!current.destination_entity_id)return json({error:'Doar o schimbare păstrată poate fi anulată.'},409);const entity=await readProductionDestination(env,current);if(!entity)return json({error:'Rezultatul canonic nu mai există. Verifică destinația înainte de anulare.'},409);const expected=current.destination_entity_updated_at||null;const actual=entity.updated_at||entity.created_at||null;if(expected&&actual!==expected){const message='Rezultatul a fost modificat după creare și nu poate fi șters automat.';await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({revert_error:message,updated_at:new Date().toISOString()})});return json({error:message,destination_entity_id:current.destination_entity_id},409);}if(!await deleteProductionDestination(env,current,current.destination_entity_id))return json({error:'Anularea nu a putut fi verificată în destinația canonică.'},500);const reverted={status:'reverted',reverted_at:new Date().toISOString(),updated_at:new Date().toISOString(),revert_error:null};const response=await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(reverted)});return json((await response.json())[0]);}
+  if(request.method==='POST'&&match[2]==='approve'){const body=await readJson(request,10_000);if(current.status==='approved'){if(await readProductionDestination(env,current))return json(current);await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({status:'failed',last_error:'Rezultatul aprobat nu mai poate fi citit din destinația canonică.',updated_at:new Date().toISOString()})});return json({error:'Rezultatul aprobat nu mai poate fi citit din destinația canonică.'},409);}if(['ignored','reverted'].includes(current.status))return json({error:'Propunerea nu mai poate fi aprobată'},409);const noteResponse=await supabaseRequest(env,`/rest/v1/admin_monthly_report_notes?note_date=eq.${encodeURIComponent(current.source_id)}&select=note`);const currentHash=await sha256(String((await noteResponse.json())[0]?.note||''));if(currentHash!==current.source_hash&&!body.confirm_stale)return json({error:'Nota a fost modificată. Confirmă aprobarea propunerii vechi.',stale:true},409);const errors=validateProposedChange(current);if(errors.length)return json({error:errors[0],validation_errors:errors},400);try{const payload=canonicalExecutionPayload(current);const destinationId=`becky-inbox-${current.id}`;let entity;
+      if(current.destination==='activity_observation'){const existing=await supabaseRequest(env,`/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(destinationId)}&select=${ACTIVITY_OBSERVATION_COLUMNS}`);entity=(await existing.json())[0];if(!entity){entity=normalizeActivityObservationInput({...payload,id:destinationId});const response=await supabaseRequest(env,'/rest/v1/admin_activity_observations',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(entity)});entity=(await response.json())[0];}}
+      else if(current.destination==='crm_child_observation'){const childResponse=await supabaseRequest(env,`/rest/v1/crm_children?id=eq.${encodeURIComponent(payload.child_id)}&select=id`);if(!(await childResponse.json()).length)throw Object.assign(new Error('Copilul nu a fost găsit'),{status:400});const existing=await supabaseRequest(env,`/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(destinationId)}&select=${CRM_OBSERVATION_COLUMNS}`);entity=(await existing.json())[0];if(!entity){entity=normalizeCrmObservationInput({...payload,id:destinationId});const response=await supabaseRequest(env,'/rest/v1/crm_child_observations',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(entity)});entity=(await response.json())[0];}}
+      else if(current.destination==='monthly_report_entry'){const existing=await supabaseRequest(env,`/rest/v1/admin_monthly_report_entries?id=eq.${encodeURIComponent(destinationId)}&select=${MONTHLY_REPORT_ENTRY_COLUMNS}`);entity=(await existing.json())[0];if(!entity){entity=normalizeMonthlyReportEntryInput({...payload,id:destinationId},{},payload.month_key);const response=await supabaseRequest(env,'/rest/v1/admin_monthly_report_entries',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(entity)});entity=(await response.json())[0];}}
+      const verified=await readProductionDestination(env,current,entity?.id);if(!verified)throw new Error('Obiectul a fost scris, dar nu a putut fi recitit din destinația canonică.');const verifiedAt=new Date().toISOString();const approved={status:'approved',destination_entity_id:verified.id,destination_verified_at:verifiedAt,destination_entity_updated_at:verified.updated_at||verified.created_at||null,executed_at:verifiedAt,updated_at:verifiedAt,last_error:null,validation_errors:[],missing_fields:[],revert_error:null};const response=await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(approved)});return json((await response.json())[0]);
+    }catch(error){await supabaseRequest(env,`/rest/v1/admin_becky_inbox_proposals?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',body:JSON.stringify({status:'failed',last_error:String(error.message||'Execution failed'),updated_at:new Date().toISOString()})});throw error;}}
+  return json({error:'Method not allowed'},405);
+}
+
+async function handleEventCommunityFindings(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET') { const kind = String(url.searchParams.get('kind') || '').trim(); if (kind && !EVENT_FINDING_KINDS.includes(kind)) return json({ error: 'Filtru invalid' }, 400); const filter = kind ? `&kind=eq.${encodeURIComponent(kind)}` : ''; const response = await supabaseRequest(env, `/rest/v1/admin_event_community_findings?select=${EVENT_FINDING_COLUMNS}${filter}&order=updated_at.desc,created_at.desc`); return json({ findings: await response.json() }); }
+  assertSameOrigin(request); if (request.method === 'POST') { const item = normalizeEventFindingInput(await readJson(request, 50_000)); const response = await supabaseRequest(env, '/rest/v1/admin_event_community_findings?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201); }
+  const match = url.pathname.match(/^\/api\/admin\/event-community\/findings\/([^/?]+)$/); if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' }); const id = decodeURIComponent(match[1]);
+  if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_event_community_findings?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+  if (request.method === 'PATCH') { const currentResponse = await supabaseRequest(env, `/rest/v1/admin_event_community_findings?id=eq.${encodeURIComponent(id)}&select=${EVENT_FINDING_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Finding not found' }, 404); const item = normalizeEventFindingInput({ ...current, ...await readJson(request, 50_000), id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_event_community_findings?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+
+async function handleKnowledgeCandidates(request, env) {
+  await requireAdmin(request, env); const url = new URL(request.url);
+  if (request.method === 'GET') { const target = String(url.searchParams.get('target') || '').trim(); const status = String(url.searchParams.get('status') || '').trim(); if ((target && !KNOWLEDGE_CANDIDATE_TARGETS.includes(target)) || (status && !KNOWLEDGE_CANDIDATE_STATUSES.includes(status))) return json({ error: 'Filtru invalid' }, 400); const filter = `${target ? `&target=eq.${encodeURIComponent(target)}` : ''}${status ? `&status=eq.${encodeURIComponent(status)}` : ''}`; const response = await supabaseRequest(env, `/rest/v1/admin_knowledge_candidates?select=${KNOWLEDGE_CANDIDATE_COLUMNS}${filter}&order=updated_at.desc,created_at.desc`); return json({ candidates: await response.json() }); }
+  assertSameOrigin(request); if (request.method === 'POST') { const item = normalizeKnowledgeCandidateInput(await readJson(request, 50_000)); const response = await supabaseRequest(env, '/rest/v1/admin_knowledge_candidates?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0], 201); }
+  const match = url.pathname.match(/^\/api\/admin\/knowledge-candidates\/([^/?]+)$/); if (!match) return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' }); const id = decodeURIComponent(match[1]);
+  if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_knowledge_candidates?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
+  if (request.method === 'PATCH') { const currentResponse = await supabaseRequest(env, `/rest/v1/admin_knowledge_candidates?id=eq.${encodeURIComponent(id)}&select=${KNOWLEDGE_CANDIDATE_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Candidate not found' }, 404); const item = normalizeKnowledgeCandidateInput({ ...current, ...await readJson(request, 50_000), id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_knowledge_candidates?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
 
 async function handleAdminTasks(request, env) {
   await requireAdmin(request, env);
@@ -147,6 +439,172 @@ async function handleAdminTasks(request, env) {
   }
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PUT, PATCH, DELETE' });
 }
+
+const CRM_CHILD_COLUMNS = 'id,first_name,age,interests,continuity,created_at,updated_at';
+const CRM_VISIT_COLUMNS = 'id,child_id,companion_id,visit_date,note,created_at';
+const CRM_OBSERVATION_COLUMNS = 'id,child_id,visit_id,observed_at,observation,created_at,updated_at';
+const CRM_COMPANION_COLUMNS = 'id,first_name,relationship_label,created_at,updated_at';
+const CRM_CHILD_COMPANION_COLUMNS = 'child_id,companion_id,is_primary,created_at';
+const CRM_COMPANION_OBSERVATION_COLUMNS = 'id,companion_id,visit_id,observed_at,observation,created_at,updated_at';
+
+async function handleAdminCrm(request, env) {
+  await requireAdmin(request, env);
+  const url = new URL(request.url);
+  if (request.method === 'GET' && url.pathname === '/api/admin/crm') {
+    const [childrenResponse, visitsResponse, companionsResponse, linksResponse] = await Promise.all([
+      supabaseRequest(env, `/rest/v1/crm_children?select=${CRM_CHILD_COLUMNS}&order=first_name.asc`),
+      supabaseRequest(env, `/rest/v1/crm_visits?select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`),
+      supabaseRequest(env, `/rest/v1/crm_companions?select=${CRM_COMPANION_COLUMNS}&order=first_name.asc`),
+      supabaseRequest(env, `/rest/v1/crm_child_companions?select=${CRM_CHILD_COMPANION_COLUMNS}`)
+    ]);
+    const children = await childrenResponse.json();
+    const visits = await visitsResponse.json();
+    const companions=await companionsResponse.json();const links=await linksResponse.json();
+    return json({ children: children.map(child => ({...crmChildSummary(child, visits),primary_companion_id:(links.find(link=>link.child_id===child.id&&link.is_primary)||{}).companion_id||null})).sort((a, b) => (b.last_visit || '').localeCompare(a.last_visit || '') || a.first_name.localeCompare(b.first_name, 'ro')), companions:companions.map(companion=>crmCompanionSummary(companion,{children,visits,child_companions:links})).sort((a,b)=>a.first_name.localeCompare(b.first_name,'ro')) });
+  }
+  assertSameOrigin(request);
+  if (request.method === 'POST' && url.pathname === '/api/admin/crm/children') {
+    const body = await readJson(request, 20_000);
+    const child = normalizeCrmChildInput(body);
+    const response = await supabaseRequest(env, '/rest/v1/crm_children?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(child) }); const saved=(await response.json())[0];
+    const companionId=String(body?.primary_companion_id||'').trim();if(companionId){const companion=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(companionId)}&select=id`);if(!(await companion.json()).length)return json({error:'Însoțitorul nu a fost găsit'},400);await supabaseRequest(env,'/rest/v1/crm_child_companions',{method:'POST',body:JSON.stringify({child_id:saved.id,companion_id:companionId,is_primary:true})});}
+    return json(saved, 201);
+  }
+  if (request.method === 'POST' && url.pathname === '/api/admin/crm/visits') {
+    const body = await readJson(request, 20_000);
+    const childId = String(body?.child_id || '').trim();
+    const childResponse = await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(childId)}&select=id`);
+    if (!(await childResponse.json()).length) return json({ error: 'Copilul nu a fost găsit' }, 404);
+    const companionId=body?.companion_id ? String(body.companion_id).trim() : null;if(companionId){const companion=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(companionId)}&select=id`);if(!(await companion.json()).length)return json({error:'Însoțitorul nu a fost găsit'},400);}
+    const visit = normalizeCrmVisitInput(body, childId);
+    const response = await supabaseRequest(env, '/rest/v1/crm_visits?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(visit) });
+    return json((await response.json())[0], 201);
+  }
+  const observationListMatch = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)\/observations$/);
+  if (request.method === 'GET' && observationListMatch) {
+    const childId = decodeURIComponent(observationListMatch[1]);
+    const response = await supabaseRequest(env, `/rest/v1/crm_child_observations?child_id=eq.${encodeURIComponent(childId)}&select=${CRM_OBSERVATION_COLUMNS}&order=observed_at.desc,created_at.desc`);
+    return json({ observations: await response.json() });
+  }
+  if (request.method === 'POST' && observationListMatch) {
+    const childId = decodeURIComponent(observationListMatch[1]);
+    const body = await readJson(request, 40_000);
+    const childResponse = await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(childId)}&select=id`);
+    if (!(await childResponse.json()).length) return json({ error: 'Copilul nu a fost găsit' }, 404);
+    const observation = normalizeCrmObservationInput({ ...body, child_id: childId });
+    if (observation.visit_id) {
+      const visitResponse = await supabaseRequest(env, `/rest/v1/crm_visits?id=eq.${encodeURIComponent(observation.visit_id)}&child_id=eq.${encodeURIComponent(childId)}&select=id`);
+      if (!(await visitResponse.json()).length) return json({ error: 'Vizita asociată nu a fost găsită' }, 400);
+    }
+    const response = await supabaseRequest(env, '/rest/v1/crm_child_observations?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(observation) });
+    return json((await response.json())[0], 201);
+  }
+  const observationMatch = url.pathname.match(/^\/api\/admin\/crm\/observations\/([^/?]+)$/);
+  if (observationMatch && request.method === 'DELETE') {
+    await supabaseRequest(env, `/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(decodeURIComponent(observationMatch[1]))}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  if (observationMatch && request.method === 'PATCH') {
+    const id = decodeURIComponent(observationMatch[1]);
+    const body = await readJson(request, 40_000);
+    const currentResponse = await supabaseRequest(env, `/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(id)}&select=${CRM_OBSERVATION_COLUMNS}`);
+    const current = (await currentResponse.json())[0];
+    if (!current) return json({ error: 'Observația nu a fost găsită' }, 404);
+    const observation = normalizeCrmObservationInput({ ...current, ...body, id }, current);
+    if (observation.visit_id) {
+      const visitResponse = await supabaseRequest(env, `/rest/v1/crm_visits?id=eq.${encodeURIComponent(observation.visit_id)}&child_id=eq.${encodeURIComponent(observation.child_id)}&select=id`);
+      if (!(await visitResponse.json()).length) return json({ error: 'Vizita asociată nu a fost găsită' }, 400);
+    }
+    const response = await supabaseRequest(env, `/rest/v1/crm_child_observations?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(observation) });
+    const rows = await response.json();
+    return json(rows[0] || { error: 'Observația nu a fost găsită' }, rows.length ? 200 : 404);
+  }
+  if(request.method==='POST'&&url.pathname==='/api/admin/crm/companions'){const companion=normalizeCrmCompanionInput(await readJson(request,20_000));const response=await supabaseRequest(env,'/rest/v1/crm_companions',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(companion)});return json((await response.json())[0],201);}
+  const companionObservationListMatch=url.pathname.match(/^\/api\/admin\/crm\/companions\/([^/?]+)\/observations$/);
+  if(companionObservationListMatch&&request.method==='POST'){const companion_id=decodeURIComponent(companionObservationListMatch[1]);const companion=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(companion_id)}&select=id`);if(!(await companion.json()).length)return json({error:'Însoțitorul nu a fost găsit'},404);const observation=normalizeCrmCompanionObservationInput({...await readJson(request,40_000),companion_id});if(observation.visit_id){const visit=await supabaseRequest(env,`/rest/v1/crm_visits?id=eq.${encodeURIComponent(observation.visit_id)}&select=id`);if(!(await visit.json()).length)return json({error:'Vizita asociată nu a fost găsită'},400);}const response=await supabaseRequest(env,'/rest/v1/crm_companion_observations',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(observation)});return json((await response.json())[0],201);}
+  const companionObservationMatch=url.pathname.match(/^\/api\/admin\/crm\/companion-observations\/([^/?]+)$/);
+  if(companionObservationMatch&&request.method==='DELETE'){await supabaseRequest(env,`/rest/v1/crm_companion_observations?id=eq.${encodeURIComponent(decodeURIComponent(companionObservationMatch[1]))}`,{method:'DELETE'});return json({ok:true});}
+  if(companionObservationMatch&&request.method==='PATCH'){const id=decodeURIComponent(companionObservationMatch[1]);const currentResponse=await supabaseRequest(env,`/rest/v1/crm_companion_observations?id=eq.${encodeURIComponent(id)}&select=${CRM_COMPANION_OBSERVATION_COLUMNS}`);const current=(await currentResponse.json())[0];if(!current)return json({error:'Observația nu a fost găsită'},404);const item=normalizeCrmCompanionObservationInput({...current,...await readJson(request,40_000),id},current);const response=await supabaseRequest(env,`/rest/v1/crm_companion_observations?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(item)});return json((await response.json())[0]);}
+  const companionMatch=url.pathname.match(/^\/api\/admin\/crm\/companions\/([^/?]+)$/);
+  if(companionMatch&&request.method==='GET'){const id=decodeURIComponent(companionMatch[1]);const [companionResponse,childrenResponse,visitsResponse,linksResponse,observationsResponse]=await Promise.all([supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(id)}&select=${CRM_COMPANION_COLUMNS}`),supabaseRequest(env,`/rest/v1/crm_children?select=${CRM_CHILD_COLUMNS}`),supabaseRequest(env,`/rest/v1/crm_visits?companion_id=eq.${encodeURIComponent(id)}&select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`),supabaseRequest(env,`/rest/v1/crm_child_companions?companion_id=eq.${encodeURIComponent(id)}&select=${CRM_CHILD_COMPANION_COLUMNS}`),supabaseRequest(env,`/rest/v1/crm_companion_observations?companion_id=eq.${encodeURIComponent(id)}&select=${CRM_COMPANION_OBSERVATION_COLUMNS}&order=observed_at.desc,created_at.desc`)]);const companion=(await companionResponse.json())[0];if(!companion)return json({error:'Însoțitorul nu a fost găsit'},404);const children=await childrenResponse.json(),visits=await visitsResponse.json(),links=await linksResponse.json();return json({companion:crmCompanionSummary(companion,{children,visits,child_companions:links}),visits,observations:await observationsResponse.json()});}
+  if(companionMatch&&request.method==='PATCH'){const id=decodeURIComponent(companionMatch[1]);const currentResponse=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(id)}&select=${CRM_COMPANION_COLUMNS}`);const current=(await currentResponse.json())[0];if(!current)return json({error:'Însoțitorul nu a fost găsit'},404);const item=normalizeCrmCompanionInput({...current,...await readJson(request,20_000),id},current);const response=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(id)}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(item)});return json((await response.json())[0]);}
+  if(companionMatch&&request.method==='DELETE'){await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(decodeURIComponent(companionMatch[1]))}`,{method:'DELETE'});return json({ok:true});}
+  const match = url.pathname.match(/^\/api\/admin\/crm\/children\/([^/?]+)$/);
+  if (request.method === 'DELETE' && match) {
+    const id = decodeURIComponent(match[1]);
+    await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  if (request.method === 'PATCH' && match) {
+    const id = decodeURIComponent(match[1]);
+    const body = await readJson(request, 20_000);
+    if(body?.primary_companion_id!==undefined){const companionId=String(body.primary_companion_id||'').trim();if(companionId){const found=await supabaseRequest(env,`/rest/v1/crm_companions?id=eq.${encodeURIComponent(companionId)}&select=id`);if(!(await found.json()).length)return json({error:'Însoțitorul nu a fost găsit'},400);}await supabaseRequest(env,`/rest/v1/crm_child_companions?child_id=eq.${encodeURIComponent(id)}&is_primary=is.true`,{method:'PATCH',body:JSON.stringify({is_primary:false})});if(companionId)await supabaseRequest(env,'/rest/v1/crm_child_companions',{method:'POST',headers:{Prefer:'resolution=merge-duplicates'},body:JSON.stringify({child_id:id,companion_id:companionId,is_primary:true})});}
+    const child = { ...normalizeCrmChildInput({ ...body, id }), updated_at: new Date().toISOString() };
+    const response = await supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(child) });
+    const rows = await response.json();
+    if (!rows.length) return json({ error: 'Copilul nu a fost găsit' }, 404);
+    return json(rows[0]);
+  }
+  if (request.method === 'GET' && match) {
+    const id = decodeURIComponent(match[1]);
+    const [childResponse, visitsResponse, companionsResponse, linksResponse] = await Promise.all([
+      supabaseRequest(env, `/rest/v1/crm_children?id=eq.${encodeURIComponent(id)}&select=${CRM_CHILD_COLUMNS}`),
+      supabaseRequest(env, `/rest/v1/crm_visits?child_id=eq.${encodeURIComponent(id)}&select=${CRM_VISIT_COLUMNS}&order=visit_date.desc,created_at.desc`),
+      supabaseRequest(env,`/rest/v1/crm_companions?select=${CRM_COMPANION_COLUMNS}`),
+      supabaseRequest(env,`/rest/v1/crm_child_companions?child_id=eq.${encodeURIComponent(id)}&select=${CRM_CHILD_COMPANION_COLUMNS}`)
+    ]);
+    const child = (await childResponse.json())[0];
+    if (!child) return json({ error: 'Copilul nu a fost găsit' }, 404);
+    const visits = await visitsResponse.json();const companions=await companionsResponse.json();const links=await linksResponse.json();
+    const observationsResponse = await supabaseRequest(env, `/rest/v1/crm_child_observations?child_id=eq.${encodeURIComponent(id)}&select=${CRM_OBSERVATION_COLUMNS}&order=observed_at.desc,created_at.desc`);
+    const primary=links.find(link=>link.is_primary);return json({ child: {...crmChildSummary(child, visits),primary_companion_id:primary?.companion_id||null}, visits, observations: await observationsResponse.json(), companions:links.map(link=>({...companions.find(item=>item.id===link.companion_id),is_primary:link.is_primary})).filter(item=>item.id) });
+  }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+
+function normalizeCrmChildInput(input) {
+  const id = String(input?.id || crypto.randomUUID()).trim();
+  const first_name = String(input?.first_name || '').trim();
+  const age = Number(input?.age);
+  const interests = String(input?.interests || '').trim();
+  const continuity = String(input?.continuity || '').trim();
+  if (!id || !first_name || !Number.isInteger(age) || age < 0 || age > 18 || interests.length > 240 || continuity.length > 500) throw Object.assign(new Error('CRM child invalid'), { status: 400 });
+  return { id, first_name, age, interests, continuity };
+}
+
+function normalizeCrmVisitInput(input, childId) {
+  const id = String(input?.id || crypto.randomUUID()).trim();
+  const visit_date = String(input?.visit_date || '').trim();
+  const note = String(input?.note || '').trim();
+  const companion_id=input?.companion_id === null || input?.companion_id === undefined || input?.companion_id === '' ? null : String(input.companion_id).trim();
+  if (!id || !childId || !/^\d{4}-\d{2}-\d{2}$/.test(visit_date) || note.length > 500) throw Object.assign(new Error('CRM visit invalid'), { status: 400 });
+  return { id, child_id: childId, companion_id, visit_date, note };
+}
+
+function normalizeCrmCompanionInput(input, existing = {}) {
+  const id=String(input?.id||existing.id||crypto.randomUUID()).trim();const first_name=String(input?.first_name??existing.first_name??'').trim();const relationship_label=String(input?.relationship_label??existing.relationship_label??'').trim()||null;
+  if(!id||!first_name||first_name.length>100||(relationship_label||'').length>80)throw Object.assign(new Error('CRM companion invalid'),{status:400});return {id,first_name,relationship_label,created_at:existing.created_at||input?.created_at||new Date().toISOString(),updated_at:new Date().toISOString()};
+}
+function normalizeCrmCompanionObservationInput(input, existing = {}) {
+  const id=String(input?.id||existing.id||crypto.randomUUID()).trim();const companion_id=String(input?.companion_id||existing.companion_id||'').trim();const visit_id=input?.visit_id === null || input?.visit_id === undefined || input?.visit_id === '' ? (existing.visit_id||null) : String(input.visit_id).trim();const observedAt=new Date(String(input?.observed_at||existing.observed_at||'').trim());const observation=String(input?.observation??existing.observation??'').trim();
+  if(!id||!companion_id||Number.isNaN(observedAt.getTime())||!observation||observation.length>5000)throw Object.assign(new Error('CRM companion observation invalid'),{status:400});return {id,companion_id,visit_id,observed_at:observedAt.toISOString(),observation,created_at:existing.created_at||input?.created_at||new Date().toISOString(),updated_at:new Date().toISOString()};
+}
+
+function normalizeCrmObservationInput(input, existing = {}) {
+  const id = String(input?.id || existing.id || crypto.randomUUID()).trim();
+  const child_id = String(input?.child_id || existing.child_id || '').trim();
+  const visit_id = input?.visit_id === null || input?.visit_id === undefined || input?.visit_id === '' ? (existing.visit_id || null) : String(input.visit_id).trim();
+  const observedAt = new Date(String(input?.observed_at || existing.observed_at || '').trim());
+  const observation = String(input?.observation ?? existing.observation ?? '').trim();
+  if (!id || !child_id || Number.isNaN(observedAt.getTime()) || !observation || observation.length > 5000) throw Object.assign(new Error('CRM observation invalid'), { status: 400 });
+  return { id, child_id, visit_id, observed_at: observedAt.toISOString(), observation, created_at: existing.created_at || input?.created_at || new Date().toISOString(), updated_at: new Date().toISOString() };
+}
+
+function crmChildSummary(child, visits) {
+  const childVisits = visits.filter(visit => visit.child_id === child.id).sort((a, b) => `${b.visit_date}T${b.created_at || ''}`.localeCompare(`${a.visit_date}T${a.created_at || ''}`));
+  return { ...child, visit_count: childVisits.length, last_visit: childVisits[0]?.visit_date || null };
+}
+function crmCompanionSummary(companion, {children,visits,child_companions}) { const linked=(child_companions||[]).filter(link=>link.companion_id===companion.id).map(link=>children.find(child=>child.id===link.child_id)).filter(Boolean).map(child=>crmChildSummary(child,visits));const history=visits.filter(visit=>visit.companion_id===companion.id).sort((a,b)=>`${b.visit_date}${b.created_at||''}`.localeCompare(`${a.visit_date}${a.created_at||''}`));return {...companion,children:linked,visit_count:history.length,last_visit:history[0]?.visit_date||null}; }
 
 const CALENDAR_COLUMNS = 'id,title,type,date,start_time,end_time,note,created_at,updated_at';
 const CALENDAR_TYPES = new Set(['open', 'event', 'private', 'closed']);
@@ -361,14 +819,15 @@ async function handleCarouselPlan(request, env) {
   const body = await readJson(request, 40_000);
   const context = typeof body?.context === 'string' ? body.context.trim() : '';
   if (!context || context.length > 12_000) return json({ error: 'Contextul postării este invalid' }, 400);
+  const storyMode = body?.mode === 'story-of-day';
   const headingPart = { type: 'object', additionalProperties: false, properties: { text: { type: 'string' }, color: { type: 'string', enum: ['teal', 'coral'] }, breakBefore: { type: 'boolean' } }, required: ['text', 'color', 'breakBefore'] };
   const slide = { type: 'object', additionalProperties: false, properties: { heading: { type: 'string' }, body: { type: 'string' }, headingParts: { type: 'array', minItems: 2, maxItems: 2, items: headingPart }, artworkInstruction: { type: 'string' } }, required: ['heading', 'body', 'headingParts', 'artworkInstruction'] };
-  const schema = { type: 'object', additionalProperties: false, properties: { slides: { type: 'array', minItems: 5, maxItems: 5, items: slide }, caption: { type: 'string', minLength: 40, maxLength: 400 } }, required: ['slides', 'caption'] };
+  const schema = { type: 'object', additionalProperties: false, properties: { slides: { type: 'array', minItems: storyMode ? 3 : 5, maxItems: storyMode ? 5 : 5, items: slide }, caption: { type: 'string', minLength: 40, maxLength: 500 } }, required: ['slides', 'caption'] };
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST', headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini',
-      instructions: `Creează direct draftul final de text pentru un carousel social media Becky’s Garden în limba română. Obiectiv unic: awareness prin informație de calitate, prezentată matur, profesionist și atractiv.
+      instructions: storyMode ? `Creează draftul final al unui carousel narativ Becky’s Garden, în limba română, pornind strict din candidatul editorial și dovezile lui. Acesta este storytelling despre conexiune, nu un carousel pedagogic de tip problemă + sfaturi. Vocea este la persoana I a lui Radu. Alege flexibil 3–5 slide-uri, strict cât are nevoie povestea; fiecare slide conține o singură idee și foarte puțin text. Păstrează arcul concret: situație → moment/tensiune → schimbare → ce a rezultat → sens proporțional cu dovada. Nu inventa citate, reacții, emoții, cronologie, intenții sau rezultate. Nu transforma o interpretare în fapt și nu universaliza un caz singular. Nu folosi clișee de brand precum „momente magice”, „la Becky credem că”, „ne reamintește cât de important”, „mai mult decât” sau „conexiuni autentice”. Primul heading pornește din scenă, nu din teză. REGULĂ DE CONFIDENȚIALITATE: nu reproduce numele copilului din nota-sursă; folosește un pseudonim coerent. Ultimul slide nu este CTA comercial. Headerele au 3–10 cuvinte, body-urile maximum 35 de cuvinte. headingParts conține exact două fragmente care recompun heading-ul: primul teal cu breakBefore true, al doilea coral cu breakBefore false. artworkInstruction descrie o singură scenă relevantă; adultul este Radu, bazat pe RADU.png. Captionul este o introducere fidelă, nu un rezumat și nu adaugă fapte.` : `Creează direct draftul final de text pentru un carousel social media Becky’s Garden în limba română. Obiectiv unic: awareness prin informație de calitate, prezentată matur, profesionist și atractiv.
 
 REGULA EDITORIALĂ PRINCIPALĂ: nu aduna idei pedagogice corecte doar fiindcă au legătură cu aceeași temă. Construiește o singură intervenție coerentă, ancorată într-un moment precis din viața părintelui. Înainte de redactare, stabilește intern: (1) comportamentul observabil al copilului, (2) clipa exactă în care părintele are nevoie de ajutor, (3) rezultatul imediat promis și (4) ordinea logică a răspunsurilor. Toate slide-urile de conținut trebuie să păstreze același actor, aceeași situație, aceeași scară de timp și același rezultat.
 
@@ -395,7 +854,77 @@ Pentru ORICE slide, inclusiv cover și CTA, headingParts conține exact două fr
     console.error('OpenAI carousel plan failed', response.status, result.error?.code || result.error?.message || 'unknown');
     return json({ error: response.status === 429 ? 'Limita OpenAI a fost atinsă.' : 'Draftul carouselului nu a putut fi construit.' }, response.status === 429 ? 429 : 502);
   }
-  return json({ plan: JSON.parse(outputText), model: result.model });
+  const parsedPlan = JSON.parse(outputText);
+  const safePlan = storyMode
+    ? JSON.parse(JSON.stringify(parsedPlan).replace(/\bErdu\b/gi, 'Mara'))
+    : parsedPlan;
+  return json({ plan: safePlan, model: result.model });
+}
+
+async function handleStoryCandidates(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, { Allow: 'POST' });
+  await requireAdmin(request, env);
+  const body = await readJson(request, 40_000);
+  const noteText = typeof body?.note_text === 'string' ? body.note_text.trim() : '';
+  if (!noteText || noteText.length > 12_000) return json({ error: 'Nota este invalidă' }, 400);
+  if (!env.OPENAI_API_KEY) throw Object.assign(new Error('OPENAI_API_KEY lipsește din configurația Worker-ului'), { status: 503 });
+  const frame = { type: 'object', additionalProperties: false, properties: { text: { type: 'string' }, visual_direction: { type: 'string' } }, required: ['text', 'visual_direction'] };
+  const narrative = { type: 'object', additionalProperties: false, properties: { before: { type: 'string' }, moment: { type: 'string' }, turn: { type: 'string' }, after: { type: 'string' }, meaning: { type: 'string' } }, required: ['before', 'moment', 'turn', 'after', 'meaning'] };
+  const candidate = { type: ['object', 'null'], additionalProperties: false, properties: { content_type: { type: 'string', enum: ['growth_story', 'behind_the_scenes', 'authority_expertise', 'reusable_insight'] }, angle: { type: 'string' }, why_this_story: { type: 'string' }, source_excerpts: { type: 'array', minItems: 1, maxItems: 5, items: { type: 'string' } }, narrative, story_frames: { type: 'array', minItems: 3, maxItems: 5, items: frame }, caption_seed: { type: 'string' }, privacy_flags: { type: 'array', items: { type: 'string' } } }, required: ['content_type', 'angle', 'why_this_story', 'source_excerpts', 'narrative', 'story_frames', 'caption_seed', 'privacy_flags'] };
+  const schema = { type: 'object', additionalProperties: false, properties: { story_worthy: { type: 'boolean' }, reason: { type: 'string' }, candidate }, required: ['story_worthy', 'reason', 'candidate'] };
+  const instructions = `Ești gate-ul editorial pentru Daily Note → Story Candidate al Becky’s Garden. Mai întâi decizi dacă există o poveste; abia apoi scrii un singur candidat. Zero povești este un rezultat bun și preferabil fillerului.
+
+Un story este eligibil numai dacă nota susține o scenă concretă, un participant, o tensiune/surpriză/întrebare, o schimbare observabilă și un sens neevident de la început. Caută arcul BEFORE → MOMENT → TURN → AFTER → MEANING. Aplică testul „și ce dacă?”: dacă povestea doar reformulează nota sau răspunsul natural este „OK... și?”, story_worthy=false și candidate=null. O observație izolată, „copilului i-a plăcut”, o zi frumoasă, o listă operațională, un plan sau o ipoteză nu sunt singure suficiente.
+
+FIDELITATE: nu inventa citate, emoții, intenții, cronologie, reacții, rezultate ori concluzii ale părinților. Nu transforma interpretările în fapte. source_excerpts conține numai fragmente copiate exact, caracter cu caracter, din notă, care susțin povestea. Dacă nu poți susține arcul prin citate exacte, respinge candidatul. Persoana I este Radu, facilitatorul Becky. Pentru draftul public anonimizează implicit copiii; identitatea poate rămâne numai în source_excerpts pentru audit intern.
+
+VOCE: observată, specifică, umană, simplă, inteligentă, caldă fără sirop. Scena concretă domină abstracția. Nu universaliza un caz singular; folosește „ieri, în cazul ei/lui”, „m-a făcut să mă întreb” sau „vreau să testez” când este doar o ipoteză.
+
+INTERZIS: „momente magice”, „fiecare copil este unic”, „la Becky credem că”, „ne reamintește cât de important este”, „în lumea celor mici”, „zâmbete și voie bună”, „o experiență de neuitat”, „mai mult decât”, „nu este doar X, este Y”, „uneori cele mai mici momente”, „lecții prețioase”, „conexiuni autentice” și clișee echivalente.
+
+Dacă este eligibil, generează UN singur candidat și 3–5 cadre de Story pentru Instagram/Facebook, numai câte adaugă valoare. Fiecare cadru are o singură idee, foarte puțin text, fără paragraf. Hook-ul pornește din scenă, nu din teză și nu este clickbait. Concluzia rămâne proporțională cu dovada. Alege content_type numai după ce story-worthiness este confirmat; nu fabrica autoritate dintr-un singur caz. visual_direction descrie numai acțiunea explicită din notă, cu personaje anonime; nu adăuga expresii faciale, emoții, gesturi, obiecte sau decor nespecificate.
+
+Înainte de răspuns verifică: scenă, tensiune/schimbare, specificitate, fidelitate, valoare peste reformulare, extrapolare limitată, hook real, inteligibilitate fără context intern și dacă este realmente mai bun decât a nu posta nimic. Dacă ultima condiție nu este îndeplinită: story_worthy=false, candidate=null.`;
+  const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini', instructions, input: noteText, text: { format: { type: 'json_schema', name: 'becky_story_candidate_gate', strict: true, schema } } }) });
+  const result = await response.json().catch(() => ({}));
+  const outputText = result.output?.flatMap(item => item.content || []).find(item => item.type === 'output_text')?.text;
+  if (!response.ok || !outputText) return json({ error: 'Poveștile nu au putut fi extrase.' }, 502);
+  const assessment = JSON.parse(outputText);
+  const excerptsAreExact = assessment.candidate?.source_excerpts?.every(excerpt => excerpt && noteText.includes(excerpt));
+  if (!assessment.story_worthy || !assessment.candidate || !excerptsAreExact) {
+    return json({ story_worthy: false, reason: excerptsAreExact === false ? 'Candidatul nu a putut fi susținut prin fragmente exacte din notă.' : assessment.reason, candidate: null, model: result.model });
+  }
+  const auditSchema = { type: 'object', additionalProperties: false, properties: { approved: { type: 'boolean' }, reason: { type: 'string' }, candidate }, required: ['approved', 'reason', 'candidate'] };
+  const auditResponse = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini',
+      instructions: `Ești verificatorul final de fidelitate al unui Story Candidate Becky. Compară fiecare afirmație cu NOTA ORIGINALĂ. Corectează și rescrie orice detaliu nesusținut. Respinge numai dacă NOTA ORIGINALĂ nu conține ea însăși o succesiune factuală cu situație, schimbare și rezultat/continuitate. Nu respinge un arc factual bun doar fiindcă propunerea inițială a introdus ornamente: elimină ornamentele și returnează versiunea corectată.
+
+Nu permite emoții, expresii faciale, gesturi, citate, intenții, cauzalitate, cronologie, obiecte, decor, rezultate sau semnificații care nu sunt explicit susținute. Direcțiile vizuale pot reprezenta numai acțiunile și contextul menționate în notă; nu adăuga zâmbete, tristețe, brațe încrucișate, planșe, fișe sau recuzită. Nu transforma o experiență singulară într-o soluție replicabilă ori principiu despre copii.
+
+source_excerpts rămân citate exacte și pot conține identitatea internă. În toate celelalte câmpuri publice anonimizează numele copilului ca „un copil”/„o fetiță”/„un băiat”, numai dacă genul este susținut; altfel „un copil”. Păstrează 3–5 cadre, o idee scurtă per cadru. Elimină clișeele și limbajul de soluție/autoritate.
+Păstrează vocea firească la persoana I a lui Radu: „Un copil mi-a spus...”, „Am început...”, nu formulări clinice precum „copilul exprimă” sau „adultul propune”. angle este un hook scurt extras din scena concretă, nu o explicație de tip „Cum X a transformat Y”. Fiecare frame trebuie să poată fi citit direct pe social media, cald și simplu, dar fără niciun fapt nou.`,
+      input: JSON.stringify({ original_note: noteText, proposed_candidate: assessment.candidate }),
+      text: { format: { type: 'json_schema', name: 'becky_story_candidate_fidelity_audit', strict: true, schema: auditSchema } }
+    })
+  });
+  const auditResult = await auditResponse.json().catch(() => ({}));
+  const auditText = auditResult.output?.flatMap(item => item.content || []).find(item => item.type === 'output_text')?.text;
+  if (!auditResponse.ok || !auditText) return json({ error: 'Verificarea de fidelitate a poveștii nu a reușit.' }, 502);
+  const audited = JSON.parse(auditText);
+  const auditedExcerptsAreExact = audited.candidate?.source_excerpts?.every(excerpt => excerpt && noteText.includes(excerpt));
+  if (audited.candidate?.story_frames?.length) {
+    const groundedFrameLimit = Math.max(3, Math.min(5, audited.candidate.source_excerpts.length));
+    audited.candidate.story_frames = audited.candidate.story_frames.slice(0, groundedFrameLimit);
+    audited.candidate.angle = audited.candidate.story_frames[0].text;
+  }
+  const bannedPhrases = ['momente magice', 'fiecare copil este unic', 'la becky credem că', 'ne reamintește cât de important', 'în lumea celor mici', 'zâmbete și voie bună', 'o experiență de neuitat', 'mai mult decât', 'nu este doar', 'uneori cele mai mici momente', 'lecții prețioase', 'conexiuni autentice'];
+  const candidateCopy = JSON.stringify(audited.candidate || {}).toLocaleLowerCase('ro-RO');
+  const containsCliche = bannedPhrases.some(phrase => candidateCopy.includes(phrase));
+  if (!audited.approved || !audited.candidate || !auditedExcerptsAreExact || containsCliche) return json({ story_worthy: false, reason: containsCliche ? 'Candidatul a fost respins de filtrul anti-clișeu.' : audited.reason, candidate: null, model: auditResult.model || result.model });
+  return json({ story_worthy: true, reason: audited.reason || assessment.reason, candidate: audited.candidate, model: auditResult.model || result.model });
 }
 
 async function handleCarouselEdit(request, env) {
@@ -602,6 +1131,17 @@ async function handleApi(request, env, pathname) {
   });
   if (pathname.startsWith('/api/auth/')) return handleAuth(request, env, pathname);
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
+  if (pathname === '/api/admin/becky-memory/analyze' || pathname === '/api/admin/becky-memory/signals' || pathname.startsWith('/api/admin/becky-memory/signals/') || pathname === '/api/admin/becky-memory/attention' || pathname.startsWith('/api/admin/becky-memory/attention/')) return handleBeckyMemory(request, env);
+  if (pathname === '/api/admin/becky-inbox/context' || pathname === '/api/admin/becky-inbox/brief' || pathname === '/api/admin/becky-inbox/analyze' || pathname === '/api/admin/becky-inbox/proposals' || pathname.startsWith('/api/admin/becky-inbox/proposals/')) return handleBeckyInbox(request, env);
+  if (pathname === '/api/admin/content-lab/ideas' || pathname.startsWith('/api/admin/content-lab/ideas/')) return handleContentLabIdeas(request, env);
+  if (pathname === '/api/admin/event-community/findings' || pathname.startsWith('/api/admin/event-community/findings/')) return handleEventCommunityFindings(request, env);
+  if (pathname === '/api/admin/knowledge-candidates' || pathname.startsWith('/api/admin/knowledge-candidates/')) return handleKnowledgeCandidates(request, env);
+  if (pathname === '/api/admin/crm' || pathname.startsWith('/api/admin/crm/')) return handleAdminCrm(request, env);
+  if (pathname === '/api/admin/experience-repertoire' || pathname.startsWith('/api/admin/experience-repertoire/')) return handleExperienceRepertoire(request, env);
+  if (pathname === '/api/admin/pedagogic-coverage' || pathname === '/api/admin/becky-themed-activities' || pathname.startsWith('/api/admin/becky-themed-activities/')) return handleBeckyThemedActivities(request, env);
+  if (pathname === '/api/admin/children-activity-validations') return handleBeckyThemedActivities(request, env);
+  if (pathname === '/api/admin/monthly-report' || pathname.startsWith('/api/admin/monthly-report/')) return handleAdminMonthlyReport(request, env);
+  if (pathname === '/api/admin/activity-observations' || pathname.startsWith('/api/admin/activity-observations/')) return handleActivityObservations(request, env);
   if (pathname === '/api/admin/calendar' || pathname.startsWith('/api/admin/calendar/')) return handleAdminCalendar(request, env);
   if (pathname === '/api/event-survey/results') return handleSurveyResults(request, env);
   if (pathname === '/api/event-survey/funnel') return handleSurveyFunnel(request, env);
@@ -611,6 +1151,7 @@ async function handleApi(request, env, pathname) {
   if (pathname === '/api/playground-survey/raffle') return handlePlaygroundRaffle(request, env);
   if (pathname === '/api/playground-survey') return handlePlaygroundSurvey(request, env);
   if (pathname === '/api/content/carousel/image') return handleCarouselImage(request, env);
+  if (pathname === '/api/content/story-candidates') return handleStoryCandidates(request, env);
   if (pathname === '/api/content/carousel/plan') return handleCarouselPlan(request, env);
   if (pathname === '/api/content/carousel/edit') return handleCarouselEdit(request, env);
   if (pathname === '/api/manual/download') {

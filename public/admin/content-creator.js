@@ -2,6 +2,12 @@
   const STORAGE_KEY = 'becky-content-director-prototype-v1';
   const defaults = {
     contentView: 'home',
+    storyDate: '',
+    storyCandidates: [],
+    storyLoading: false,
+    storyAssessmentComplete: false,
+    storyAssessmentReason: '',
+    storySaveMessage: '',
     contentItemId: '',
     selectedContentItemKey: '',
     contentDetailTab: 'manual',
@@ -129,6 +135,13 @@
   const MIN_CAROUSEL_SLIDES = 3;
   const DEFAULT_CAROUSEL_SLIDES = 5;
   const MAX_CAROUSEL_SLIDES = 10;
+  const contentLabIdeaTypes = [
+    ['growth_story', 'Growth story'],
+    ['behind_the_scenes', 'Behind the scenes'],
+    ['authority_expertise', 'Authority / expertise'],
+    ['reusable_insight', 'Insight reutilizabil']
+  ];
+  const contentLabStatuses = [['active', 'Activă'], ['archived', 'Arhivată']];
 
   function carouselSlideCount() {
     return Math.max(MIN_CAROUSEL_SLIDES, Math.min(MAX_CAROUSEL_SLIDES, state.carouselSlides?.length || DEFAULT_CAROUSEL_SLIDES));
@@ -407,6 +420,9 @@ Ce vă place să descoperiți împreună?`;
   let frozenComposedSlides = [];
   let carouselVersions = [];
   let carouselDrafts = [];
+  let contentLabIdeas = [];
+  let contentLabIdeasLoaded = false;
+  let contentLabIdeasRequest = null;
   let draftPersistTimer = null;
   let versionBusy = false;
   let versionMessage = '';
@@ -797,6 +813,7 @@ Ce vă place să descoperiți împreună?`;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     if (touchContent) scheduleDraftPersistence();
   };
+  const api = (url, options) => fetch(url, { credentials: 'same-origin', ...options });
   const contentRouteIsActive = () => new URLSearchParams(window.location.search).get('view') === 'content';
   const safe = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' })[character]);
 
@@ -819,6 +836,7 @@ Ce vă place să descoperiți împreună?`;
 
   const contentViews = [
     ['home', 'Acasă'],
+    ['story', 'Povestea de azi'],
     ['create', 'Creează'],
     ['ideas', 'Idei'],
     ['campaigns', 'Campanii'],
@@ -1100,6 +1118,81 @@ Ce vă place să descoperiți împreună?`;
     }
   ];
 
+  function contentLabIdeaTypeLabel(type) { return contentLabIdeaTypes.find(item => item[0] === type)?.[1] || type; }
+  function contentLabIdeasSection() {
+    const cards = contentLabIdeasLoaded
+      ? (contentLabIdeas.length ? `<div class="cc-content-lab-idea-list">${contentLabIdeas.map(idea => `<article><div><small>${safe(contentLabIdeaTypeLabel(idea.idea_type))} · ${idea.status === 'archived' ? 'ARHIVATĂ' : 'ACTIVĂ'}</small>${idea.title ? `<h3>${safe(idea.title)}</h3>` : ''}<p>${safe(idea.core_thought)}</p><time>${safe(String(idea.updated_at || idea.created_at || '').slice(0, 10))}</time></div><div class="cc-content-lab-idea-actions"><button type="button" class="cc-back" data-cc-edit-idea="${safe(idea.id)}">Editează</button><button type="button" class="cc-back" data-cc-delete-idea="${safe(idea.id)}">Șterge</button></div></article>`).join('')}</div>` : '<div class="cc-empty-state"><strong>Nu ai încă idei salvate.</strong><p>Adaugă o idee manuală ca să devină disponibilă și pe alte dispozitive.</p></div>')
+      : '<div class="cc-empty-state"><strong>Se încarcă ideile salvate…</strong></div>';
+    return `<section class="cc-content-lab-ideas"><header class="cc-section-title"><div><small>CONTENT LAB · IDEI PERSISTENTE</small><h3>Ideile mele</h3></div><button type="button" class="cc-primary" data-cc-add-idea>＋ Adaugă idee</button></header><form class="cc-content-lab-form is-hidden" data-cc-idea-form><label>Tipul ideii<select name="idea_type" required>${contentLabIdeaTypes.map(([value,label]) => `<option value="${value}">${label}</option>`).join('')}</select></label><label>Status<select name="status">${contentLabStatuses.map(([value,label]) => `<option value="${value}">${label}</option>`).join('')}</select></label><label class="is-wide">Titlu opțional<input name="title" maxlength="500" placeholder="Un nume scurt pentru idee"></label><label class="is-wide">Ideea<textarea name="core_thought" maxlength="10000" required placeholder="Scrie ideea în forma în care vrei să o păstrezi."></textarea></label><div class="is-wide cc-content-lab-form-actions"><button type="submit" class="cc-primary">Salvează ideea</button><button type="button" class="cc-back" data-cc-cancel-idea>Anulează</button><span data-cc-idea-message></span></div></form>${cards}</section>`;
+  }
+
+  async function loadContentLabIdeas(renderAfter = false) {
+    if (contentLabIdeasLoaded) return;
+    if (contentLabIdeasRequest) return contentLabIdeasRequest;
+    contentLabIdeasRequest = api('/api/admin/content-lab/ideas').then(async response => {
+      if (!response.ok) throw new Error('Content Lab ideas unavailable');
+      const payload = await response.json(); contentLabIdeas = Array.isArray(payload.ideas) ? payload.ideas : []; contentLabIdeasLoaded = true;
+      const migrationKey = 'becky-content-lab-ideas-migrated-v1';
+      if (!localStorage.getItem(migrationKey)) {
+        const legacy = (state.savedIdeas || []).filter(item => contentLabIdeaTypes.some(([type]) => type === item?.idea_type) && String(item?.core_thought || item?.text || '').trim());
+        for (const item of legacy) { const migrated = await api('/api/admin/content-lab/ideas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id: item.id || undefined, idea_type: item.idea_type, title: item.title || '', core_thought: item.core_thought || item.text, status: item.status === 'archived' ? 'archived' : 'active' }) }); if (migrated.ok) contentLabIdeas.push(await migrated.json()); }
+        localStorage.setItem(migrationKey, '1');
+      }
+      if (renderAfter && contentRouteIsActive()) render(true);
+    }).catch(() => { contentLabIdeasLoaded = true; if (renderAfter && contentRouteIsActive()) render(true); }).finally(() => { contentLabIdeasRequest = null; });
+    return contentLabIdeasRequest;
+  }
+
+  const publicStoryText = value => String(value || '').replace(/\bErdu\b/gi, 'Domnișoara E.').trim();
+  function storyFrameToSlide(frame, index) {
+    const text = publicStoryText(frame?.text);
+    const parts = text.split(/\n+/).map(value => value.trim()).filter(Boolean);
+    const heading = parts.shift() || `Momentul ${index + 1}`;
+    return {
+      heading,
+      body: parts.join('\n'),
+      headingParts: semanticHeadingParts(heading),
+      artworkInstruction: publicStoryText(frame?.visual_direction),
+      preserveFinal: true
+    };
+  }
+  function storyView() {
+    const date = state.storyDate || 'nota aleasă';
+    if (state.storyLoading) return `<main class="cc-os-page"><header class="cc-page-intro"><div><small>Povestea de azi</small><h2>Caut poveștile care merită spuse.</h2><p>Separ ce are miză pentru părinți de simpla cronologie a zilei.</p></div></header><div class="cc-empty-state"><strong>Procesez nota din ${safe(date)}…</strong></div></main>`;
+    const candidates = state.storyCandidates || [];
+    const empty = state.storyAssessmentComplete
+      ? `<div class="cc-empty-state cc-story-gate-empty"><small>✓ Nota a fost verificată pentru Content Lab.</small><strong>Nu am găsit o poveste suficient de puternică aici.</strong><p>${safe(state.storyAssessmentReason || 'Nota rămâne în memoria internă pentru pattern-uri viitoare.')}</p></div>`
+      : '<div class="cc-empty-state"><strong>Nota nu a fost încă verificată.</strong></div>';
+    return `<main class="cc-os-page"><button type="button" class="cc-detail-back" data-cc-story-back>← Content Director</button><header class="cc-page-intro"><div><small>POVESTEA DE AZI · ${safe(date)}</small><h2>Ce merită să ajungă la oameni?</h2><p>Mai întâi verificăm dacă există un arc real. Uneori, răspunsul editorial corect este să nu publicăm nimic.</p></div></header>${state.storySaveMessage ? `<p class="cc-story-save-message">${safe(state.storySaveMessage)}</p>` : ''}${candidates.length ? `<div class="cc-story-candidate-list">${candidates.map((item,index)=>`<article class="cc-story-candidate"><small>STORY CANDIDATE · ${safe(contentLabIdeaTypeLabel(item.content_type))}</small><h3>${safe(item.title)}</h3><p>${safe(item.summary)}</p><span>${item.story_frames.length} cadre</span><div class="cc-story-actions"><button type="button" class="cc-primary" data-cc-story-choice="${index}">Vezi draftul</button><button type="button" class="cc-back" data-cc-story-save="${index}">Păstrează în Content Lab</button><button type="button" class="cc-back" data-cc-story-dismiss="${index}">Nu merită</button></div><details><summary>De ce a trecut filtrul editorial</summary><p>${safe(item.why_this_story)}</p><small>DOVEZI DIN NOTĂ</small><ul>${item.source_excerpts.map(excerpt => `<li>${safe(excerpt)}</li>`).join('')}</ul></details></article>`).join('')}</div>` : empty}</main>`;
+  }
+  async function loadStoryCandidates(date) {
+    state.storyLoading = true; render(true);
+    try {
+      const reportResponse = await api('/api/admin/monthly-report');
+      const reportPayload = await reportResponse.json();
+      const note = String(reportPayload.report?.notes?.[date] || '').trim();
+      const storyResponse = await api('/api/content/story-candidates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note_text: note }) });
+      const assessment = await storyResponse.json().catch(() => ({}));
+      if (!storyResponse.ok) throw new Error(assessment.error || 'Verificarea editorială nu a putut fi finalizată.');
+      const item = assessment.story_worthy ? assessment.candidate : null;
+      const frames = Array.isArray(item?.story_frames) ? item.story_frames.map(frame => ({ text: publicStoryText(frame.text), visual_direction: publicStoryText(frame.visual_direction) })) : [];
+      const candidates = item && frames.length >= 3 ? [{
+        ...item,
+        title: publicStoryText(item.angle),
+        summary: frames.slice(0, 2).map(frame => frame.text).join(' '),
+        why_this_story: publicStoryText(item.why_this_story),
+        caption_seed: publicStoryText(item.caption_seed),
+        story_frames: frames,
+        source_note: note
+      }] : [];
+      state.storyCandidates = candidates;
+      state.storyAssessmentComplete = true;
+      state.storyAssessmentReason = String(assessment.reason || '');
+      state.storySaveMessage = '';
+      state.storyLoading = false; save(false); render(true);
+    } catch (error) { state.storyCandidates = []; state.storyAssessmentComplete = false; state.storyAssessmentReason = ''; state.storySaveMessage = error.message || 'Verificarea editorială nu a putut fi finalizată.'; state.storyLoading = false; render(true); }
+  }
+
   function ideasView() {
     const ideaBranches = [
       ['prepared', 'Carduri pregătite pentru generare', 'Deschizi structuri aprobate, cu text, concluzie și caption deja stabilite.'],
@@ -1130,7 +1223,7 @@ Ce vă place să descoperiți împreună?`;
     if (selectedBranch) {
       return `<main class="cc-os-page"><button type="button" class="cc-detail-back" data-cc-ideas-back>← Schimbă perspectiva</button><header class="cc-page-intro"><div><small>${suggestions[state.ideaBranch].length} IDEI PREGĂTITE</small><h2>${safe(selectedBranch[1])}</h2><p>Alege una. Construim imediat situația, pașii legați și CTA-ul — fără să mai scrii tu brief-ul.</p></div></header><div class="cc-suggestion-grid">${suggestions[state.ideaBranch].map((idea, index) => `<article><small>PROPUNEREA ${index + 1}</small><h3>${safe(idea.hook)}</h3><p>${safe(idea.value)}</p><button type="button" class="cc-primary" data-cc-use-idea="${index}" data-cc-idea-context="${safe(idea.context)}">✦ Construiește carouselul</button></article>`).join('')}</div></main>`;
     }
-    return `<main class="cc-os-page"><header class="cc-page-intro"><div><small>IDEI</small><h2>Ce fel de idee să-ți aduc?</h2><p>Nu trebuie să scrii nimic. Alege doar o zonă, iar Content Director îți oferă subiecte concrete și utile.</p></div></header><div class="cc-idea-grid">${ideaBranches.map(([key, title, description]) => `<button type="button" data-cc-idea-branch="${key}"><span>✦</span><strong>${title}</strong><p>${description}</p><b>Arată-mi ideile →</b></button>`).join('')}</div></main>`;
+    return `<main class="cc-os-page"><header class="cc-page-intro"><div><small>IDEI</small><h2>Ce fel de idee să-ți aduc?</h2><p>Nu trebuie să scrii nimic. Alege doar o zonă, iar Content Director îți oferă subiecte concrete și utile.</p></div></header>${contentLabIdeasSection()}<div class="cc-idea-grid">${ideaBranches.map(([key, title, description]) => `<button type="button" data-cc-idea-branch="${key}"><span>✦</span><strong>${title}</strong><p>${description}</p><b>Arată-mi ideile →</b></button>`).join('')}</div></main>`;
   }
 
   function curatedIdeaPlan(branch, index) {
@@ -1294,6 +1387,26 @@ Ce vă place să descoperiți împreună?`;
   }
 
   function carouselPlan() {
+    if (state.creationEntry === 'story-of-day' && Array.isArray(state.carouselSlides) && state.carouselSlides.length) {
+      return state.carouselSlides.map((storedSlide, index) => {
+        const heading = cleanCarouselText(storedSlide.heading || storedSlide.title || `Momentul ${index + 1}`);
+        return {
+          title: storedSlide.title || (index === 0 ? 'Începutul poveștii' : index === state.carouselSlides.length - 1 ? 'Cu ce am rămas' : `Momentul ${index + 1}`),
+          heading,
+          headingLines: null,
+          headingCustomized: true,
+          headingParts: semanticHeadingParts(heading, storedSlide.headingParts),
+          body: cleanCarouselText(storedSlide.body || ''),
+          copy: heading,
+          role: index === 0 ? 'cover' : 'content',
+          solutionNumber: 0,
+          change: cleanCarouselText(storedSlide.change || ''),
+          assistantInstruction: storedSlide.assistantInstruction || '',
+          ctaVariant: 0,
+          layout: storedSlide.layout || {}
+        };
+      });
+    }
     const angle = angleFor(state.angle);
     const objective = objectives[state.objective];
     const variant = carouselVariants[state.carouselVariant] || carouselVariants['story-cards'];
@@ -1384,6 +1497,12 @@ Ce vă place să descoperiți împreună?`;
 
   function artworkPrompt(slide) {
     const variant = carouselVariants[state.carouselVariant] || carouselVariants['story-cards'];
+    const storyCharacter = state.creationEntry === 'story-of-day'
+      ? ' This is Radu’s first-person story: Radu is the adult facilitator who spends the day with the children at Becky, not a child and not an educator in a generic institution. When the story needs a recurring person, use a warm illustrated adult character based on the profile reference asset /assets/content_assets/RADU.png; create a different meaningful pose or situation on each slide while preserving the same identity, hairstyle, clothing palette and watercolor treatment. If a child named Erdu appears, anonymize her as “Domnișoara E.”. Do not show a real photograph, readable text or an identifiable child.'
+      : '';
+    if (state.creationEntry === 'story-of-day') {
+      return `Create one emotionally clear watercolor story moment for a square Becky’s Garden carousel. This slide belongs to one continuous true story told in the first person by Radu, the adult facilitator at Becky. Use the illustrated profile asset /assets/content_assets/RADU.png as the identity reference for Radu and preserve his recognizable face, hairstyle, proportions and clothing palette across the entire carousel, while changing his pose and expression to match this exact moment. Slide text: “${slide.heading}” — “${slide.body}”. Visual direction: ${slide.change || 'show only the single interaction or emotional beat described by this slide'}. Children must remain anonymous, softly illustrated and non-identifiable; never render their names. One intimate scene only, with at most Radu and two children, no collage and no unrelated symbols. Premium warm watercolor, gentle Becky palette, expressive body language, generous clean white margins and a perfectly uniform white background for automatic placement. No written text, letters, logos, clouds, frame, pagination, watermark, photorealism or extra decorative objects.`;
+    }
     if (slide.role === 'cover') {
       return `Create a highly expressive, premium watercolor character illustration for the COVER of a square Becky’s Garden carousel. Feature Becky, a charming cheerful yellow duckling mascot with big expressive eyes, a small orange beak and a delicate flower crown. Theme and rhetorical hook: “${slide.heading}”. She is overflowing with ideas, imagination, curiosity and happy excitement. Render the COMPLETE character artwork, including the entire lower torso/body that belongs to the pose. CRITICAL: no part of Becky may touch or be cropped by any edge of the generated image; leave at least 12 percent clean white margin around the complete artwork on every side. Do not create a flat horizontal cut through the body, feathers, wings or flower crown. The app will position the complete artwork and crop it only at the bottom edge of the final carousel card. ONE ISOLATED CHARACTER ONLY. Do not add any floating decorative marks around her: no stars, sparkles, hearts, exclamation marks, question marks, light bulbs, strokes, confetti, flowers detached from the crown or background accents. Keep all white space perfectly empty outside the character. Pure uniform white background. No text, letters, logo, clouds, pagination, frame, square panel, room, scene, collage, photorealism, other characters or watermark. Match the Becky palette: coral #F96B76, teal #238B9A, soft yellow, pale purple and pale blue. ${slide.change ? `Requested adjustment: ${slide.change}.` : ''} Variant: ${variant.label}.`;
     }
@@ -1404,7 +1523,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       : state.carouselVariant === 'playful-guide'
         ? 'playful hand-drawn line icon with one small watercolor accent'
         : 'simple expressive watercolor line icon';
-    return `Create one VERY SIMPLE isolated visual symbol for a square Becky’s Garden carousel. Style reference: airy premium children’s poster, ${style}, lots of white space. Use only one visual idea for: “${slide.heading}” — “${slide.body}”. ${slide.change ? `Requested adjustment: ${slide.change}.` : ''} Palette accents only: coral #F96B76, teal #238B9A, soft yellow, pale purple and pale blue. The result must be minimal and immediately readable: one icon, one object, or at most three tiny symbolic marks. No scene, no collage, no montage, no hands doing multiple activities, no room, no detailed background, no visual storytelling with many objects. Place the isolated symbol in the center on a perfectly uniform pure white background with very generous empty margins, prepared for automatic background removal. No paper texture, backdrop, vignette, square panel, cast shadow, floor, or border. Do not render text, letters, numbers, logos, pagination, clouds, UI, ducks, mascots, people, or watermarks. Keep the same thin hand-drawn/watercolor treatment across the five-slide set. Variant: ${variant.label}.`;
+    return `Create one VERY SIMPLE isolated visual symbol for a square Becky’s Garden carousel. Style reference: airy premium children’s poster, ${style}, lots of white space. Use only one visual idea for: “${slide.heading}” — “${slide.body}”.${storyCharacter} ${slide.change ? `Requested adjustment: ${slide.change}.` : ''} Palette accents only: coral #F96B76, teal #238B9A, soft yellow, pale purple and pale blue. The result must be minimal and immediately readable: one icon, one object, or at most three tiny symbolic marks. No scene, no collage, no montage, no hands doing multiple activities, no room, no detailed background, no visual storytelling with many objects. Place the isolated symbol in the center on a perfectly uniform pure white background with very generous empty margins, prepared for automatic background removal. No paper texture, backdrop, vignette, square panel, cast shadow, floor, or border. Do not render text, letters, numbers, logos, pagination, clouds, UI, ducks, mascots, people, or watermarks. Keep the same thin hand-drawn/watercolor treatment across the five-slide set. Variant: ${variant.label}.`;
   }
 
   function characterForSlide() { return null; }
@@ -1563,12 +1682,22 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
   function carouselGenerationStep() {
     const plan = carouselPlan();
     const variant = carouselVariants[state.carouselVariant] || carouselVariants['story-cards'];
+    const storyMode = state.creationEntry === 'story-of-day';
+    const generatedDescription = storyMode
+      ? 'Glisează spre dreapta pentru întreaga poveste. Fiecare slide păstrează același fir, aceleași personaje și același moment real.'
+      : `Glisează spre dreapta pentru toate cele ${plan.length} slide-uri. Coperta, soluțiile și CTA-ul Becky folosesc reguli potrivite rolului lor.`;
+    const draftDescription = storyMode
+      ? 'Firul urmărește o singură poveste: început, schimbare, punct culminant, deznodământ și concluzia lui Radu.'
+      : 'Firul este clar: problema și promisiunea pe copertă, soluții concrete, apoi modul în care Becky le aplică.';
+    const planSummary = storyMode ? 'O singură poveste, în ritmul ei firesc' : `${plan.length - 2} soluții între cover și CTA`;
+    const structureSummary = storyMode ? 'Început · tensiune · alegere · deznodământ · concluzie' : `Problemă · ${plan.length - 2} soluții · Becky`;
+    const imageSummary = storyMode ? `${plan.length} ilustrații narative consecvente` : `${plan.length - 1} ilustrații AI + 1 CTA`;
     const resultIndexes = DEVELOPMENT_SINGLE_IMAGE_MODE ? [DEVELOPMENT_GENERATED_SLIDE_INDEX] : plan.map((_, index) => index);
     const generationComplete = resultIndexes.every(index => Boolean(generatedSlides[index]));
     if (generationComplete && !carouselBusy) {
-      return `<section class="cc-carousel-result"><header class="cc-result-head"><div><span>${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'IMAGINE TEST · DEV MODE' : `CAROUSEL GENERAT · ${safe(variant.label)}`}</span><h2>Revizuiește, modifică,<br><em>apoi postează.</em></h2><p>Glisează spre dreapta pentru toate cele ${plan.length} slide-uri. Coperta, soluțiile și CTA-ul Becky folosesc reguli potrivite rolului lor.</p></div><div class="cc-result-actions"><button class="cc-back" type="button" data-cc-remove-card ${plan.length <= MIN_CAROUSEL_SLIDES || carouselBusy || versionBusy ? 'disabled' : ''}>− Scoate o soluție</button><button class="cc-secondary-action" type="button" data-cc-add-card ${plan.length >= MAX_CAROUSEL_SLIDES || carouselBusy || versionBusy ? 'disabled' : ''}>＋ Adaugă o soluție</button><button class="cc-back" type="button" data-cc-generate-all ${carouselBusy || versionBusy ? 'disabled' : ''}>↻ ${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'Regenerează imaginea' : 'Regenerează tot'}</button></div></header>${carouselError ? `<p class="cc-generation-error">${safe(carouselError)}</p>` : ''}${carouselVersionBar()}<div class="cc-carousel-strip-toolbar"><div class="cc-carousel-strip-label"><strong>1–2 din ${plan.length}</strong><span>Mai există încă ${Math.max(0, plan.length - 2)} slide-uri →</span></div><div class="cc-carousel-strip-actions"><span>SLIDE TO THE RIGHT</span><button type="button" class="cc-carousel-nav" data-cc-carousel-scroll="-1" aria-label="Slide-uri anterioare">← <b>Anterior</b></button><button type="button" class="cc-carousel-nav is-next" data-cc-carousel-scroll="1" aria-label="Vezi următoarele slide-uri"><b>Următorul</b> →</button></div></div><div class="cc-carousel-viewport"><div class="cc-generated-grid ${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'is-single' : ''}">${resultIndexes.map(index => slidePreview(generatedSlides[index], index, plan)).join('')}</div><div class="cc-carousel-edge-hint" aria-hidden="true">→</div></div>${readyToPostPanel(plan)}</section>`;
+      return `<section class="cc-carousel-result"><header class="cc-result-head"><div><span>${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'IMAGINE TEST · DEV MODE' : `CAROUSEL GENERAT · ${safe(variant.label)}`}</span><h2>Revizuiește, modifică,<br><em>apoi postează.</em></h2><p>${generatedDescription}</p></div><div class="cc-result-actions"><button class="cc-back" type="button" data-cc-remove-card ${plan.length <= MIN_CAROUSEL_SLIDES || carouselBusy || versionBusy ? 'disabled' : ''}>− Scoate un slide</button><button class="cc-secondary-action" type="button" data-cc-add-card ${plan.length >= MAX_CAROUSEL_SLIDES || carouselBusy || versionBusy ? 'disabled' : ''}>＋ Adaugă un slide</button><button class="cc-back" type="button" data-cc-generate-all ${carouselBusy || versionBusy ? 'disabled' : ''}>↻ ${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'Regenerează imaginea' : 'Regenerează tot'}</button></div></header>${carouselError ? `<p class="cc-generation-error">${safe(carouselError)}</p>` : ''}${carouselVersionBar()}<div class="cc-carousel-strip-toolbar"><div class="cc-carousel-strip-label"><strong>1–2 din ${plan.length}</strong><span>Mai există încă ${Math.max(0, plan.length - 2)} slide-uri →</span></div><div class="cc-carousel-strip-actions"><span>SLIDE TO THE RIGHT</span><button type="button" class="cc-carousel-nav" data-cc-carousel-scroll="-1" aria-label="Slide-uri anterioare">← <b>Anterior</b></button><button type="button" class="cc-carousel-nav is-next" data-cc-carousel-scroll="1" aria-label="Vezi următoarele slide-uri"><b>Următorul</b> →</button></div></div><div class="cc-carousel-viewport"><div class="cc-generated-grid ${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'is-single' : ''}">${resultIndexes.map(index => slidePreview(generatedSlides[index], index, plan)).join('')}</div><div class="cc-carousel-edge-hint" aria-hidden="true">→</div></div>${readyToPostPanel(plan)}</section>`;
     }
-    return `<section class="cc-carousel-ready"><article class="cc-carousel-plan"><header><span>DRAFT EDITABIL · ${plan.length} SLIDE-URI</span><h2>Verifică textele înainte<br><em>să generezi imaginile.</em></h2><p>Firul este clar: problema și promisiunea pe copertă, soluții concrete, apoi modul în care Becky le aplică.</p></header><div class="cc-plan-toolbar"><div><strong>${plan.length} slide-uri</strong><span>${plan.length - 2} soluții între cover și CTA</span></div><div><button type="button" class="cc-back" data-cc-remove-card ${plan.length <= MIN_CAROUSEL_SLIDES ? 'disabled' : ''}>− Elimină ultimul card</button><button type="button" class="cc-secondary-action" data-cc-add-card ${plan.length >= MAX_CAROUSEL_SLIDES ? 'disabled' : ''}>＋ Adaugă o soluție</button></div></div><div class="cc-plan-grid">${plan.map((slide, index) => `<article><div class="cc-plan-card-head"><b>${String(index + 1).padStart(2, '0')}</b>${slide.role === 'content' ? `<div class="cc-plan-move" aria-label="Schimbă ordinea soluției"><button type="button" data-cc-move-card="${index}" data-cc-move-direction="-1" aria-label="Mută soluția la stânga" title="Mută la stânga" ${index === 1 ? 'disabled' : ''}>←</button><button type="button" data-cc-move-card="${index}" data-cc-move-direction="1" aria-label="Mută soluția la dreapta" title="Mută la dreapta" ${index === plan.length - 2 ? 'disabled' : ''}>→</button></div>` : '<span class="cc-plan-locked">FIX</span>'}</div><small>${safe(slide.title)}</small><label>HEADER<textarea data-cc-plan-heading="${index}">${safe(slide.heading)}</textarea></label><label>DESCRIERE<textarea data-cc-plan-body="${index}">${safe(slide.body || '')}</textarea></label></article>`).join('')}</div></article><aside class="cc-generate-panel ${carouselBusy ? 'is-generating' : ''}"><div class="cc-card-kicker">${carouselBusy ? 'GENERATION IN PROGRESS' : 'GATA DE GENERARE'}</div><h3>${carouselBusy ? 'Carouselul tău se construiește acum.' : 'Totul este setat.'}</h3>${carouselBusy ? generationStatus(plan) : `<dl><div><dt>Structură</dt><dd>Problemă · ${plan.length - 2} soluții · Becky</dd></div><div><dt>Format</dt><dd>Story Cards · ${plan.length} slide-uri</dd></div><div><dt>Imagini</dt><dd>${plan.length - 1} ilustrații AI + 1 CTA</dd></div><div><dt>Calitate</dt><dd>Finală</dd></div></dl><button class="cc-primary cc-generate-button" type="button" data-cc-generate-all>✦ Confirmă textele și generează</button><button class="cc-back cc-change-direction" type="button" data-cc-context-back>← Schimbă subiectul</button>`}${carouselError ? `<p class="cc-generation-error">${safe(carouselError)}</p>` : ''}</aside></section>`;
+    return `<section class="cc-carousel-ready"><article class="cc-carousel-plan"><header><span>DRAFT EDITABIL · ${plan.length} SLIDE-URI</span><h2>Verifică textele înainte<br><em>să generezi imaginile.</em></h2><p>${draftDescription}</p></header><div class="cc-plan-toolbar"><div><strong>${plan.length} slide-uri</strong><span>${planSummary}</span></div><div><button type="button" class="cc-back" data-cc-remove-card ${plan.length <= MIN_CAROUSEL_SLIDES ? 'disabled' : ''}>− Elimină ultimul slide</button><button type="button" class="cc-secondary-action" data-cc-add-card ${plan.length >= MAX_CAROUSEL_SLIDES ? 'disabled' : ''}>＋ Adaugă un slide</button></div></div><div class="cc-plan-grid">${plan.map((slide, index) => `<article><div class="cc-plan-card-head"><b>${String(index + 1).padStart(2, '0')}</b>${slide.role === 'content' ? `<div class="cc-plan-move" aria-label="Schimbă ordinea soluției"><button type="button" data-cc-move-card="${index}" data-cc-move-direction="-1" aria-label="Mută soluția la stânga" title="Mută la stânga" ${index === 1 ? 'disabled' : ''}>←</button><button type="button" data-cc-move-card="${index}" data-cc-move-direction="1" aria-label="Mută soluția la dreapta" title="Mută la dreapta" ${index === plan.length - 2 ? 'disabled' : ''}>→</button></div>` : '<span class="cc-plan-locked">FIX</span>'}</div><small>${safe(slide.title)}</small><label>HEADER<textarea data-cc-plan-heading="${index}">${safe(slide.heading)}</textarea></label><label>DESCRIERE<textarea data-cc-plan-body="${index}">${safe(slide.body || '')}</textarea></label></article>`).join('')}</div></article><aside class="cc-generate-panel ${carouselBusy ? 'is-generating' : ''}"><div class="cc-card-kicker">${carouselBusy ? 'GENERATION IN PROGRESS' : 'GATA DE GENERARE'}</div><h3>${carouselBusy ? 'Carouselul tău se construiește acum.' : 'Totul este setat.'}</h3>${carouselBusy ? generationStatus(plan) : `<dl><div><dt>Structură</dt><dd>${structureSummary}</dd></div><div><dt>Format</dt><dd>Story Cards · ${plan.length} slide-uri</dd></div><div><dt>Imagini</dt><dd>${imageSummary}</dd></div><div><dt>Calitate</dt><dd>Finală</dd></div></dl><button class="cc-primary cc-generate-button" type="button" data-cc-generate-all>✦ Confirmă textele și generează</button><button class="cc-back cc-change-direction" type="button" data-cc-context-back>← Schimbă subiectul</button>`}${carouselError ? `<p class="cc-generation-error">${safe(carouselError)}</p>` : ''}</aside></section>`;
   }
 
   function briefStep() {
@@ -2245,6 +2374,9 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       format: 'carousel',
       carouselVariant: defaults.carouselVariant,
       carouselQuality: defaults.carouselQuality,
+      // Un proiect nou trebuie să pornească fără planul editorial al proiectului
+      // anterior. Altfel, alegerea unei povești putea reutiliza un draft vechi.
+      selectedIdeaPlan: null,
       discardedSolutionHeadings: [],
       carouselSlides: defaults.carouselSlides.map(item => ({ ...item })),
       tasks: {},
@@ -2253,7 +2385,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     };
   }
 
-  async function beginNewContent(entry = 'own', branch = '') {
+async function beginNewContent(entry = 'own', branch = '') {
     await persistCurrentDraft().catch(() => {});
     if (generatedSlides.length >= carouselSlideCount()) {
       try {
@@ -2263,7 +2395,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
         state.contentView = 'content';
         save();
         render(true);
-        return;
+        return false;
       }
     }
     state = { ...state, ...freshCreationState(entry, branch) };
@@ -2274,6 +2406,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     save();
     render();
     requestAnimationFrame(() => document.querySelector('[data-cc-context]')?.focus());
+    return true;
   }
 
   async function beginVariationFromVersion(versionId) {
@@ -2333,17 +2466,22 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
   }
 
   function applyCarouselCopyPlan(slides, caption = '') {
-    const fittedSlides = fitCarouselCopyPlan(slides, slides?.length || DEFAULT_CAROUSEL_SLIDES);
-    const titles = carouselSlideTitles(fittedSlides.length);
+    const storyMode = state.creationEntry === 'story-of-day';
+    const fittedSlides = storyMode
+      ? (Array.isArray(slides) ? slides.slice(0, MAX_CAROUSEL_SLIDES).map(slide => ({ ...slide })) : [])
+      : fitCarouselCopyPlan(slides, slides?.length || DEFAULT_CAROUSEL_SLIDES);
+    const titles = storyMode
+      ? fittedSlides.map((_, index) => index === 0 ? 'Începutul poveștii' : index === fittedSlides.length - 1 ? 'Concluzia poveștii' : `Momentul ${index + 1}`)
+      : carouselSlideTitles(fittedSlides.length);
     state.carouselSlides = fittedSlides.map((slide, index) => ({
       title: titles[index],
       heading: cleanCarouselText(slide.heading),
       body: cleanCarouselText(slide.body),
-      coverPromiseAuto: index === 0 ? slide.coverPromiseAuto !== false : false,
-      coverHookAuto: index === 0,
-      ctaInsightAuto: index === fittedSlides.length - 1 ? slide.preserveFinal !== true : false,
-      preserveFinal: index === fittedSlides.length - 1 && slide.preserveFinal === true,
-      solutionAuto: index > 0 && index < fittedSlides.length - 1 ? slide.solutionAuto !== false : false,
+      coverPromiseAuto: storyMode ? false : index === 0 ? slide.coverPromiseAuto !== false : false,
+      coverHookAuto: storyMode ? false : index === 0,
+      ctaInsightAuto: storyMode ? false : index === fittedSlides.length - 1 ? slide.preserveFinal !== true : false,
+      preserveFinal: storyMode || (index === fittedSlides.length - 1 && slide.preserveFinal === true),
+      solutionAuto: storyMode ? false : index > 0 && index < fittedSlides.length - 1 ? slide.solutionAuto !== false : false,
       headingParts: semanticHeadingParts(cleanCarouselText(slide.heading), Array.isArray(slide.headingParts) ? slide.headingParts.map(part => ({ ...part, text: cleanCarouselText(part?.text) })) : slide.headingParts),
       change: cleanCarouselText(slide.artworkInstruction),
       assistantInstruction: '',
@@ -2419,6 +2557,15 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     return copiedBriefCount < 2;
   }
 
+  function storyCarouselPlanIsUsable(slides) {
+    if (!Array.isArray(slides) || slides.length < 3 || slides.length > 5) return false;
+    const headings = slides.map(slide => normalizedCopy(slide?.heading));
+    const bodies = slides.map(slide => normalizedCopy(slide?.body));
+    if (headings.some(heading => heading.split(' ').filter(Boolean).length < 2)) return false;
+    if (bodies.some(body => body.split(' ').filter(Boolean).length < 4)) return false;
+    return new Set(headings).size === headings.length && new Set(bodies).size === bodies.length;
+  }
+
   function localCarouselCopyFallback(context) {
     const clean = String(context).replace(/\s+/g, ' ').trim();
     const sentences = (clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean]).map(item => item.trim()).filter(item => item.length > 18);
@@ -2460,7 +2607,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     render(true);
     try {
       if (generatedSlides.length >= carouselSlideCount()) await saveCarouselVersion('Backup automat · înainte de un draft text nou', { automatic: true });
-      if (Array.isArray(state.selectedIdeaPlan) && (state.selectedIdeaPlan.length !== DEFAULT_CAROUSEL_SLIDES || state.selectedIdeaPlan.some(slide => slide?.preserveFinal))) {
+      if (Array.isArray(state.selectedIdeaPlan) && state.selectedIdeaPlan.length >= MIN_CAROUSEL_SLIDES && (state.selectedIdeaPlan.length !== DEFAULT_CAROUSEL_SLIDES || state.selectedIdeaPlan.some(slide => slide?.preserveFinal))) {
         applyCarouselCopyPlan(state.selectedIdeaPlan);
         generatedSlides = [];
         frozenComposedSlides = [];
@@ -2472,11 +2619,14 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       const response = await apiFetch('/api/content/carousel/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context, brand: state.brandSettings })
+        body: JSON.stringify({ context, brand: state.brandSettings, mode: state.creationEntry === 'story-of-day' ? 'story-of-day' : 'standard' })
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok || !Array.isArray(result.plan?.slides) || result.plan.slides.length !== DEFAULT_CAROUSEL_SLIDES) throw new Error(result.error || 'Draftul nu a putut fi construit.');
-      if (!carouselCopyPlanIsUsable(result.plan.slides, context)) throw new Error('AI-ul a întors texte repetitive sau a copiat brief-ul în slide-uri.');
+      const storyMode = state.creationEntry === 'story-of-day';
+      const expectedPlan = Array.isArray(result.plan?.slides) && (storyMode
+        ? storyCarouselPlanIsUsable(result.plan.slides)
+        : result.plan.slides.length === DEFAULT_CAROUSEL_SLIDES && carouselCopyPlanIsUsable(result.plan.slides, context));
+      if (!response.ok || !expectedPlan) throw new Error(result.error || (storyMode ? 'Povestea nu a putut fi structurată coerent.' : 'Draftul nu a putut fi construit.'));
       applyCarouselCopyPlan(result.plan.slides, result.plan.caption);
       generatedSlides = [];
       frozenComposedSlides = [];
@@ -2484,6 +2634,13 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       state.step = 4;
       save();
     } catch (error) {
+      if (state.creationEntry === 'story-of-day') {
+        copyDraftError = error.message || 'Povestea nu a putut fi construită.';
+        copyDraftNotice = 'Nu am înlocuit povestea cu un draft generic. Poți încerca din nou fără să pierzi selecția.';
+        state.step = 1;
+        save();
+        return;
+      }
       const fallbackPlan = Array.isArray(state.selectedIdeaPlan) && state.selectedIdeaPlan.length >= MIN_CAROUSEL_SLIDES
         ? state.selectedIdeaPlan
         : localCarouselCopyFallback(context);
@@ -2501,6 +2658,53 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
   }
 
   function bind(demo) {
+    demo.querySelector('[data-cc-story-back]')?.addEventListener('click', () => { state.contentView = 'home'; state.storyDate = ''; state.storyCandidates = []; state.storyAssessmentComplete = false; state.storyAssessmentReason = ''; state.storySaveMessage = ''; save(false); render(); });
+    demo.querySelectorAll('[data-cc-story-choice]').forEach(button => button.addEventListener('click', async () => {
+      const candidate = state.storyCandidates?.[Number(button.dataset.ccStoryChoice)];
+      if (!candidate) return;
+      button.disabled = true; button.textContent = 'Construiesc draftul…';
+      const started = await beginNewContent('own');
+      if (!started) return;
+      state.context = [candidate.title, candidate.why_this_story, ...candidate.story_frames.map(frame => frame.text)].filter(Boolean).join('\n\n');
+      state.selectedIdeaPlan = candidate.story_frames.map(storyFrameToSlide);
+      state.postCaption = candidate.caption_seed || '';
+      state.postCaptionAuto = !candidate.caption_seed;
+      state.creationEntry = 'story-of-day';
+      state.storySourceDate = state.storyDate;
+      await buildCarouselDraft();
+    }));
+    demo.querySelectorAll('[data-cc-story-save]').forEach(button => button.addEventListener('click', async () => {
+      const candidate = state.storyCandidates?.[Number(button.dataset.ccStorySave)];
+      if (!candidate) return;
+      button.disabled = true;
+      const response = await api('/api/admin/content-lab/ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idea_type: candidate.content_type,
+          title: candidate.title,
+          core_thought: [candidate.why_this_story, ...candidate.story_frames.map(frame => frame.text)].filter(Boolean).join('\n\n'),
+          status: 'active',
+          source_type: 'daily_note',
+          source_id: state.storyDate || null
+        })
+      });
+      if (!response.ok) { button.disabled = false; state.storySaveMessage = 'Nu am putut păstra ideea în Content Lab.'; return render(true); }
+      const savedIdea = await response.json();
+      contentLabIdeas = [savedIdea, ...contentLabIdeas.filter(item => item.id !== savedIdea.id)];
+      contentLabIdeasLoaded = true;
+      state.storySaveMessage = '✓ Povestea a fost păstrată în Content Lab.';
+      render(true);
+    }));
+    demo.querySelectorAll('[data-cc-story-dismiss]').forEach(button => button.addEventListener('click', () => {
+      const index = Number(button.dataset.ccStoryDismiss);
+      state.storyCandidates = (state.storyCandidates || []).filter((_, candidateIndex) => candidateIndex !== index);
+      state.storyAssessmentComplete = true;
+      state.storyAssessmentReason = 'Ai decis că acest moment nu merită transformat în conținut public.';
+      state.storySaveMessage = '';
+      save(false);
+      render(true);
+    }));
     demo.querySelector('[data-cc-abandon-idea]')?.addEventListener('click', async event => {
       if (!window.confirm('Abandonezi această idee? Draftul, imaginile și backupurile lui automate vor fi șterse. Versiunile salvate de tine rămân în bibliotecă.')) return;
       const contentItemId = state.contentItemId;
@@ -2583,6 +2787,13 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       save(false);
       render();
     });
+    const ideaForm = demo.querySelector('[data-cc-idea-form]');
+    const resetIdeaForm = () => { if (!ideaForm) return; ideaForm.reset(); ideaForm.dataset.editId = ''; ideaForm.querySelector('[data-cc-idea-message]').textContent = ''; };
+    demo.querySelector('[data-cc-add-idea]')?.addEventListener('click', () => { resetIdeaForm(); ideaForm?.classList.remove('is-hidden'); ideaForm?.querySelector('[name="core_thought"]')?.focus(); });
+    demo.querySelector('[data-cc-cancel-idea]')?.addEventListener('click', () => { ideaForm?.classList.add('is-hidden'); resetIdeaForm(); });
+    demo.querySelectorAll('[data-cc-edit-idea]').forEach(button => button.addEventListener('click', () => { const idea = contentLabIdeas.find(item => item.id === button.dataset.ccEditIdea); if (!ideaForm || !idea) return; ideaForm.dataset.editId = idea.id; ideaForm.querySelector('[name="idea_type"]').value = idea.idea_type; ideaForm.querySelector('[name="status"]').value = idea.status; ideaForm.querySelector('[name="title"]').value = idea.title || ''; ideaForm.querySelector('[name="core_thought"]').value = idea.core_thought || ''; ideaForm.querySelector('[data-cc-idea-message]').textContent = ''; ideaForm.classList.remove('is-hidden'); ideaForm.querySelector('[name="core_thought"]').focus(); }));
+    demo.querySelectorAll('[data-cc-delete-idea]').forEach(button => button.addEventListener('click', async () => { if (!window.confirm('Ștergi această idee?')) return; const response = await api(`/api/admin/content-lab/ideas/${encodeURIComponent(button.dataset.ccDeleteIdea)}`, { method:'DELETE' }); if (!response.ok) return; contentLabIdeas = contentLabIdeas.filter(item => item.id !== button.dataset.ccDeleteIdea); render(true); }));
+    ideaForm?.addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const message = form.querySelector('[data-cc-idea-message]'); const payload = { idea_type: form.querySelector('[name="idea_type"]').value, status: form.querySelector('[name="status"]').value, title: form.querySelector('[name="title"]').value, core_thought: form.querySelector('[name="core_thought"]').value }; const editId = form.dataset.editId; const response = await api(editId ? `/api/admin/content-lab/ideas/${encodeURIComponent(editId)}` : '/api/admin/content-lab/ideas', { method: editId ? 'PATCH' : 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) }); if (!response.ok) { message.textContent = 'Nu am putut salva ideea.'; return; } const savedIdea = await response.json(); contentLabIdeas = editId ? contentLabIdeas.map(item => item.id === editId ? savedIdea : item) : [savedIdea, ...contentLabIdeas]; contentLabIdeasLoaded = true; render(true); });
     demo.querySelectorAll('[data-cc-use-idea]').forEach(button => button.addEventListener('click', async () => {
       const branch = state.ideaBranch;
       const ideaIndex = Number(button.dataset.ccUseIdea);
@@ -3033,6 +3244,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     const activeStep = state.step === 4 ? briefStep() : contextStep();
     const view = state.contentView || 'home';
     const activeView = view === 'home' ? homeView()
+      : view === 'story' ? storyView()
       : view === 'ideas' ? ideasView()
       : view === 'campaigns' ? campaignsView()
       : view === 'content' ? contentLibraryView()
@@ -3067,10 +3279,21 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
   }
 
   window.renderContentCreator = (options = {}) => {
-    if (options.home) {
+    const storyDate = new URLSearchParams(window.location.search).get('story_date');
+    if (storyDate && (state.storyDate !== storyDate || state.contentView !== 'story')) {
+      state.storyDate = storyDate;
+      state.storyCandidates = [];
+      state.storyAssessmentComplete = false;
+      state.storyAssessmentReason = '';
+      state.storySaveMessage = '';
+      state.contentView = 'story';
+      loadStoryCandidates(storyDate);
+    }
+    if (options.home && !storyDate) {
       state.contentView = 'home';
       save(false);
     }
+    if (!contentLabIdeasLoaded) loadContentLabIdeas(true);
     render(Boolean(options.preserveScroll));
   };
 })();
