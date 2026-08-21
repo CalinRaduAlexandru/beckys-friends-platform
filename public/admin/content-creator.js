@@ -5,6 +5,9 @@
     storyDate: '',
     storyCandidates: [],
     storyLoading: false,
+    storyAssessmentComplete: false,
+    storyAssessmentReason: '',
+    storySaveMessage: '',
     contentItemId: '',
     selectedContentItemKey: '',
     contentDetailTab: 'manual',
@@ -1141,27 +1144,53 @@ Ce vă place să descoperiți împreună?`;
   }
 
   const publicStoryText = value => String(value || '').replace(/\bErdu\b/gi, 'Domnișoara E.').trim();
+  function storyFrameToSlide(frame, index) {
+    const text = publicStoryText(frame?.text);
+    const parts = text.split(/\n+/).map(value => value.trim()).filter(Boolean);
+    const heading = parts.shift() || `Momentul ${index + 1}`;
+    return {
+      heading,
+      body: parts.join('\n'),
+      headingParts: semanticHeadingParts(heading),
+      artworkInstruction: publicStoryText(frame?.visual_direction),
+      preserveFinal: true
+    };
+  }
   function storyView() {
     const date = state.storyDate || 'nota aleasă';
     if (state.storyLoading) return `<main class="cc-os-page"><header class="cc-page-intro"><div><small>Povestea de azi</small><h2>Caut poveștile care merită spuse.</h2><p>Separ ce are miză pentru părinți de simpla cronologie a zilei.</p></div></header><div class="cc-empty-state"><strong>Procesez nota din ${safe(date)}…</strong></div></main>`;
     const candidates = state.storyCandidates || [];
-    return `<main class="cc-os-page"><button type="button" class="cc-detail-back" data-cc-story-back>← Content Director</button><header class="cc-page-intro"><div><small>POVESTEA DE AZI · ${safe(date)}</small><h2>Ce merită să ajungă la oameni?</h2><p>Alege o singură poveste cu miez. Restul rămâne în memoria internă, fără să forțăm un carousel din orice notă.</p></div></header>${candidates.length ? `<div class="cc-suggestion-grid">${candidates.map((item,index)=>`<article><small>POVESTE ${index+1}</small><h3>${safe(item.title)}</h3><p>${safe(item.summary)}</p>${item.emotional_core ? `<p class="cc-story-emotion">${safe(item.emotional_core)}</p>` : ''}<button type="button" class="cc-primary" data-cc-story-choice="${index}">Folosește povestea →</button></article>`).join('')}</div>` : '<div class="cc-empty-state"><strong>Nu am găsit încă o poveste publicabilă.</strong><p>Nota rămâne disponibilă și poate fi reformulată sau procesată din nou.</p></div>'}</main>`;
+    const empty = state.storyAssessmentComplete
+      ? `<div class="cc-empty-state cc-story-gate-empty"><small>✓ Nota a fost verificată pentru Content Lab.</small><strong>Nu am găsit o poveste suficient de puternică aici.</strong><p>${safe(state.storyAssessmentReason || 'Nota rămâne în memoria internă pentru pattern-uri viitoare.')}</p></div>`
+      : '<div class="cc-empty-state"><strong>Nota nu a fost încă verificată.</strong></div>';
+    return `<main class="cc-os-page"><button type="button" class="cc-detail-back" data-cc-story-back>← Content Director</button><header class="cc-page-intro"><div><small>POVESTEA DE AZI · ${safe(date)}</small><h2>Ce merită să ajungă la oameni?</h2><p>Mai întâi verificăm dacă există un arc real. Uneori, răspunsul editorial corect este să nu publicăm nimic.</p></div></header>${state.storySaveMessage ? `<p class="cc-story-save-message">${safe(state.storySaveMessage)}</p>` : ''}${candidates.length ? `<div class="cc-story-candidate-list">${candidates.map((item,index)=>`<article class="cc-story-candidate"><small>STORY CANDIDATE · ${safe(contentLabIdeaTypeLabel(item.content_type))}</small><h3>${safe(item.title)}</h3><p>${safe(item.summary)}</p><span>${item.story_frames.length} cadre</span><div class="cc-story-actions"><button type="button" class="cc-primary" data-cc-story-choice="${index}">Vezi draftul</button><button type="button" class="cc-back" data-cc-story-save="${index}">Păstrează în Content Lab</button><button type="button" class="cc-back" data-cc-story-dismiss="${index}">Nu merită</button></div><details><summary>De ce a trecut filtrul editorial</summary><p>${safe(item.why_this_story)}</p><small>DOVEZI DIN NOTĂ</small><ul>${item.source_excerpts.map(excerpt => `<li>${safe(excerpt)}</li>`).join('')}</ul></details></article>`).join('')}</div>` : empty}</main>`;
   }
   async function loadStoryCandidates(date) {
     state.storyLoading = true; render(true);
     try {
       const reportResponse = await api('/api/admin/monthly-report');
       const reportPayload = await reportResponse.json();
-      const note = publicStoryText(reportPayload.report?.notes?.[date] || '');
+      const note = String(reportPayload.report?.notes?.[date] || '').trim();
       const storyResponse = await api('/api/content/story-candidates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note_text: note }) });
-      const stories = storyResponse.ok ? (await storyResponse.json()).stories || [] : [];
-      const candidates = stories.map(item => ({ title: publicStoryText(item.title), summary: publicStoryText(item.summary), emotional_core: publicStoryText(item.emotional_core), why_it_matters: publicStoryText(item.why_it_matters), context: publicStoryText(item.context || `${item.title}\n\n${item.summary}\n\n${item.why_it_matters}`), source_note: note })).filter(item => item.title && item.summary).slice(0, 3);
-      // Semnalele factuale sunt memorie internă, nu povești publicabile. Nu le afișăm
-      // ca propuneri de carousel dacă generatorul dedicat nu a produs o poveste.
-      // O notă fără un fir editorial real rămâne în memorie; nu o prezentăm
-      // ca poveste doar ca să umplem interfața.
-      state.storyCandidates = candidates; state.storyLoading = false; save(false); render(true);
-    } catch { state.storyCandidates = []; state.storyLoading = false; render(true); }
+      const assessment = await storyResponse.json().catch(() => ({}));
+      if (!storyResponse.ok) throw new Error(assessment.error || 'Verificarea editorială nu a putut fi finalizată.');
+      const item = assessment.story_worthy ? assessment.candidate : null;
+      const frames = Array.isArray(item?.story_frames) ? item.story_frames.map(frame => ({ text: publicStoryText(frame.text), visual_direction: publicStoryText(frame.visual_direction) })) : [];
+      const candidates = item && frames.length >= 3 ? [{
+        ...item,
+        title: publicStoryText(item.angle),
+        summary: frames.slice(0, 2).map(frame => frame.text).join(' '),
+        why_this_story: publicStoryText(item.why_this_story),
+        caption_seed: publicStoryText(item.caption_seed),
+        story_frames: frames,
+        source_note: note
+      }] : [];
+      state.storyCandidates = candidates;
+      state.storyAssessmentComplete = true;
+      state.storyAssessmentReason = String(assessment.reason || '');
+      state.storySaveMessage = '';
+      state.storyLoading = false; save(false); render(true);
+    } catch (error) { state.storyCandidates = []; state.storyAssessmentComplete = false; state.storyAssessmentReason = ''; state.storySaveMessage = error.message || 'Verificarea editorială nu a putut fi finalizată.'; state.storyLoading = false; render(true); }
   }
 
   function ideasView() {
@@ -2529,7 +2558,7 @@ async function beginNewContent(entry = 'own', branch = '') {
   }
 
   function storyCarouselPlanIsUsable(slides) {
-    if (!Array.isArray(slides) || slides.length < 4 || slides.length > MAX_CAROUSEL_SLIDES) return false;
+    if (!Array.isArray(slides) || slides.length < 3 || slides.length > 5) return false;
     const headings = slides.map(slide => normalizedCopy(slide?.heading));
     const bodies = slides.map(slide => normalizedCopy(slide?.body));
     if (headings.some(heading => heading.split(' ').filter(Boolean).length < 2)) return false;
@@ -2629,18 +2658,52 @@ async function beginNewContent(entry = 'own', branch = '') {
   }
 
   function bind(demo) {
-    demo.querySelector('[data-cc-story-back]')?.addEventListener('click', () => { state.contentView = 'home'; state.storyDate = ''; state.storyCandidates = []; save(false); render(); });
+    demo.querySelector('[data-cc-story-back]')?.addEventListener('click', () => { state.contentView = 'home'; state.storyDate = ''; state.storyCandidates = []; state.storyAssessmentComplete = false; state.storyAssessmentReason = ''; state.storySaveMessage = ''; save(false); render(); });
     demo.querySelectorAll('[data-cc-story-choice]').forEach(button => button.addEventListener('click', async () => {
       const candidate = state.storyCandidates?.[Number(button.dataset.ccStoryChoice)];
       if (!candidate) return;
       button.disabled = true; button.textContent = 'Construiesc draftul…';
       const started = await beginNewContent('own');
       if (!started) return;
-      state.context = [candidate.title, candidate.summary, candidate.emotional_core, candidate.why_it_matters, candidate.context, 'NOTA ORIGINALĂ — sursa factuală obligatorie:', candidate.source_note]
-        .filter(Boolean).join('\n\n');
+      state.context = [candidate.title, candidate.why_this_story, ...candidate.story_frames.map(frame => frame.text)].filter(Boolean).join('\n\n');
+      state.selectedIdeaPlan = candidate.story_frames.map(storyFrameToSlide);
+      state.postCaption = candidate.caption_seed || '';
+      state.postCaptionAuto = !candidate.caption_seed;
       state.creationEntry = 'story-of-day';
       state.storySourceDate = state.storyDate;
       await buildCarouselDraft();
+    }));
+    demo.querySelectorAll('[data-cc-story-save]').forEach(button => button.addEventListener('click', async () => {
+      const candidate = state.storyCandidates?.[Number(button.dataset.ccStorySave)];
+      if (!candidate) return;
+      button.disabled = true;
+      const response = await api('/api/admin/content-lab/ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idea_type: candidate.content_type,
+          title: candidate.title,
+          core_thought: [candidate.why_this_story, ...candidate.story_frames.map(frame => frame.text)].filter(Boolean).join('\n\n'),
+          status: 'active',
+          source_type: 'daily_note',
+          source_id: state.storyDate || null
+        })
+      });
+      if (!response.ok) { button.disabled = false; state.storySaveMessage = 'Nu am putut păstra ideea în Content Lab.'; return render(true); }
+      const savedIdea = await response.json();
+      contentLabIdeas = [savedIdea, ...contentLabIdeas.filter(item => item.id !== savedIdea.id)];
+      contentLabIdeasLoaded = true;
+      state.storySaveMessage = '✓ Povestea a fost păstrată în Content Lab.';
+      render(true);
+    }));
+    demo.querySelectorAll('[data-cc-story-dismiss]').forEach(button => button.addEventListener('click', () => {
+      const index = Number(button.dataset.ccStoryDismiss);
+      state.storyCandidates = (state.storyCandidates || []).filter((_, candidateIndex) => candidateIndex !== index);
+      state.storyAssessmentComplete = true;
+      state.storyAssessmentReason = 'Ai decis că acest moment nu merită transformat în conținut public.';
+      state.storySaveMessage = '';
+      save(false);
+      render(true);
     }));
     demo.querySelector('[data-cc-abandon-idea]')?.addEventListener('click', async event => {
       if (!window.confirm('Abandonezi această idee? Draftul, imaginile și backupurile lui automate vor fi șterse. Versiunile salvate de tine rămân în bibliotecă.')) return;
@@ -3220,6 +3283,9 @@ async function beginNewContent(entry = 'own', branch = '') {
     if (storyDate && (state.storyDate !== storyDate || state.contentView !== 'story')) {
       state.storyDate = storyDate;
       state.storyCandidates = [];
+      state.storyAssessmentComplete = false;
+      state.storyAssessmentReason = '';
+      state.storySaveMessage = '';
       state.contentView = 'story';
       loadStoryCandidates(storyDate);
     }
