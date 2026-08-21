@@ -532,7 +532,8 @@ Dacă este eligibil, generează UN singur candidat și 3–5 cadre de Story pent
 
 Nu permite emoții, expresii faciale, gesturi, citate, intenții, cauzalitate, cronologie, obiecte, decor, rezultate sau semnificații care nu sunt explicit susținute. Direcțiile vizuale pot reprezenta numai acțiunile și contextul menționate în notă; nu adăuga zâmbete, tristețe, brațe încrucișate, planșe, fișe sau recuzită. Nu transforma o experiență singulară într-o soluție replicabilă ori principiu despre copii.
 
-source_excerpts rămân citate exacte și pot conține identitatea internă. În toate celelalte câmpuri publice anonimizează numele copilului ca „un copil”/„o fetiță”/„un băiat”, numai dacă genul este susținut; altfel „un copil”. Păstrează 3–5 cadre, o idee scurtă per cadru. Elimină clișeele și limbajul de soluție/autoritate.`,
+source_excerpts rămân citate exacte și pot conține identitatea internă. În toate celelalte câmpuri publice anonimizează numele copilului ca „un copil”/„o fetiță”/„un băiat”, numai dacă genul este susținut; altfel „un copil”. Păstrează 3–5 cadre, o idee scurtă per cadru. Elimină clișeele și limbajul de soluție/autoritate.
+Păstrează vocea firească la persoana I a lui Radu: „Un copil mi-a spus...”, „Am început...”, nu formulări clinice precum „copilul exprimă” sau „adultul propune”. angle este un hook scurt extras din scena concretă, nu o explicație de tip „Cum X a transformat Y”. Fiecare frame trebuie să poată fi citit direct pe social media, cald și simplu, dar fără niciun fapt nou.`,
       input: JSON.stringify({ original_note: noteText, proposed_candidate: assessment.candidate }),
       text: { format: { type: 'json_schema', name: 'becky_story_candidate_fidelity_audit', strict: true, schema: auditSchema } }
     })
@@ -542,6 +543,11 @@ source_excerpts rămân citate exacte și pot conține identitatea internă. În
   if (!auditResponse.ok || !auditText) throw Object.assign(new Error('Verificarea de fidelitate a poveștii nu a reușit.'), { status: 502 });
   const audited = JSON.parse(auditText);
   const auditedExcerptsAreExact = audited.candidate?.source_excerpts?.every(excerpt => excerpt && noteText.includes(excerpt));
+  if (audited.candidate?.story_frames?.length) {
+    const groundedFrameLimit = Math.max(3, Math.min(5, audited.candidate.source_excerpts.length));
+    audited.candidate.story_frames = audited.candidate.story_frames.slice(0, groundedFrameLimit);
+    audited.candidate.angle = audited.candidate.story_frames[0].text;
+  }
   const bannedPhrases = ['momente magice', 'fiecare copil este unic', 'la becky credem că', 'ne reamintește cât de important', 'în lumea celor mici', 'zâmbete și voie bună', 'o experiență de neuitat', 'mai mult decât', 'nu este doar', 'uneori cele mai mici momente', 'lecții prețioase', 'conexiuni autentice'];
   const candidateCopy = JSON.stringify(audited.candidate || {}).toLocaleLowerCase('ro-RO');
   const containsCliche = bannedPhrases.some(phrase => candidateCopy.includes(phrase));
