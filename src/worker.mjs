@@ -819,14 +819,21 @@ async function handleCarouselPlan(request, env) {
   const body = await readJson(request, 40_000);
   const context = typeof body?.context === 'string' ? body.context.trim() : '';
   if (!context || context.length > 12_000) return json({ error: 'Contextul postării este invalid' }, 400);
+  const storyMode = body?.mode === 'story-of-day';
   const headingPart = { type: 'object', additionalProperties: false, properties: { text: { type: 'string' }, color: { type: 'string', enum: ['teal', 'coral'] }, breakBefore: { type: 'boolean' } }, required: ['text', 'color', 'breakBefore'] };
   const slide = { type: 'object', additionalProperties: false, properties: { heading: { type: 'string' }, body: { type: 'string' }, headingParts: { type: 'array', minItems: 2, maxItems: 2, items: headingPart }, artworkInstruction: { type: 'string' } }, required: ['heading', 'body', 'headingParts', 'artworkInstruction'] };
-  const schema = { type: 'object', additionalProperties: false, properties: { slides: { type: 'array', minItems: 5, maxItems: 5, items: slide }, caption: { type: 'string', minLength: 40, maxLength: 400 } }, required: ['slides', 'caption'] };
+  const schema = { type: 'object', additionalProperties: false, properties: { slides: { type: 'array', minItems: storyMode ? 4 : 5, maxItems: storyMode ? 10 : 5, items: slide }, caption: { type: 'string', minLength: 40, maxLength: 500 } }, required: ['slides', 'caption'] };
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST', headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini',
-      instructions: `Creează direct draftul final de text pentru un carousel social media Becky’s Garden în limba română. Obiectiv unic: awareness prin informație de calitate, prezentată matur, profesionist și atractiv.
+      instructions: storyMode ? `Creează draftul final al unui carousel narativ Becky’s Garden, în limba română, pornind strict din povestea selectată. Acesta este storytelling despre conexiune și despre un moment mic, adevărat și frumos care merită împărtășit. NU este un carousel pedagogic de tip problemă + sfaturi, nu oferă modalități sau pași pentru părinți și nu schimbă tema.
+
+Vocea este la persoana I a lui Radu, facilitatorul Becky care stă cu copiii. Alege flexibil între 4 și 10 slide-uri, strict cât are nevoie povestea. Fiecare slide conține o singură idee și mută povestea înainte. Arcul narativ este obligatoriu: începutul și relația dintre personaje → schimbarea sau tensiunea → punctul culminant/alegerea lui Radu → deznodământul observabil → concluzia sinceră cu care a rămas.
+
+Primul heading este hook-ul viu al scenei, de exemplu „Mara mă voia doar pentru ea.”; disclaimerul „Poveste reală · numele au fost schimbate pentru protejarea identității copiilor.” apare discret la începutul body-ului, niciodată ca heading. REGULĂ DE CONFIDENȚIALITATE: nu reproduce niciun nume de copil găsit în nota-sursă. Înlocuiește fiecare nume cu un pseudonim românesc natural și păstrează aceeași mapare pe toate slide-urile; de exemplu, Erdu poate deveni Mara. Nu inventa replici, reacții, rezultate, gânduri ale copiilor sau detalii care nu există în context. Poți formula doar reflecția lui Radu ca reflecție, nu ca adevăr despre copil. Ultimul slide nu este CTA comercial și nu cere comentarii; încheie cu ideea umană a poveștii. Nu folosi titluri generice, jargon pedagogic, liste, recomandări ori formule precum „3 moduri”.
+
+Headerele au 3–10 cuvinte, body-urile maximum 55 de cuvinte, cu paragrafe scurte și accent pe una-două propoziții importante. Pentru fiecare slide, headingParts conține exact două fragmente care recompun heading-ul: primul teal cu breakBefore true, al doilea coral cu breakBefore false. artworkInstruction descrie o singură scenă relevantă pentru acel moment; când apare adultul, este Radu, bazat pe ilustrația de profil RADU.png, cu aceeași identitate vizuală în toate slide-urile. Captionul este o introducere caldă și fidelă în poveste, nu un rezumat, nu o lecție și nu adaugă metafore sau fapte care nu există în sursă.` : `Creează direct draftul final de text pentru un carousel social media Becky’s Garden în limba română. Obiectiv unic: awareness prin informație de calitate, prezentată matur, profesionist și atractiv.
 
 REGULA EDITORIALĂ PRINCIPALĂ: nu aduna idei pedagogice corecte doar fiindcă au legătură cu aceeași temă. Construiește o singură intervenție coerentă, ancorată într-un moment precis din viața părintelui. Înainte de redactare, stabilește intern: (1) comportamentul observabil al copilului, (2) clipa exactă în care părintele are nevoie de ajutor, (3) rezultatul imediat promis și (4) ordinea logică a răspunsurilor. Toate slide-urile de conținut trebuie să păstreze același actor, aceeași situație, aceeași scară de timp și același rezultat.
 
@@ -853,7 +860,27 @@ Pentru ORICE slide, inclusiv cover și CTA, headingParts conține exact două fr
     console.error('OpenAI carousel plan failed', response.status, result.error?.code || result.error?.message || 'unknown');
     return json({ error: response.status === 429 ? 'Limita OpenAI a fost atinsă.' : 'Draftul carouselului nu a putut fi construit.' }, response.status === 429 ? 429 : 502);
   }
-  return json({ plan: JSON.parse(outputText), model: result.model });
+  const parsedPlan = JSON.parse(outputText);
+  const safePlan = storyMode
+    ? JSON.parse(JSON.stringify(parsedPlan).replace(/\bErdu\b/gi, 'Mara'))
+    : parsedPlan;
+  return json({ plan: safePlan, model: result.model });
+}
+
+async function handleStoryCandidates(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, { Allow: 'POST' });
+  await requireAdmin(request, env);
+  const body = await readJson(request, 40_000);
+  const noteText = typeof body?.note_text === 'string' ? body.note_text.trim() : '';
+  if (!noteText || noteText.length > 12_000) return json({ error: 'Nota este invalidă' }, 400);
+  if (!env.OPENAI_API_KEY) throw Object.assign(new Error('OPENAI_API_KEY lipsește din configurația Worker-ului'), { status: 503 });
+  const story = { type: 'object', additionalProperties: false, properties: { title: { type: 'string' }, summary: { type: 'string' }, emotional_core: { type: 'string' }, why_it_matters: { type: 'string' }, context: { type: 'string' } }, required: ['title', 'summary', 'emotional_core', 'why_it_matters', 'context'] };
+  const schema = { type: 'object', additionalProperties: false, properties: { stories: { type: 'array', minItems: 0, maxItems: 3, items: story } }, required: ['stories'] };
+  const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini', instructions: 'Extrage între 0 și 3 povești Becky care pot deveni un carousel cald și publicabil pe Facebook. Alege un singur moment cu inimă: o scenă concretă, o realizare sinceră, o emoție sau ceva cu care adultul a rămas. Persoana I din notă este Radu, facilitatorul Becky care stă cu copiii; păstrează vocea lui când contextul o cere. Spune ce s-a întâmplat, cum s-a simțit și de ce contează pentru un părinte. Nu transforma planurile, lipsurile sau intențiile în fapte. Nu inventa copii, părinți, reacții, rezultate sau roluri și nu folosi formule generice precum „O scenă care merită păstrată”, „părinții vor aprecia” ori „educatoarea”, dacă nota nu le susține. Dacă nota nu conține un moment suficient de bogat pentru public, întoarce array gol. Anonimizează Erdu ca „Domnișoara E.”, dar păstrează persoana I a lui Radu. Titlul trebuie să fie scurt, viu și uman; summary trebuie să fie teaser publicabil, nu listă; contextul trebuie să rămână strict fidel notei.', input: noteText, text: { format: { type: 'json_schema', name: 'becky_story_candidates', strict: true, schema } } }) });
+  const result = await response.json().catch(() => ({}));
+  const outputText = result.output?.flatMap(item => item.content || []).find(item => item.type === 'output_text')?.text;
+  if (!response.ok || !outputText) return json({ error: 'Poveștile nu au putut fi extrase.' }, 502);
+  return json({ stories: JSON.parse(outputText).stories || [], model: result.model });
 }
 
 async function handleCarouselEdit(request, env) {
@@ -1080,6 +1107,7 @@ async function handleApi(request, env, pathname) {
   if (pathname === '/api/playground-survey/raffle') return handlePlaygroundRaffle(request, env);
   if (pathname === '/api/playground-survey') return handlePlaygroundSurvey(request, env);
   if (pathname === '/api/content/carousel/image') return handleCarouselImage(request, env);
+  if (pathname === '/api/content/story-candidates') return handleStoryCandidates(request, env);
   if (pathname === '/api/content/carousel/plan') return handleCarouselPlan(request, env);
   if (pathname === '/api/content/carousel/edit') return handleCarouselEdit(request, env);
   if (pathname === '/api/manual/download') {

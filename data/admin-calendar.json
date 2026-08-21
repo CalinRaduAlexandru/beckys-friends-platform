@@ -19,28 +19,39 @@
     "end_time": "21:00",
     "note": "",
     "created_at": "2026-08-17T05:23:31.948Z",
-    "updated_at": "2026-08-19T16:16:31.454Z"
+    "updated_at": "2026-08-21T12:49:40.777Z"
   },
   {
-    "id": "14047f79-33aa-4000-b046-49191ef45f5b",
-    "title": "Închis",
-    "type": "closed",
-    "date": "2026-08-25",
-    "start_time": "15:00",
-    "end_time": "21:00",
-    "note": "",
-    "created_at": "2026-08-19T16:16:17.257Z",
-    "updated_at": "2026-08-19T16:16:31.454Z"
-  },
-  {
-    "id": "fc741172-3c1f-4148-9677-3bd025d1361a",
+    "id": "3c91f0d0-8485-45ce-a3be-c210f615285f",
     "title": "Eveniment privat",
     "type": "private",
     "date": "2026-08-26",
     "start_time": "18:00",
-    "end_time": "21:00",
+    "end_time": "20:00",
     "note": "",
-    "created_at": "2026-08-19T16:16:31.454Z",
-    "updated_at": "2026-08-19T16:16:31.454Z"
+    "created_at": "2026-08-20T18:07:10.538Z",
+    "updated_at": "2026-08-21T12:49:40.777Z"
+  },
+  {
+    "id": "98394ed4-f8f3-4ca8-ba7e-0bb10af5462f",
+    "title": "Eveniment privat",
+    "type": "private",
+    "date": "2026-08-28",
+    "start_time": "17:00",
+    "end_time": "19:00",
+    "note": "",
+    "created_at": "2026-08-21T12:49:40.777Z",
+    "updated_at": "2026-08-21T12:49:40.777Z"
+  },
+  {
+    "id": "215ed8f7-dd76-44a2-a5d0-9be90a829c27",
+    "title": "Eveniment privat",
+    "type": "private",
+    "date": "2026-08-30",
+    "start_time": "13:00",
+    "end_time": "18:00",
+    "note": "",
+    "created_at": "2026-08-21T08:40:03.119Z",
+    "updated_at": "2026-08-21T12:49:40.777Z"
   }
 ]

@@ -2,6 +2,9 @@
   const STORAGE_KEY = 'becky-content-director-prototype-v1';
   const defaults = {
     contentView: 'home',
+    storyDate: '',
+    storyCandidates: [],
+    storyLoading: false,
     contentItemId: '',
     selectedContentItemKey: '',
     contentDetailTab: 'manual',
@@ -830,6 +833,7 @@ Ce vă place să descoperiți împreună?`;
 
   const contentViews = [
     ['home', 'Acasă'],
+    ['story', 'Povestea de azi'],
     ['create', 'Creează'],
     ['ideas', 'Idei'],
     ['campaigns', 'Campanii'],
@@ -1136,6 +1140,30 @@ Ce vă place să descoperiți împreună?`;
     return contentLabIdeasRequest;
   }
 
+  const publicStoryText = value => String(value || '').replace(/\bErdu\b/gi, 'Domnișoara E.').trim();
+  function storyView() {
+    const date = state.storyDate || 'nota aleasă';
+    if (state.storyLoading) return `<main class="cc-os-page"><header class="cc-page-intro"><div><small>Povestea de azi</small><h2>Caut poveștile care merită spuse.</h2><p>Separ ce are miză pentru părinți de simpla cronologie a zilei.</p></div></header><div class="cc-empty-state"><strong>Procesez nota din ${safe(date)}…</strong></div></main>`;
+    const candidates = state.storyCandidates || [];
+    return `<main class="cc-os-page"><button type="button" class="cc-detail-back" data-cc-story-back>← Content Director</button><header class="cc-page-intro"><div><small>POVESTEA DE AZI · ${safe(date)}</small><h2>Ce merită să ajungă la oameni?</h2><p>Alege o singură poveste cu miez. Restul rămâne în memoria internă, fără să forțăm un carousel din orice notă.</p></div></header>${candidates.length ? `<div class="cc-suggestion-grid">${candidates.map((item,index)=>`<article><small>POVESTE ${index+1}</small><h3>${safe(item.title)}</h3><p>${safe(item.summary)}</p>${item.emotional_core ? `<p class="cc-story-emotion">${safe(item.emotional_core)}</p>` : ''}<button type="button" class="cc-primary" data-cc-story-choice="${index}">Folosește povestea →</button></article>`).join('')}</div>` : '<div class="cc-empty-state"><strong>Nu am găsit încă o poveste publicabilă.</strong><p>Nota rămâne disponibilă și poate fi reformulată sau procesată din nou.</p></div>'}</main>`;
+  }
+  async function loadStoryCandidates(date) {
+    state.storyLoading = true; render(true);
+    try {
+      const reportResponse = await api('/api/admin/monthly-report');
+      const reportPayload = await reportResponse.json();
+      const note = publicStoryText(reportPayload.report?.notes?.[date] || '');
+      const storyResponse = await api('/api/content/story-candidates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note_text: note }) });
+      const stories = storyResponse.ok ? (await storyResponse.json()).stories || [] : [];
+      const candidates = stories.map(item => ({ title: publicStoryText(item.title), summary: publicStoryText(item.summary), emotional_core: publicStoryText(item.emotional_core), why_it_matters: publicStoryText(item.why_it_matters), context: publicStoryText(item.context || `${item.title}\n\n${item.summary}\n\n${item.why_it_matters}`), source_note: note })).filter(item => item.title && item.summary).slice(0, 3);
+      // Semnalele factuale sunt memorie internă, nu povești publicabile. Nu le afișăm
+      // ca propuneri de carousel dacă generatorul dedicat nu a produs o poveste.
+      // O notă fără un fir editorial real rămâne în memorie; nu o prezentăm
+      // ca poveste doar ca să umplem interfața.
+      state.storyCandidates = candidates; state.storyLoading = false; save(false); render(true);
+    } catch { state.storyCandidates = []; state.storyLoading = false; render(true); }
+  }
+
   function ideasView() {
     const ideaBranches = [
       ['prepared', 'Carduri pregătite pentru generare', 'Deschizi structuri aprobate, cu text, concluzie și caption deja stabilite.'],
@@ -1330,6 +1358,26 @@ Ce vă place să descoperiți împreună?`;
   }
 
   function carouselPlan() {
+    if (state.creationEntry === 'story-of-day' && Array.isArray(state.carouselSlides) && state.carouselSlides.length) {
+      return state.carouselSlides.map((storedSlide, index) => {
+        const heading = cleanCarouselText(storedSlide.heading || storedSlide.title || `Momentul ${index + 1}`);
+        return {
+          title: storedSlide.title || (index === 0 ? 'Începutul poveștii' : index === state.carouselSlides.length - 1 ? 'Cu ce am rămas' : `Momentul ${index + 1}`),
+          heading,
+          headingLines: null,
+          headingCustomized: true,
+          headingParts: semanticHeadingParts(heading, storedSlide.headingParts),
+          body: cleanCarouselText(storedSlide.body || ''),
+          copy: heading,
+          role: index === 0 ? 'cover' : 'content',
+          solutionNumber: 0,
+          change: cleanCarouselText(storedSlide.change || ''),
+          assistantInstruction: storedSlide.assistantInstruction || '',
+          ctaVariant: 0,
+          layout: storedSlide.layout || {}
+        };
+      });
+    }
     const angle = angleFor(state.angle);
     const objective = objectives[state.objective];
     const variant = carouselVariants[state.carouselVariant] || carouselVariants['story-cards'];
@@ -1420,6 +1468,12 @@ Ce vă place să descoperiți împreună?`;
 
   function artworkPrompt(slide) {
     const variant = carouselVariants[state.carouselVariant] || carouselVariants['story-cards'];
+    const storyCharacter = state.creationEntry === 'story-of-day'
+      ? ' This is Radu’s first-person story: Radu is the adult facilitator who spends the day with the children at Becky, not a child and not an educator in a generic institution. When the story needs a recurring person, use a warm illustrated adult character based on the profile reference asset /assets/content_assets/RADU.png; create a different meaningful pose or situation on each slide while preserving the same identity, hairstyle, clothing palette and watercolor treatment. If a child named Erdu appears, anonymize her as “Domnișoara E.”. Do not show a real photograph, readable text or an identifiable child.'
+      : '';
+    if (state.creationEntry === 'story-of-day') {
+      return `Create one emotionally clear watercolor story moment for a square Becky’s Garden carousel. This slide belongs to one continuous true story told in the first person by Radu, the adult facilitator at Becky. Use the illustrated profile asset /assets/content_assets/RADU.png as the identity reference for Radu and preserve his recognizable face, hairstyle, proportions and clothing palette across the entire carousel, while changing his pose and expression to match this exact moment. Slide text: “${slide.heading}” — “${slide.body}”. Visual direction: ${slide.change || 'show only the single interaction or emotional beat described by this slide'}. Children must remain anonymous, softly illustrated and non-identifiable; never render their names. One intimate scene only, with at most Radu and two children, no collage and no unrelated symbols. Premium warm watercolor, gentle Becky palette, expressive body language, generous clean white margins and a perfectly uniform white background for automatic placement. No written text, letters, logos, clouds, frame, pagination, watermark, photorealism or extra decorative objects.`;
+    }
     if (slide.role === 'cover') {
       return `Create a highly expressive, premium watercolor character illustration for the COVER of a square Becky’s Garden carousel. Feature Becky, a charming cheerful yellow duckling mascot with big expressive eyes, a small orange beak and a delicate flower crown. Theme and rhetorical hook: “${slide.heading}”. She is overflowing with ideas, imagination, curiosity and happy excitement. Render the COMPLETE character artwork, including the entire lower torso/body that belongs to the pose. CRITICAL: no part of Becky may touch or be cropped by any edge of the generated image; leave at least 12 percent clean white margin around the complete artwork on every side. Do not create a flat horizontal cut through the body, feathers, wings or flower crown. The app will position the complete artwork and crop it only at the bottom edge of the final carousel card. ONE ISOLATED CHARACTER ONLY. Do not add any floating decorative marks around her: no stars, sparkles, hearts, exclamation marks, question marks, light bulbs, strokes, confetti, flowers detached from the crown or background accents. Keep all white space perfectly empty outside the character. Pure uniform white background. No text, letters, logo, clouds, pagination, frame, square panel, room, scene, collage, photorealism, other characters or watermark. Match the Becky palette: coral #F96B76, teal #238B9A, soft yellow, pale purple and pale blue. ${slide.change ? `Requested adjustment: ${slide.change}.` : ''} Variant: ${variant.label}.`;
     }
@@ -1440,7 +1494,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       : state.carouselVariant === 'playful-guide'
         ? 'playful hand-drawn line icon with one small watercolor accent'
         : 'simple expressive watercolor line icon';
-    return `Create one VERY SIMPLE isolated visual symbol for a square Becky’s Garden carousel. Style reference: airy premium children’s poster, ${style}, lots of white space. Use only one visual idea for: “${slide.heading}” — “${slide.body}”. ${slide.change ? `Requested adjustment: ${slide.change}.` : ''} Palette accents only: coral #F96B76, teal #238B9A, soft yellow, pale purple and pale blue. The result must be minimal and immediately readable: one icon, one object, or at most three tiny symbolic marks. No scene, no collage, no montage, no hands doing multiple activities, no room, no detailed background, no visual storytelling with many objects. Place the isolated symbol in the center on a perfectly uniform pure white background with very generous empty margins, prepared for automatic background removal. No paper texture, backdrop, vignette, square panel, cast shadow, floor, or border. Do not render text, letters, numbers, logos, pagination, clouds, UI, ducks, mascots, people, or watermarks. Keep the same thin hand-drawn/watercolor treatment across the five-slide set. Variant: ${variant.label}.`;
+    return `Create one VERY SIMPLE isolated visual symbol for a square Becky’s Garden carousel. Style reference: airy premium children’s poster, ${style}, lots of white space. Use only one visual idea for: “${slide.heading}” — “${slide.body}”.${storyCharacter} ${slide.change ? `Requested adjustment: ${slide.change}.` : ''} Palette accents only: coral #F96B76, teal #238B9A, soft yellow, pale purple and pale blue. The result must be minimal and immediately readable: one icon, one object, or at most three tiny symbolic marks. No scene, no collage, no montage, no hands doing multiple activities, no room, no detailed background, no visual storytelling with many objects. Place the isolated symbol in the center on a perfectly uniform pure white background with very generous empty margins, prepared for automatic background removal. No paper texture, backdrop, vignette, square panel, cast shadow, floor, or border. Do not render text, letters, numbers, logos, pagination, clouds, UI, ducks, mascots, people, or watermarks. Keep the same thin hand-drawn/watercolor treatment across the five-slide set. Variant: ${variant.label}.`;
   }
 
   function characterForSlide() { return null; }
@@ -1599,12 +1653,22 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
   function carouselGenerationStep() {
     const plan = carouselPlan();
     const variant = carouselVariants[state.carouselVariant] || carouselVariants['story-cards'];
+    const storyMode = state.creationEntry === 'story-of-day';
+    const generatedDescription = storyMode
+      ? 'Glisează spre dreapta pentru întreaga poveste. Fiecare slide păstrează același fir, aceleași personaje și același moment real.'
+      : `Glisează spre dreapta pentru toate cele ${plan.length} slide-uri. Coperta, soluțiile și CTA-ul Becky folosesc reguli potrivite rolului lor.`;
+    const draftDescription = storyMode
+      ? 'Firul urmărește o singură poveste: început, schimbare, punct culminant, deznodământ și concluzia lui Radu.'
+      : 'Firul este clar: problema și promisiunea pe copertă, soluții concrete, apoi modul în care Becky le aplică.';
+    const planSummary = storyMode ? 'O singură poveste, în ritmul ei firesc' : `${plan.length - 2} soluții între cover și CTA`;
+    const structureSummary = storyMode ? 'Început · tensiune · alegere · deznodământ · concluzie' : `Problemă · ${plan.length - 2} soluții · Becky`;
+    const imageSummary = storyMode ? `${plan.length} ilustrații narative consecvente` : `${plan.length - 1} ilustrații AI + 1 CTA`;
     const resultIndexes = DEVELOPMENT_SINGLE_IMAGE_MODE ? [DEVELOPMENT_GENERATED_SLIDE_INDEX] : plan.map((_, index) => index);
     const generationComplete = resultIndexes.every(index => Boolean(generatedSlides[index]));
     if (generationComplete && !carouselBusy) {
-      return `<section class="cc-carousel-result"><header class="cc-result-head"><div><span>${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'IMAGINE TEST · DEV MODE' : `CAROUSEL GENERAT · ${safe(variant.label)}`}</span><h2>Revizuiește, modifică,<br><em>apoi postează.</em></h2><p>Glisează spre dreapta pentru toate cele ${plan.length} slide-uri. Coperta, soluțiile și CTA-ul Becky folosesc reguli potrivite rolului lor.</p></div><div class="cc-result-actions"><button class="cc-back" type="button" data-cc-remove-card ${plan.length <= MIN_CAROUSEL_SLIDES || carouselBusy || versionBusy ? 'disabled' : ''}>− Scoate o soluție</button><button class="cc-secondary-action" type="button" data-cc-add-card ${plan.length >= MAX_CAROUSEL_SLIDES || carouselBusy || versionBusy ? 'disabled' : ''}>＋ Adaugă o soluție</button><button class="cc-back" type="button" data-cc-generate-all ${carouselBusy || versionBusy ? 'disabled' : ''}>↻ ${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'Regenerează imaginea' : 'Regenerează tot'}</button></div></header>${carouselError ? `<p class="cc-generation-error">${safe(carouselError)}</p>` : ''}${carouselVersionBar()}<div class="cc-carousel-strip-toolbar"><div class="cc-carousel-strip-label"><strong>1–2 din ${plan.length}</strong><span>Mai există încă ${Math.max(0, plan.length - 2)} slide-uri →</span></div><div class="cc-carousel-strip-actions"><span>SLIDE TO THE RIGHT</span><button type="button" class="cc-carousel-nav" data-cc-carousel-scroll="-1" aria-label="Slide-uri anterioare">← <b>Anterior</b></button><button type="button" class="cc-carousel-nav is-next" data-cc-carousel-scroll="1" aria-label="Vezi următoarele slide-uri"><b>Următorul</b> →</button></div></div><div class="cc-carousel-viewport"><div class="cc-generated-grid ${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'is-single' : ''}">${resultIndexes.map(index => slidePreview(generatedSlides[index], index, plan)).join('')}</div><div class="cc-carousel-edge-hint" aria-hidden="true">→</div></div>${readyToPostPanel(plan)}</section>`;
+      return `<section class="cc-carousel-result"><header class="cc-result-head"><div><span>${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'IMAGINE TEST · DEV MODE' : `CAROUSEL GENERAT · ${safe(variant.label)}`}</span><h2>Revizuiește, modifică,<br><em>apoi postează.</em></h2><p>${generatedDescription}</p></div><div class="cc-result-actions"><button class="cc-back" type="button" data-cc-remove-card ${plan.length <= MIN_CAROUSEL_SLIDES || carouselBusy || versionBusy ? 'disabled' : ''}>− Scoate un slide</button><button class="cc-secondary-action" type="button" data-cc-add-card ${plan.length >= MAX_CAROUSEL_SLIDES || carouselBusy || versionBusy ? 'disabled' : ''}>＋ Adaugă un slide</button><button class="cc-back" type="button" data-cc-generate-all ${carouselBusy || versionBusy ? 'disabled' : ''}>↻ ${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'Regenerează imaginea' : 'Regenerează tot'}</button></div></header>${carouselError ? `<p class="cc-generation-error">${safe(carouselError)}</p>` : ''}${carouselVersionBar()}<div class="cc-carousel-strip-toolbar"><div class="cc-carousel-strip-label"><strong>1–2 din ${plan.length}</strong><span>Mai există încă ${Math.max(0, plan.length - 2)} slide-uri →</span></div><div class="cc-carousel-strip-actions"><span>SLIDE TO THE RIGHT</span><button type="button" class="cc-carousel-nav" data-cc-carousel-scroll="-1" aria-label="Slide-uri anterioare">← <b>Anterior</b></button><button type="button" class="cc-carousel-nav is-next" data-cc-carousel-scroll="1" aria-label="Vezi următoarele slide-uri"><b>Următorul</b> →</button></div></div><div class="cc-carousel-viewport"><div class="cc-generated-grid ${DEVELOPMENT_SINGLE_IMAGE_MODE ? 'is-single' : ''}">${resultIndexes.map(index => slidePreview(generatedSlides[index], index, plan)).join('')}</div><div class="cc-carousel-edge-hint" aria-hidden="true">→</div></div>${readyToPostPanel(plan)}</section>`;
     }
-    return `<section class="cc-carousel-ready"><article class="cc-carousel-plan"><header><span>DRAFT EDITABIL · ${plan.length} SLIDE-URI</span><h2>Verifică textele înainte<br><em>să generezi imaginile.</em></h2><p>Firul este clar: problema și promisiunea pe copertă, soluții concrete, apoi modul în care Becky le aplică.</p></header><div class="cc-plan-toolbar"><div><strong>${plan.length} slide-uri</strong><span>${plan.length - 2} soluții între cover și CTA</span></div><div><button type="button" class="cc-back" data-cc-remove-card ${plan.length <= MIN_CAROUSEL_SLIDES ? 'disabled' : ''}>− Elimină ultimul card</button><button type="button" class="cc-secondary-action" data-cc-add-card ${plan.length >= MAX_CAROUSEL_SLIDES ? 'disabled' : ''}>＋ Adaugă o soluție</button></div></div><div class="cc-plan-grid">${plan.map((slide, index) => `<article><div class="cc-plan-card-head"><b>${String(index + 1).padStart(2, '0')}</b>${slide.role === 'content' ? `<div class="cc-plan-move" aria-label="Schimbă ordinea soluției"><button type="button" data-cc-move-card="${index}" data-cc-move-direction="-1" aria-label="Mută soluția la stânga" title="Mută la stânga" ${index === 1 ? 'disabled' : ''}>←</button><button type="button" data-cc-move-card="${index}" data-cc-move-direction="1" aria-label="Mută soluția la dreapta" title="Mută la dreapta" ${index === plan.length - 2 ? 'disabled' : ''}>→</button></div>` : '<span class="cc-plan-locked">FIX</span>'}</div><small>${safe(slide.title)}</small><label>HEADER<textarea data-cc-plan-heading="${index}">${safe(slide.heading)}</textarea></label><label>DESCRIERE<textarea data-cc-plan-body="${index}">${safe(slide.body || '')}</textarea></label></article>`).join('')}</div></article><aside class="cc-generate-panel ${carouselBusy ? 'is-generating' : ''}"><div class="cc-card-kicker">${carouselBusy ? 'GENERATION IN PROGRESS' : 'GATA DE GENERARE'}</div><h3>${carouselBusy ? 'Carouselul tău se construiește acum.' : 'Totul este setat.'}</h3>${carouselBusy ? generationStatus(plan) : `<dl><div><dt>Structură</dt><dd>Problemă · ${plan.length - 2} soluții · Becky</dd></div><div><dt>Format</dt><dd>Story Cards · ${plan.length} slide-uri</dd></div><div><dt>Imagini</dt><dd>${plan.length - 1} ilustrații AI + 1 CTA</dd></div><div><dt>Calitate</dt><dd>Finală</dd></div></dl><button class="cc-primary cc-generate-button" type="button" data-cc-generate-all>✦ Confirmă textele și generează</button><button class="cc-back cc-change-direction" type="button" data-cc-context-back>← Schimbă subiectul</button>`}${carouselError ? `<p class="cc-generation-error">${safe(carouselError)}</p>` : ''}</aside></section>`;
+    return `<section class="cc-carousel-ready"><article class="cc-carousel-plan"><header><span>DRAFT EDITABIL · ${plan.length} SLIDE-URI</span><h2>Verifică textele înainte<br><em>să generezi imaginile.</em></h2><p>${draftDescription}</p></header><div class="cc-plan-toolbar"><div><strong>${plan.length} slide-uri</strong><span>${planSummary}</span></div><div><button type="button" class="cc-back" data-cc-remove-card ${plan.length <= MIN_CAROUSEL_SLIDES ? 'disabled' : ''}>− Elimină ultimul slide</button><button type="button" class="cc-secondary-action" data-cc-add-card ${plan.length >= MAX_CAROUSEL_SLIDES ? 'disabled' : ''}>＋ Adaugă un slide</button></div></div><div class="cc-plan-grid">${plan.map((slide, index) => `<article><div class="cc-plan-card-head"><b>${String(index + 1).padStart(2, '0')}</b>${slide.role === 'content' ? `<div class="cc-plan-move" aria-label="Schimbă ordinea soluției"><button type="button" data-cc-move-card="${index}" data-cc-move-direction="-1" aria-label="Mută soluția la stânga" title="Mută la stânga" ${index === 1 ? 'disabled' : ''}>←</button><button type="button" data-cc-move-card="${index}" data-cc-move-direction="1" aria-label="Mută soluția la dreapta" title="Mută la dreapta" ${index === plan.length - 2 ? 'disabled' : ''}>→</button></div>` : '<span class="cc-plan-locked">FIX</span>'}</div><small>${safe(slide.title)}</small><label>HEADER<textarea data-cc-plan-heading="${index}">${safe(slide.heading)}</textarea></label><label>DESCRIERE<textarea data-cc-plan-body="${index}">${safe(slide.body || '')}</textarea></label></article>`).join('')}</div></article><aside class="cc-generate-panel ${carouselBusy ? 'is-generating' : ''}"><div class="cc-card-kicker">${carouselBusy ? 'GENERATION IN PROGRESS' : 'GATA DE GENERARE'}</div><h3>${carouselBusy ? 'Carouselul tău se construiește acum.' : 'Totul este setat.'}</h3>${carouselBusy ? generationStatus(plan) : `<dl><div><dt>Structură</dt><dd>${structureSummary}</dd></div><div><dt>Format</dt><dd>Story Cards · ${plan.length} slide-uri</dd></div><div><dt>Imagini</dt><dd>${imageSummary}</dd></div><div><dt>Calitate</dt><dd>Finală</dd></div></dl><button class="cc-primary cc-generate-button" type="button" data-cc-generate-all>✦ Confirmă textele și generează</button><button class="cc-back cc-change-direction" type="button" data-cc-context-back>← Schimbă subiectul</button>`}${carouselError ? `<p class="cc-generation-error">${safe(carouselError)}</p>` : ''}</aside></section>`;
   }
 
   function briefStep() {
@@ -2281,6 +2345,9 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       format: 'carousel',
       carouselVariant: defaults.carouselVariant,
       carouselQuality: defaults.carouselQuality,
+      // Un proiect nou trebuie să pornească fără planul editorial al proiectului
+      // anterior. Altfel, alegerea unei povești putea reutiliza un draft vechi.
+      selectedIdeaPlan: null,
       discardedSolutionHeadings: [],
       carouselSlides: defaults.carouselSlides.map(item => ({ ...item })),
       tasks: {},
@@ -2289,7 +2356,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     };
   }
 
-  async function beginNewContent(entry = 'own', branch = '') {
+async function beginNewContent(entry = 'own', branch = '') {
     await persistCurrentDraft().catch(() => {});
     if (generatedSlides.length >= carouselSlideCount()) {
       try {
@@ -2299,7 +2366,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
         state.contentView = 'content';
         save();
         render(true);
-        return;
+        return false;
       }
     }
     state = { ...state, ...freshCreationState(entry, branch) };
@@ -2310,6 +2377,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     save();
     render();
     requestAnimationFrame(() => document.querySelector('[data-cc-context]')?.focus());
+    return true;
   }
 
   async function beginVariationFromVersion(versionId) {
@@ -2369,17 +2437,22 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
   }
 
   function applyCarouselCopyPlan(slides, caption = '') {
-    const fittedSlides = fitCarouselCopyPlan(slides, slides?.length || DEFAULT_CAROUSEL_SLIDES);
-    const titles = carouselSlideTitles(fittedSlides.length);
+    const storyMode = state.creationEntry === 'story-of-day';
+    const fittedSlides = storyMode
+      ? (Array.isArray(slides) ? slides.slice(0, MAX_CAROUSEL_SLIDES).map(slide => ({ ...slide })) : [])
+      : fitCarouselCopyPlan(slides, slides?.length || DEFAULT_CAROUSEL_SLIDES);
+    const titles = storyMode
+      ? fittedSlides.map((_, index) => index === 0 ? 'Începutul poveștii' : index === fittedSlides.length - 1 ? 'Concluzia poveștii' : `Momentul ${index + 1}`)
+      : carouselSlideTitles(fittedSlides.length);
     state.carouselSlides = fittedSlides.map((slide, index) => ({
       title: titles[index],
       heading: cleanCarouselText(slide.heading),
       body: cleanCarouselText(slide.body),
-      coverPromiseAuto: index === 0 ? slide.coverPromiseAuto !== false : false,
-      coverHookAuto: index === 0,
-      ctaInsightAuto: index === fittedSlides.length - 1 ? slide.preserveFinal !== true : false,
-      preserveFinal: index === fittedSlides.length - 1 && slide.preserveFinal === true,
-      solutionAuto: index > 0 && index < fittedSlides.length - 1 ? slide.solutionAuto !== false : false,
+      coverPromiseAuto: storyMode ? false : index === 0 ? slide.coverPromiseAuto !== false : false,
+      coverHookAuto: storyMode ? false : index === 0,
+      ctaInsightAuto: storyMode ? false : index === fittedSlides.length - 1 ? slide.preserveFinal !== true : false,
+      preserveFinal: storyMode || (index === fittedSlides.length - 1 && slide.preserveFinal === true),
+      solutionAuto: storyMode ? false : index > 0 && index < fittedSlides.length - 1 ? slide.solutionAuto !== false : false,
       headingParts: semanticHeadingParts(cleanCarouselText(slide.heading), Array.isArray(slide.headingParts) ? slide.headingParts.map(part => ({ ...part, text: cleanCarouselText(part?.text) })) : slide.headingParts),
       change: cleanCarouselText(slide.artworkInstruction),
       assistantInstruction: '',
@@ -2455,6 +2528,15 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     return copiedBriefCount < 2;
   }
 
+  function storyCarouselPlanIsUsable(slides) {
+    if (!Array.isArray(slides) || slides.length < 4 || slides.length > MAX_CAROUSEL_SLIDES) return false;
+    const headings = slides.map(slide => normalizedCopy(slide?.heading));
+    const bodies = slides.map(slide => normalizedCopy(slide?.body));
+    if (headings.some(heading => heading.split(' ').filter(Boolean).length < 2)) return false;
+    if (bodies.some(body => body.split(' ').filter(Boolean).length < 4)) return false;
+    return new Set(headings).size === headings.length && new Set(bodies).size === bodies.length;
+  }
+
   function localCarouselCopyFallback(context) {
     const clean = String(context).replace(/\s+/g, ' ').trim();
     const sentences = (clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean]).map(item => item.trim()).filter(item => item.length > 18);
@@ -2496,7 +2578,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     render(true);
     try {
       if (generatedSlides.length >= carouselSlideCount()) await saveCarouselVersion('Backup automat · înainte de un draft text nou', { automatic: true });
-      if (Array.isArray(state.selectedIdeaPlan) && (state.selectedIdeaPlan.length !== DEFAULT_CAROUSEL_SLIDES || state.selectedIdeaPlan.some(slide => slide?.preserveFinal))) {
+      if (Array.isArray(state.selectedIdeaPlan) && state.selectedIdeaPlan.length >= MIN_CAROUSEL_SLIDES && (state.selectedIdeaPlan.length !== DEFAULT_CAROUSEL_SLIDES || state.selectedIdeaPlan.some(slide => slide?.preserveFinal))) {
         applyCarouselCopyPlan(state.selectedIdeaPlan);
         generatedSlides = [];
         frozenComposedSlides = [];
@@ -2508,11 +2590,14 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       const response = await apiFetch('/api/content/carousel/plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ context, brand: state.brandSettings })
+        body: JSON.stringify({ context, brand: state.brandSettings, mode: state.creationEntry === 'story-of-day' ? 'story-of-day' : 'standard' })
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok || !Array.isArray(result.plan?.slides) || result.plan.slides.length !== DEFAULT_CAROUSEL_SLIDES) throw new Error(result.error || 'Draftul nu a putut fi construit.');
-      if (!carouselCopyPlanIsUsable(result.plan.slides, context)) throw new Error('AI-ul a întors texte repetitive sau a copiat brief-ul în slide-uri.');
+      const storyMode = state.creationEntry === 'story-of-day';
+      const expectedPlan = Array.isArray(result.plan?.slides) && (storyMode
+        ? storyCarouselPlanIsUsable(result.plan.slides)
+        : result.plan.slides.length === DEFAULT_CAROUSEL_SLIDES && carouselCopyPlanIsUsable(result.plan.slides, context));
+      if (!response.ok || !expectedPlan) throw new Error(result.error || (storyMode ? 'Povestea nu a putut fi structurată coerent.' : 'Draftul nu a putut fi construit.'));
       applyCarouselCopyPlan(result.plan.slides, result.plan.caption);
       generatedSlides = [];
       frozenComposedSlides = [];
@@ -2520,6 +2605,13 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       state.step = 4;
       save();
     } catch (error) {
+      if (state.creationEntry === 'story-of-day') {
+        copyDraftError = error.message || 'Povestea nu a putut fi construită.';
+        copyDraftNotice = 'Nu am înlocuit povestea cu un draft generic. Poți încerca din nou fără să pierzi selecția.';
+        state.step = 1;
+        save();
+        return;
+      }
       const fallbackPlan = Array.isArray(state.selectedIdeaPlan) && state.selectedIdeaPlan.length >= MIN_CAROUSEL_SLIDES
         ? state.selectedIdeaPlan
         : localCarouselCopyFallback(context);
@@ -2537,6 +2629,19 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
   }
 
   function bind(demo) {
+    demo.querySelector('[data-cc-story-back]')?.addEventListener('click', () => { state.contentView = 'home'; state.storyDate = ''; state.storyCandidates = []; save(false); render(); });
+    demo.querySelectorAll('[data-cc-story-choice]').forEach(button => button.addEventListener('click', async () => {
+      const candidate = state.storyCandidates?.[Number(button.dataset.ccStoryChoice)];
+      if (!candidate) return;
+      button.disabled = true; button.textContent = 'Construiesc draftul…';
+      const started = await beginNewContent('own');
+      if (!started) return;
+      state.context = [candidate.title, candidate.summary, candidate.emotional_core, candidate.why_it_matters, candidate.context, 'NOTA ORIGINALĂ — sursa factuală obligatorie:', candidate.source_note]
+        .filter(Boolean).join('\n\n');
+      state.creationEntry = 'story-of-day';
+      state.storySourceDate = state.storyDate;
+      await buildCarouselDraft();
+    }));
     demo.querySelector('[data-cc-abandon-idea]')?.addEventListener('click', async event => {
       if (!window.confirm('Abandonezi această idee? Draftul, imaginile și backupurile lui automate vor fi șterse. Versiunile salvate de tine rămân în bibliotecă.')) return;
       const contentItemId = state.contentItemId;
@@ -3076,6 +3181,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     const activeStep = state.step === 4 ? briefStep() : contextStep();
     const view = state.contentView || 'home';
     const activeView = view === 'home' ? homeView()
+      : view === 'story' ? storyView()
       : view === 'ideas' ? ideasView()
       : view === 'campaigns' ? campaignsView()
       : view === 'content' ? contentLibraryView()
@@ -3110,7 +3216,14 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
   }
 
   window.renderContentCreator = (options = {}) => {
-    if (options.home) {
+    const storyDate = new URLSearchParams(window.location.search).get('story_date');
+    if (storyDate && (state.storyDate !== storyDate || state.contentView !== 'story')) {
+      state.storyDate = storyDate;
+      state.storyCandidates = [];
+      state.contentView = 'story';
+      loadStoryCandidates(storyDate);
+    }
+    if (options.home && !storyDate) {
       state.contentView = 'home';
       save(false);
     }

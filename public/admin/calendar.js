@@ -340,6 +340,111 @@
     const cardFills = fullDayClosed ? ["#faf9f7", "#eff1f2"] : fills[index];
     const headerFill = fullDayClosed ? "#e6e9eb" : headerFills[index];
     const accent = fullDayClosed ? "#82909c" : accents[index];
+    const fullDayOpen =
+      day.entries.length === 1 && day.entries[0].type === "open";
+    if (options.reference) {
+      context.save();
+      if (fullDayClosed) context.globalAlpha = 0.58;
+      const centerX = x + width / 2;
+      // Rața este rezervată zilei închise. Pentru zilele deschise folosim
+      // markerul inimă/stea din antet și bifa de lângă interval.
+      const icon = hideDuckIcon;
+      if (fullDayOpen || fullDayClosed) {
+        context.fillStyle = accent;
+        context.textAlign = "center";
+        context.font = `800 28px 'Quicksand', sans-serif`;
+        context.font = `700 23px 'Quicksand', sans-serif`;
+        if (fullDayClosed) {
+          context.font = `800 28px 'Quicksand', sans-serif`;
+          context.fillText(dayNames[index], centerX, y + 34);
+          const titleWidth = context.measureText(dayNames[index]).width;
+          const markerSize = 22;
+          const markerGap = 12;
+          const markerX = centerX - titleWidth / 2 - markerGap - markerSize;
+          drawHeart(context, markerX, y + 15, markerSize, accent);
+          context.font = `700 28px 'Quicksand', sans-serif`;
+          const closedLabel = "ÎNCHIS";
+          const closedLabelWidth = context.measureText(closedLabel).width;
+          const closedMarkerSize = 51;
+          const closedGap = 6;
+          const closedGroupWidth = closedMarkerSize + closedGap + closedLabelWidth;
+          const closedGroupX = centerX - closedGroupWidth / 2;
+          drawThemedContained(context, icon, closedGroupX, y + 44, closedMarkerSize, closedMarkerSize, accent);
+          context.textAlign = "left";
+          context.letterSpacing = "1.2px";
+          context.fillText(closedLabel, closedGroupX + closedMarkerSize + closedGap, y + 80);
+          context.letterSpacing = "0px";
+        } else {
+          // Ziua deschisă: markerul rămâne lângă nume, iar bifa lângă orar.
+          context.font = `800 28px 'Quicksand', sans-serif`;
+          context.fillText(dayNames[index], centerX, y + 34);
+          const titleWidth = context.measureText(dayNames[index]).width;
+          const markerSize = 22;
+          const markerGap = 12;
+          const markerX = centerX - titleWidth / 2 - markerGap - markerSize;
+          if (index < 5) drawHeart(context, markerX, y + 15, markerSize, accent);
+          else drawStar(context, markerX + markerSize / 2, y + 25, markerSize / 2, accent);
+          const time = `${day.entries[0].start_time} - ${day.entries[0].end_time}`;
+          context.fillStyle = "#10264B";
+          context.font = `800 28px 'Quicksand', sans-serif`;
+          const timeWidth = context.measureText(time).width;
+          const checkSize = width > 300 ? 22 : 19;
+          const checkGap = 10;
+          const groupLeft = centerX - (checkSize + checkGap + timeWidth) / 2;
+          drawEntryIcon(context, "open", groupLeft, y + 59, accent);
+          context.textAlign = "left";
+          context.fillText(time, groupLeft + checkSize + checkGap + 3, y + 81);
+        }
+      } else {
+        context.fillStyle = accent; context.textAlign = "center"; context.font = `800 28px 'Quicksand', sans-serif`; context.fillText(dayNames[index], centerX, y + 34);
+        const titleWidth = context.measureText(dayNames[index]).width;
+        const markerSize = 22;
+        const markerX = centerX - titleWidth / 2 - 12 - markerSize;
+        if (index < 5) drawHeart(context, markerX, y + 15, markerSize, accent);
+        else drawStar(context, markerX + markerSize / 2, y + 25, markerSize / 2, accent);
+        let rowY = y + 80;
+        const hasPrivateEvent = day.entries.some((entry) => entry.type === "private");
+        const rowStep = (day.entries.length >= 3 ? 42 : 52) + (hasPrivateEvent ? 4 : 0);
+        day.entries.forEach(entry => {
+          context.fillStyle = "#10264B";
+          context.font = `800 28px 'Quicksand', sans-serif`;
+          const time = `${entry.start_time} - ${entry.end_time}`;
+          const privateSuffix = entry.type === "private" ? "(ÎNCHIS)" : "";
+          const timeWidth = context.measureText(time).width;
+          let suffixWidth = 0;
+          if (privateSuffix) {
+            context.font = `700 22px 'Quicksand', sans-serif`;
+            suffixWidth = context.measureText(privateSuffix).width;
+          }
+          context.font = `800 28px 'Quicksand', sans-serif`;
+          if (entry.type === "open") {
+            const checkSize = width > 300 ? 20 : 18;
+            const left = centerX - (checkSize + 9 + timeWidth) / 2;
+            drawEntryIcon(context, "open", left, rowY - 22, accent);
+            context.textAlign = "left";
+            context.fillText(time, left + checkSize + 12, rowY);
+          } else {
+            // Evenimentul privat este indicat printr-un singur lacăt lângă orar;
+            // legenda de sub grilă explică semnificația fără a repeta eticheta.
+            const lockSize = width > 300 ? 20 : 18;
+            const left = centerX - (lockSize + 9 + timeWidth + suffixWidth + 8) / 2;
+            drawEntryIcon(context, "private", left, rowY - 24, accent);
+            context.textAlign = "left";
+            const textX = left + lockSize + 12;
+            context.fillStyle = "#10264B";
+            context.font = `800 28px 'Quicksand', sans-serif`;
+            context.fillText(time, textX, rowY);
+            context.fillStyle = "#6f8093";
+            context.font = `700 22px 'Quicksand', sans-serif`;
+            context.letterSpacing = "1.2px";
+            context.fillText(privateSuffix, textX + timeWidth + 8, rowY - 2);
+            context.letterSpacing = "0px";
+          }
+          rowY += rowStep;
+        });
+      }
+      context.restore(); return;
+    }
     context.save();
     if (fullDayClosed) context.globalAlpha = 0.78;
     context.shadowColor = "#2334492e";
@@ -421,8 +526,6 @@
       context.lineTo(x + width - 1, y + headerHeight);
       context.stroke();
     }
-    const fullDayOpen =
-      day.entries.length === 1 && day.entries[0].type === "open";
     if (fullDayOpen || fullDayClosed) {
       const entry = day.entries[0];
       const bodyTop = y + headerHeight;
@@ -560,6 +663,94 @@
     context.restore();
   }
 
+  function drawSimplifiedFooter(context, footerY, invitation, contactIconAsset) {
+    const panelX = 48;
+    const panelWidth = 756;
+    const panelHeight = 102;
+    const dividerX = panelX + 420;
+
+    context.save();
+    context.shadowColor = "#2334491d";
+    context.shadowBlur = 15;
+    context.shadowOffsetY = 6;
+    context.fillStyle = "#fffdf9f2";
+    context.beginPath();
+    context.roundRect(panelX, footerY, panelWidth, panelHeight, 22);
+    context.fill();
+    context.shadowColor = "transparent";
+    context.strokeStyle = "#decfc4";
+    context.lineWidth = 1.4;
+    context.stroke();
+
+    context.strokeStyle = "#dfd2ca";
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(dividerX, footerY + 24);
+    context.lineTo(dividerX, footerY + panelHeight - 24);
+    context.stroke();
+
+    context.textAlign = "left";
+    context.fillStyle = "#10264B";
+    context.font = `900 29px 'Quicksand', sans-serif`;
+    context.letterSpacing = ".35px";
+    context.fillText("Prețuri:", panelX + 28, footerY + 46);
+    context.letterSpacing = "0px";
+    context.font = `700 21px 'Quicksand', sans-serif`;
+    context.fillText("1h – 30 lei", panelX + 28, footerY + 82);
+    context.fillStyle = "#7350b5";
+    context.fillText("•", panelX + 143, footerY + 82);
+    context.fillStyle = "#10264B";
+    context.fillText("2h – 50 lei", panelX + 164, footerY + 82);
+    context.fillStyle = "#ed6165";
+    context.fillText("•", panelX + 279, footerY + 82);
+    context.fillStyle = "#10264B";
+    context.fillText("3h – 70 lei", panelX + 300, footerY + 82);
+
+    const offerX = dividerX + 34;
+    context.fillStyle = "#ed6165";
+    context.font = `700 29px 'DynaPuff', 'Quicksand', sans-serif`;
+    context.letterSpacing = ".5px";
+    context.fillText("ALL DAY", offerX, footerY + 48);
+    context.letterSpacing = "0px";
+    const allDayWidth = context.measureText("ALL DAY").width;
+    context.fillStyle = "#10264B";
+    context.font = `800 27px 'Quicksand', sans-serif`;
+    context.fillText(" – 90 lei", offerX + allDayWidth, footerY + 48);
+    context.font = `600 21px 'Quicksand', sans-serif`;
+    context.fillText("Include: 1 cafea + 1 apă 0,5L", offerX, footerY + 83);
+
+    const contactY = footerY + panelHeight + 49;
+    const contactLabel = "Rezervări:";
+    const phone = "0752 155 115";
+    const iconSize = 39;
+    context.font = `900 26px 'Quicksand', sans-serif`;
+    const labelWidth = context.measureText(contactLabel).width;
+    context.font = `700 26px 'Quicksand', sans-serif`;
+    const phoneWidth = context.measureText(phone).width;
+    const contactWidth = iconSize + 12 + labelWidth + 12 + phoneWidth;
+    const contactX = panelX + (panelWidth - contactWidth) / 2;
+    if (contactIconAsset) {
+      drawContained(
+        context,
+        contactIconAsset,
+        contactX,
+        contactY - 29,
+        iconSize,
+        iconSize,
+      );
+    }
+    context.fillStyle = "#10264B";
+    context.font = `900 26px 'Quicksand', sans-serif`;
+    context.fillText(contactLabel, contactX + iconSize + 12, contactY);
+    context.font = `700 26px 'Quicksand', sans-serif`;
+    context.fillText(phone, contactX + iconSize + 24 + labelWidth, contactY);
+
+    if (invitation) {
+      drawContained(context, invitation, 805, footerY - 60, 275, 235);
+    }
+    context.restore();
+  }
+
   async function createCanvas(weekStart, days) {
     if (document.fonts)
       await Promise.all([
@@ -613,6 +804,9 @@
     duckBulletIcon = duckIcon;
     hideDuckIcon = hiddenDuckIcon;
     happyDuckIcon = openedDuckIcon;
+    const hasPrivateEvent = days.some((day) =>
+      day.entries.some((entry) => entry.type === "private"),
+    );
     const naturalHeights = days.map((day) => dayCardHeight(day, true));
     const rowGap = 16;
     const naturalFirstRowHeight = Math.max(
@@ -631,10 +825,13 @@
       naturalHeights[5],
       naturalHeights[6],
     );
-    const firstRowY = 145;
-    const footerCardHeight = 210;
+    const firstRowY = 204;
+    // Footerul simplificat are nevoie de mai puțină înălțime decât vechile
+    // trei carduri. Îl ancorăm mai jos, într-o zonă proprie, fără să intre
+    // peste rândul de weekend.
+    const footerCardHeight = 155;
     const footerBottom = 1040;
-    const footerGap = 22;
+    const footerGap = 46;
     const footerY = footerBottom - footerCardHeight;
     const availableGridHeight = footerY - footerGap - firstRowY;
     const naturalGridHeight =
@@ -668,19 +865,20 @@
       context.fillStyle = pageGradient;
       context.fillRect(0, 0, canvas.width, canvas.height);
     }
-    if (logo) context.drawImage(logo, 0, 55, logo.width, 125, 62, 31, 190, 70);
+    if (logo) context.drawImage(logo, 0, 55, logo.width, 125, 35, 31, 242, 89);
     context.textAlign = "center";
     context.fillStyle = "#10254a";
-    context.font = `700 39px 'DynaPuff', 'Quicksand', sans-serif`;
+    context.font = `700 62px 'DynaPuff', 'Quicksand', sans-serif`;
     context.letterSpacing = ".78px";
     context.shadowColor = "#17335320";
     context.shadowBlur = 3;
     context.shadowOffsetY = 3;
-    context.fillText("Programul săptămânii", 520, 82);
+    context.fillText("Programul", 520, 92);
+    context.fillText("săptămânii", 520, 155);
     context.shadowColor = "transparent";
     context.letterSpacing = "0px";
     const dateLabel = formatRange(localDate(weekStart));
-    context.font = `800 23px 'Quicksand', sans-serif`;
+    context.font = `800 27px 'Quicksand', sans-serif`;
     const dateWidth = Math.max(210, context.measureText(dateLabel).width + 42);
     const dateX = 806;
     context.shadowColor = "#c9444b24";
@@ -688,37 +886,40 @@
     context.shadowOffsetY = 5;
     context.fillStyle = "#fb6268";
     context.beginPath();
-    context.roundRect(dateX, 45, dateWidth, 46, 23);
+    context.roundRect(dateX, 51, dateWidth, 58, 29);
     context.fill();
     context.shadowColor = "transparent";
     context.setLineDash([7, 5]);
     context.strokeStyle = "#fff";
     context.lineWidth = 2;
     context.beginPath();
-    context.roundRect(dateX + 6, 51, dateWidth - 12, 34, 17);
+    context.roundRect(dateX + 6, 57, dateWidth - 12, 46, 23);
     context.stroke();
     context.setLineDash([]);
     context.fillStyle = "#fff";
-    context.fillText(dateLabel, dateX + dateWidth / 2, 75);
+    context.fillText(dateLabel, dateX + dateWidth / 2, 87);
+    if (hasPrivateEvent) {
+      drawEntryIcon(context, "private", dateX + 8, 124, "#10264B");
+      context.fillStyle = "#10264B";
+      context.textAlign = "left";
+      context.font = `700 17px 'Quicksand', sans-serif`;
+      context.fillText("= eveniment privat", dateX + 41, 143);
+    }
     context.textAlign = "left";
-    drawHeart(context, 42, 119, 24, "#fb7176");
-    drawStar(context, 1024, 117, 18, "#ffb116");
-    const outerX = 52;
-    const innerWidth = 976;
+    const outerX = 36;
+    const innerWidth = 1008;
+    const twoRowWidth = innerWidth * 0.7;
+    const twoStartX = outerX + (innerWidth - twoRowWidth) / 2;
     const twoGap = 28;
-    const twoWidth = (innerWidth - twoGap) / 2;
+    const twoWidth = (twoRowWidth - twoGap) / 2;
     const threeGap = 24;
     const threeWidth = (innerWidth - threeGap * 2) / 3;
-    const cardOptions = {
-      compact: true,
-      centerEntries: true,
-      headerBand: true,
-    };
+    const cardOptions = { compact: true, centerEntries: true, headerBand: false, reference: true };
     drawDayCard(
       context,
       days[0],
       0,
-      outerX,
+      twoStartX,
       firstRowY,
       twoWidth,
       firstRowHeight,
@@ -728,7 +929,7 @@
       context,
       days[1],
       1,
-      outerX + twoWidth + twoGap,
+      twoStartX + twoWidth + twoGap,
       firstRowY,
       twoWidth,
       firstRowHeight,
@@ -752,7 +953,7 @@
       context,
       days[5],
       5,
-      outerX,
+      twoStartX,
       thirdRowY,
       twoWidth,
       thirdRowHeight,
@@ -762,12 +963,42 @@
       context,
       days[6],
       6,
-      outerX + twoWidth + twoGap,
+      twoStartX + twoWidth + twoGap,
       thirdRowY,
       twoWidth,
       thirdRowHeight,
       cardOptions,
     );
+    context.save();
+    context.strokeStyle = "#d9c8bd66";
+    context.setLineDash([6, 5]);
+    context.lineWidth = 3;
+    [secondRowY - 16, thirdRowY - 16].forEach(lineY => { context.beginPath(); context.moveTo(outerX + 110, lineY); context.lineTo(outerX + innerWidth - 110, lineY); context.stroke(); });
+    // Separatoare doar între coloanele zilelor; nu desenăm contururi laterale.
+    context.setLineDash([6, 5]);
+    context.lineWidth = 3;
+    const firstDividerX = twoStartX + twoWidth + twoGap / 2;
+    context.beginPath();
+    context.moveTo(firstDividerX, firstRowY + 18);
+    context.lineTo(firstDividerX, firstRowY + firstRowHeight - 18);
+    context.moveTo(firstDividerX, thirdRowY + 18);
+    context.lineTo(firstDividerX, thirdRowY + thirdRowHeight - 18);
+    // Evenimentul privat are o etichetă suplimentară; deplasăm discret
+    // separatorul spre centrul vizual dintre cele două blocuri de conținut.
+    const secondDividerOne = outerX + threeWidth + threeGap / 2 + 8;
+    const secondDividerTwo = outerX + threeWidth * 2 + threeGap * 1.5;
+    context.moveTo(secondDividerOne, secondRowY + 18);
+    context.lineTo(secondDividerOne, secondRowY + secondRowHeight - 18);
+    context.moveTo(secondDividerTwo, secondRowY + 18);
+    context.lineTo(secondDividerTwo, secondRowY + secondRowHeight - 18);
+    context.stroke();
+    context.setLineDash([]);
+    context.restore();
+    drawSimplifiedFooter(context, footerY, invitation, contactIcon);
+    return canvas;
+
+    // Layoutul vechi al footerului rămâne momentan mai jos doar ca referință
+    // de implementare; preview-ul folosește footerul simplificat de mai sus.
     const footerCardWidth = threeWidth;
     const pricingX = outerX;
     context.save();

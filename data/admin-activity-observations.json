@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "id": "becky-inbox-0a684d47-cc92-47c4-967d-bcd682f0a12b",
+    "activity_id": "activity-6f0e43cd",
+    "tested_at": "2026-08-18",
+    "age_categories": [
+      "5–6 ani",
+      "7–8 ani"
+    ],
+    "participants": "2–3 copii",
+    "result": "A mers bine",
+    "observed": "Carla la început nu putea să se așeze pe minge, dar a reușit să se adapteze la mișcarea și viteza mingii încetul cu încetul.",
+    "interpreted": "",
+    "hypothesized": "",
+    "action": "",
+    "capacity": "",
+    "behavior_observed": null,
+    "behaviors": [],
+    "created_at": "2026-08-20T12:40:28.154Z",
+    "updated_at": "2026-08-20T12:40:28.154Z"
+  }
+]
