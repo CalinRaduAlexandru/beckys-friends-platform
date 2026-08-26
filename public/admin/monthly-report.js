@@ -120,8 +120,8 @@
     app.querySelector('[data-pedagogic-domain]').addEventListener('change', renderMatrices); renderMatrices();
   }
   function renderNotes(report) {
-    const app =
-      document.querySelector("#app") || document.querySelector("main");
+    const app = document.querySelector("#workspace-demo") || document.querySelector("#app");
+    if (!app) return;
     app.innerHTML = `<section class="monthly-report-shell"><div class="monthly-report-header"><div><small class="monthly-report-eyebrow">ADMIN · RAPORT LUNAR V1</small><h1>Note zilnice</h1><p>Un jurnal comun pentru toate rolurile. Poți folosi <strong>@rol</strong> ca să marchezi contextul unei note.</p></div><a class="monthly-report-back" href="/admin?view=monthly-report">← Înapoi la roluri</a></div><div class="monthly-report-notes-layout"><form class="monthly-report-editor monthly-report-note-form"><label>Data<input id="daily-note-date" type="date" value="${today()}"></label><label>Notă zilnică<textarea id="daily-note-text" placeholder="Ex. @design-pedagogic Am testat..."></textarea></label><div id="daily-note-analysis-state"></div><div class="monthly-report-actions"><span id="daily-note-message"></span><button type="button" id="daily-note-analyze">✨ Analizează nota</button><button class="primary" type="submit">Salvează nota</button></div></form><section class="monthly-report-editor"><div class="monthly-report-editor-head"><h2>Jurnal</h2><a class="monthly-report-tab-link" href="/admin?view=becky-inbox">Deschide Becky Inbox →</a></div><div class="monthly-report-notes-list">${
       Object.entries(report.notes || {})
         .sort((a, b) => b[0].localeCompare(a[0]))
@@ -367,10 +367,8 @@
           link.classList.contains("monthly-report-link"),
         ),
       );
-    const app =
-      document.querySelector("#app") ||
-      document.querySelector("main") ||
-      document.body;
+    const app = document.querySelector("#workspace-demo") || document.querySelector("#app");
+    if (!app) return;
     app.innerHTML = `<section class="monthly-report-shell"><div class="monthly-report-header"><div><small class="monthly-report-eyebrow">ADMIN · RAPORT LUNAR V1</small><h1>Raport Lunar</h1><p>Un spațiu simplu pentru a nota ce ai urmărit, ce ai făcut și care este următorul pas.</p></div><div class="monthly-report-deadline"><strong>${days >= 0 ? `Mai sunt ${days} zile` : `Termen depășit cu ${Math.abs(days)} zile`}</strong><span>până la trimitere · 2 septembrie</span></div></div><div class="monthly-report-progress"><strong>${complete} / ${total} secțiuni completate</strong><div><i style="width:${total ? (complete / total) * 100 : 0}%"></i></div></div><div class="monthly-report-layout"><nav class="monthly-report-roles"><small>ROLURI</small>${report.roles.map((role) => `<a class="monthly-report-role ${role.id === selected.id ? "is-selected" : ""}" href="/admin?view=monthly-report&role=${encodeURIComponent(role.id)}"><span>${esc(role.label)}</span><em class="status-${statuses.indexOf(role.status)}">${esc(role.status)}</em><b>${filled(role)}/7</b></a>`).join("")}</nav><article class="monthly-report-editor"><div class="monthly-report-editor-head"><div><small>ROL SELECTAT</small><h2>${esc(selected.label)}</h2></div><label>Status<select id="monthly-status">${statuses.map((status) => `<option ${status === selected.status ? "selected" : ""}>${esc(status)}</option>`).join("")}</select></label></div><div class="monthly-report-fields">${sections.map(([key, label, hint]) => `<label><span>${label}</span><small>${hint}</small><textarea data-section="${key}" placeholder="Scrie aici..."></textarea></label>`).join("")}</div><div class="monthly-report-actions"><span id="monthly-save-message"></span><button class="primary" id="monthly-save">Salvează rolul</button></div><section class="monthly-report-entries" aria-labelledby="monthly-entries-title"></section>${selected.id === "experienta-copilului" ? experienceRepertoireMarkup() : selected.id === "design-pedagogic" ? pedagogicCoverageMarkup() : ""}</article></div></section>`;
     app
       .querySelector(".monthly-report-header")
@@ -426,9 +424,18 @@
     if (selected.id === "design-pedagogic") loadPedagogicCoverage(app);
   }
   window.renderMonthlyReportAdmin = async function () {
-    const app =
-      document.querySelector("#app") || document.querySelector("main");
-    if (app) app.classList.add("monthly-report-app");
+    const app = document.querySelector("#workspace-demo") || document.querySelector("#app");
+    if (!app) return;
+    document.body.dataset.workspace = "monthly-report";
+    document.querySelector(".workspace")?.classList.add("hidden");
+    document.querySelector("#css-workspace")?.classList.add("hidden");
+    document.querySelector("#empty")?.classList.add("hidden");
+    document.querySelector("#editor")?.classList.add("hidden");
+    document.querySelector(".top-actions")?.classList.add("overview-actions-hidden");
+    document.querySelector(".topbar h1").textContent = "Raport Lunar";
+    document.querySelector(".topbar .subtitle").textContent = "Situația lunii, pe roluri, progres și următorii pași.";
+    app.className = "workspace-demo monthly-report-app";
+    app.classList.remove("hidden");
     const response = await api("/api/admin/monthly-report");
     if (!response.ok) {
       if (app)

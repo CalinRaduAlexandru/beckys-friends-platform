@@ -15,6 +15,18 @@
   width: min(1440px, 100%);
 }
 
+@media (min-width: 761px) and (min-height: 780px) {
+  .library-viewport {
+    height: min(840px, calc(100dvh - 124px));
+  }
+}
+
+@media (min-width: 761px) and (min-height: 1040px) {
+  .library-viewport {
+    height: min(900px, calc(100dvh - 124px));
+  }
+}
+
 .library-results-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -47,6 +59,44 @@
   cursor: pointer;
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
+
+.library-card-validation {
+  --validation-color: #c45d62;
+  position: absolute;
+  z-index: 4;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  min-width: 118px;
+  grid-template-columns: 28px 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 0 7px;
+  padding: 8px 10px;
+  border: 1px solid var(--validation-color);
+  border-radius: 14px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 7px 18px rgba(35,52,72,.1);
+  text-align: left;
+}
+
+.library-card-validation > b {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  grid-row: 1 / 3;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--validation-color);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.library-card-validation > span { color: var(--validation-color); font-size: 11px; font-weight: 900; text-transform: uppercase; }
+.library-card-validation > small { color: #74869e; font-size: 8px; font-weight: 800; letter-spacing: .01em; }
+.library-card-validation.is-validated { --validation-color: #25866f; border-color: #9dd5c5; background: rgba(240,251,247,.96); }
+.library-card-validation.is-untested { --validation-color: #c45d62; border-color: #efb9bc; background: rgba(255,245,244,.96); }
 
 .library-results-grid > button::before {
   position: absolute;
@@ -135,6 +185,8 @@
 }
 
 .library-card-choices {
+  position: relative;
+  z-index: 3;
   display: grid;
   width: 100%;
   grid-area: choices;
@@ -436,6 +488,36 @@
 .library-options-age .library-option > span img { width: 82px; height: 82px; }
 .library-options-age .library-option > div { justify-items: center; }
 .library-options-age .library-option > i { display: none; }
+.library-age-cards { margin-top: 24px; }
+.library-age-custom-divider { display: flex; max-width: 900px; align-items: center; gap: 16px; margin: 24px auto 0; color: #7a8998; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.library-age-custom-divider::before, .library-age-custom-divider::after { height: 1px; flex: 1; background: #d7e5e8; content: ''; }
+.library-age-custom-divider span { white-space: nowrap; }
+.library-age-range-ticks button { border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.library-age-range-ticks button:disabled { cursor: not-allowed; opacity: .42; }
+.library-age-range { max-width: 900px; margin: 28px auto 0; padding: 28px 30px 24px; border: 1px solid #d7e5ee; border-radius: 28px; background: #fffdfa; box-shadow: 0 16px 34px rgba(35,52,72,.08); }
+.library-age-range-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; color: #233448; }
+.library-age-range-heading small { display: block; color: #198e9f; font-size: 10px; font-weight: 900; letter-spacing: .14em; }
+.library-age-range-heading strong { display: block; margin-top: 5px; font: 700 26px/1.1 'DynaPuff', sans-serif; }
+.library-age-range-heading > span { color: #74869e; font-size: 13px; font-weight: 800; }
+.library-age-range-track { position: relative; height: 42px; margin: 28px 10px 4px; }
+.library-age-range-track::before, .library-age-range-fill { position: absolute; top: 18px; height: 7px; border-radius: 99px; content: ''; }
+.library-age-range-track::before { right: 0; left: 0; background: #dce9ed; }
+.library-age-range-fill { background: #198e9f; }
+.library-age-range-track input { position: absolute; inset: 0; width: 100%; height: 42px; margin: 0; appearance: none; background: transparent; pointer-events: none; }
+.library-age-range-track input::-webkit-slider-thumb { width: 25px; height: 25px; appearance: none; border: 4px solid #fffdfa; border-radius: 50%; background: #198e9f; box-shadow: 0 2px 8px rgba(35,52,72,.22); pointer-events: auto; cursor: grab; }
+.library-age-range-track input::-moz-range-thumb { width: 18px; height: 18px; border: 4px solid #fffdfa; border-radius: 50%; background: #198e9f; box-shadow: 0 2px 8px rgba(35,52,72,.22); pointer-events: auto; cursor: grab; }
+.library-age-range-ticks { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 5px; }
+.library-age-range-ticks button { display: grid; gap: 4px; justify-items: center; padding: 8px 4px; border-radius: 12px; }
+.library-age-range-ticks button.has-activities:hover, .library-age-range-ticks button:focus-visible { background: #edf8f7; outline: 2px solid #198e9f; outline-offset: 2px; }
+.library-age-range-ticks b { color: #233448; font-size: 13px; }
+.library-age-range-ticks small { color: #74869e; font-size: 10px; }
+.library-age-range-continue { display: flex; min-height: 50px; align-items: center; justify-content: center; gap: 10px; margin: 22px auto 0; padding: 12px 24px; appearance: none; border: 0; border-radius: 999px; background: #198e9f; box-shadow: 0 10px 22px rgba(25,142,159,.22); color: #fff; font-size: 14px; font-weight: 900; cursor: pointer; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+.library-age-range-continue:hover { background: #117f8f; box-shadow: 0 13px 27px rgba(25,142,159,.28); transform: translateY(-2px); }
+.library-age-range-continue:active { box-shadow: 0 6px 14px rgba(25,142,159,.2); transform: translateY(0); }
+.library-age-range-continue:focus-visible { outline: 3px solid rgba(25,142,159,.28); outline-offset: 4px; }
+.library-age-range-continue span { font-size: 18px; line-height: 1; }
+.library-age-range-continue:disabled { background: #a9bfc3; box-shadow: none; cursor: not-allowed; opacity: .72; transform: none; }
+@media (max-width: 700px) { .library-age-range { padding: 22px 16px; } .library-age-range-heading strong { font-size: 22px; } .library-age-range-ticks small { font-size: 9px; } }
 
 /* DynaPuff defines the heading hierarchy; all supporting copy uses Quicksand. */
 .library-intro h1,
@@ -557,6 +639,8 @@
     grid-template-columns: 1fr;
     grid-template-rows: 180px auto auto;
   }
+
+  .library-card-validation { top: 12px; right: 12px; min-width: 108px; }
 
   .library-card-choices { grid-template-columns: 1fr; }
 

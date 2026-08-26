@@ -5,3 +5,163 @@ body[data-workspace="monthly-report"] .workspace, body[data-workspace="monthly-r
  .monthly-report-notes-list article[data-note-date]{cursor:pointer;border-radius:10px;padding-left:10px;padding-right:10px}.monthly-report-notes-list article[data-note-date]:hover,.monthly-report-notes-list article[data-note-date]:focus{background:#E9F4F2;outline:none}
 .monthly-report-entries{border-top:1px solid #E1E8E7;margin-top:28px;padding-top:22px}.monthly-report-entries-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}.monthly-report-entries-head span{display:block;color:#FB7176;font-size:12px;font-weight:800;letter-spacing:.12em}.monthly-report-entries-head small{display:block;color:#6F8298;margin-top:5px}.monthly-entry-add{border:1px solid #B4DBDE;border-radius:10px;background:#E9F4F2;color:#198E9F;padding:9px 12px;font:700 13px 'Quicksand',sans-serif;cursor:pointer;white-space:nowrap}.monthly-report-entry{position:relative;border:1px solid #D5E4E3;border-radius:13px;padding:13px 14px;margin-top:10px;background:#FFFEFC}.monthly-entry-meta{display:flex;align-items:center;gap:9px;flex-wrap:wrap;color:#6F8298;font-size:12px}.monthly-entry-meta time{font-weight:800;color:#198E9F}.monthly-entry-meta b{border-radius:999px;padding:4px 8px;font-size:11px}.entry-type-done{background:#E9F4F2;color:#198E9F}.entry-type-evidence{background:#FFF0E6;color:#D9953A}.entry-type-learned{background:#F2EBFB;color:#7650B5}.monthly-entry-meta span{font-size:11px;color:#6F8298}.monthly-report-entry p{white-space:pre-wrap;margin:9px 70px 2px 0;line-height:1.45;color:#233448}.monthly-entry-actions{position:absolute;right:12px;bottom:11px;display:flex;gap:8px}.monthly-entry-actions button{border:0;background:transparent;color:#6F8298;font:700 11px 'Quicksand',sans-serif;cursor:pointer}.monthly-entry-actions button:hover{color:#198E9F}.monthly-entry-modal{position:fixed;z-index:1000;inset:0;background:rgba(35,52,72,.32);display:grid;place-items:center;padding:20px}.monthly-entry-dialog{width:min(620px,100%);max-height:calc(100vh - 40px);overflow:auto;background:#FFFCF9;border:1px solid #B4DBDE;border-radius:18px;box-shadow:0 18px 50px rgba(35,52,72,.2);padding:22px}.monthly-entry-dialog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.monthly-entry-dialog-head h3{margin:0;color:#198E9F;font-size:22px}.monthly-entry-dialog-head button{border:0;background:transparent;color:#6F8298;font-size:27px;line-height:1;cursor:pointer}.monthly-entry-dialog form{display:grid;gap:14px}.monthly-entry-dialog form>label{display:flex;flex-direction:column;gap:6px;color:#198E9F;font-size:13px;font-weight:800}.monthly-entry-dialog input,.monthly-entry-dialog select,.monthly-entry-dialog textarea{border:1px solid #D5E4E3;border-radius:10px;padding:10px 11px;background:#FFFEFC;color:#233448;font:15px/1.4 'Quicksand','Nunito',sans-serif}.monthly-entry-dialog textarea{min-height:130px;resize:vertical}.monthly-entry-dialog fieldset{border:1px solid #D5E4E3;border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.monthly-entry-dialog legend{padding:0 5px;color:#198E9F;font-size:13px;font-weight:800}.monthly-entry-role{display:flex;align-items:center;gap:7px;color:#233448;font-size:13px}.monthly-entry-role input{accent-color:#198E9F}.monthly-entry-form-message{color:#D45D63!important}
 .monthly-note-story { margin-top: 12px; border: 0; background: transparent; color: #178d9d; font: 800 13px Quicksand, sans-serif; cursor: pointer; }
+
+/* Overview snapshot: optimized for scanning before opening the full report. */
+.monthly-report-overview-card {
+  min-height: 430px;
+  background: linear-gradient(145deg, #fffdfa 0%, #fff 58%, #f2faf9 100%);
+  cursor: pointer;
+}
+
+.monthly-report-overview-card .monthly-report-overview-summary {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.monthly-report-overview-card .monthly-report-overview-progress {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 15px 17px;
+  border: 1px solid #dce9e9;
+  border-radius: 17px;
+  background: rgba(255,255,255,.82);
+}
+
+.monthly-report-overview-progress-copy {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.monthly-report-overview-progress-copy strong {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  color: #233448;
+}
+
+.monthly-report-overview-progress-copy strong b {
+  color: #198e9f;
+  font: 700 28px/1 'Mali', sans-serif;
+}
+
+.monthly-report-overview-progress-copy strong span,
+.monthly-report-overview-progress-copy em {
+  color: #6f8298;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.monthly-report-overview-progress-track {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e5efef;
+}
+
+.monthly-report-overview-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #198e9f, #58b8b0);
+}
+
+.monthly-report-overview-progress > small {
+  color: #7c8da0;
+  font-size: 10px;
+  letter-spacing: .02em;
+}
+
+.monthly-report-overview-deadline {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 15px 17px;
+  border: 1px solid #f1d9a7;
+  border-radius: 17px;
+  background: #fff8e9;
+}
+
+.monthly-report-overview-deadline small { color: #b17b25; }
+.monthly-report-overview-deadline strong { margin-top: 3px; color: #9b681b; font-size: 18px; }
+.monthly-report-overview-deadline span { margin-top: 2px; color: #88775d; font-size: 10px; font-weight: 700; }
+.monthly-report-overview-deadline.is-overdue { border-color: #f3c1bd; background: #fff0ee; }
+.monthly-report-overview-deadline.is-overdue small,
+.monthly-report-overview-deadline.is-overdue strong { color: #c45d55; }
+
+.monthly-report-overview-statuses {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.monthly-report-overview-status {
+  --status-color: #768895;
+  --status-bg: #f4f6f7;
+  padding: 13px 14px;
+  border: 1px solid color-mix(in srgb, var(--status-color) 24%, white);
+  border-radius: 17px;
+  background: var(--status-bg);
+}
+
+.monthly-report-overview-status.is-on-track { --status-color: #198e78; --status-bg: #edf8f4; }
+.monthly-report-overview-status.is-attention { --status-color: #c17b24; --status-bg: #fff7e8; }
+.monthly-report-overview-status.is-behind { --status-color: #c45d62; --status-bg: #fff0ef; }
+.monthly-report-overview-status.is-unknown { --status-color: #728393; --status-bg: #f2f5f6; }
+
+.monthly-report-overview-status-title {
+  display: grid;
+  grid-template-columns: 9px auto 1fr;
+  align-items: center;
+  gap: 7px;
+  color: var(--status-color);
+}
+
+.monthly-report-overview-status-title i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--status-color);
+}
+
+.monthly-report-overview-status-title strong { font-size: 18px; line-height: 1; }
+.monthly-report-overview-status-title span { font-size: 11px; font-weight: 900; letter-spacing: .04em; text-transform: uppercase; }
+.monthly-report-overview-status > div:last-child { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 6px; margin-top: 10px; }
+
+.monthly-report-overview-status a {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+  padding: 7px 9px;
+  border: 1px solid color-mix(in srgb, var(--status-color) 18%, white);
+  border-radius: 10px;
+  background: rgba(255,255,255,.72);
+  color: #34475a;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-decoration: none;
+}
+
+.monthly-report-overview-status a:hover { border-color: var(--status-color); color: var(--status-color); }
+.monthly-report-overview-status a b { flex: 0 0 auto; color: var(--status-color); }
+.monthly-report-overview-card footer { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; padding-top: 14px; border-top: 1px solid #dfebeb; }
+.monthly-report-overview-card footer b { font-size: 17px; }
+
+@media (max-width: 760px) {
+  .monthly-report-overview-card .monthly-report-overview-summary,
+  .monthly-report-overview-statuses { grid-template-columns: 1fr; }
+  .monthly-report-overview-status > div:last-child { grid-template-columns: 1fr; }
+}

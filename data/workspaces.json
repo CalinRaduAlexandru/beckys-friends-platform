@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-15T05:28:25.387Z",
+  "updatedAt": "2026-08-21T17:00:34.660Z",
   "workspaces": [
     {
       "id": "parties",
@@ -398,6 +398,44 @@
           "illustrationStyle": "activity",
           "illustrationPrompt": "",
           "image": ""
+        },
+        {
+          "id": "activity-traseul-coordonarii",
+          "title": "Traseul coordonării",
+          "subtitle": "Mână aici, picior acolo, minte clară!",
+          "age": "5–6 ani · 7–8 ani · 9+ ani",
+          "ageCategories": [
+            "5–6 ani",
+            "7–8 ani",
+            "9+ ani"
+          ],
+          "duration": "15 min – 30 min",
+          "durationPreset": "15 min",
+          "durationRange": "15 min – 30 min",
+          "durationCategories": [
+            "15 min",
+            "30 min"
+          ],
+          "participants": "2–3 copii · 4–9 copii · 10+ copii",
+          "participantCategories": [
+            "2–3 copii",
+            "4–9 copii",
+            "10+ copii"
+          ],
+          "category": "Se mișcă",
+          "difficulty": "Cu o recuzită specială",
+          "skills": "coordonare, echilibru, control corporal, orientare spațială, atenție, planificare motorie",
+          "materials": "Traseu cu simboluri de mâini și picioare (markere, cartonașe sau bandă adezivă)\nSpațiu liber și sigur, cu suprafață antiderapantă",
+          "steps": "Așază traseul pe podea și explică faptul că fiecare rând trebuie rezolvat complet și stabil.\nCopilul așază mâinile și picioarele exact cum arată simbolurile.\nCând a rezolvat rândul fără să-și piardă echilibrul, avansează la rândul următor.\nParcurge pe rând Zona 1, Zona 2 și Zona 3 până la FINISH.",
+          "rules": "Așteaptă-ți rândul la capătul cozii.\nNu te grăbi: stabilitatea contează mai mult decât viteza.\nDacă greșești, revii la capătul cozii și lași locul următorului copil.\nÎncurajează-ți colegii și bucură-te de joc.",
+          "facilitator": "Privește traseul înainte să începi. Amintește copilului să-și așeze mâinile și picioarele exact ca în model și lasă-l să-și găsească singur echilibrul.",
+          "easier": "Folosește doar Zona 1: două puncte de contact pe rând, mai puține rânduri și simboluri foarte clare. Demonstrează primul rând și oferă mai mult timp pentru fiecare încercare.",
+          "harder": "Treci la Zona 2 și apoi la Zona 3: alternează rânduri cu două și trei puncte de contact, prelungește traseul și cere rezolvare completă înainte de avansare.",
+          "caution": "Fixează bine marker-ele, verifică să nu alunece și păstrează traseul liber de obstacole. Adaptează distanța și numărul de rânduri la capacitatea fiecărui copil.",
+          "reflection": "Ce te-a ajutat să-ți păstrezi echilibrul? Cum ai știut unde să pui următoarea mână sau următorul picior?",
+          "illustrationStyle": "activity",
+          "illustrationPrompt": "Children following a floor coordination trail made of colorful hand and foot markers, one child advancing while others wait their turn, isolated Becky’s Garden watercolor activity illustration",
+          "image": "/assets/activity-library-illustrations/traseul-coordonarii.png"
         }
       ]
     }

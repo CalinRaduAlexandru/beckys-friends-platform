@@ -37,13 +37,13 @@
     participants: ['group-individual-v2.png','group-2-3.png','group-4-9.png','group-10-plus.png'],
     implementation: ['prep-none.png','prep-everyday.png','prep-special.png','prep-kit.png']
   };
-  const steps = ['category', 'age', 'participants', 'implementation', 'results', 'activity'];
+  const steps = ['category', 'participants', 'age', 'implementation', 'results', 'activity'];
   let activities = [];
   let step = 'category';
   let selectedActivity = null;
   let activityObservations = [];
   let editingObservation = null;
-  let filters = { category: '', age: '', participants: '', implementation: '' };
+  let filters = { category: '', age: '', ageRange: null, participants: '', implementation: '' };
 
   const safe = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[character]);
   const api = (url, options) => (window.adminApiFetch || fetch)(url, options);
@@ -56,6 +56,14 @@
     return ages.filter(filter => source.some(value => ageMatches(value, filter)));
   };
   const activityAgeMatches = (activity, filter) => normalizedActivityAges(activity).includes(filter);
+  const ageRangeIndexes = activity => normalizedActivityAges(activity).map(value => ages.indexOf(value)).filter(index => index >= 0);
+  const activityMatchesAgeRange = (activity, range) => {
+    if (!range) return true;
+    const supported = new Set(ageRangeIndexes(activity));
+    for (let index = range.min; index <= range.max; index += 1) if (!supported.has(index)) return false;
+    return true;
+  };
+  const ageRangeLabel = (min, max) => min === max ? ages[min] : `${ages[min].match(/^\d+/)?.[0] || ages[min]}–${ages[max].includes('+') ? '9+' : ages[max].match(/\d+/g)?.at(-1)} ani`;
   const rangeLabel = (values, options, firstFallback, lastPlus, suffix) => {
     const ordered = options.filter(value => values.includes(value));
     if (!ordered.length) return '';
@@ -75,11 +83,31 @@
   const matches = () => all().filter(activity =>
     (!filters.category || (activity.category || 'Gândește') === filters.category) &&
     (!filters.age || activityAgeMatches(activity, filters.age)) &&
+    activityMatchesAgeRange(activity, filters.ageRange) &&
     (!filters.participants || activityParticipantMatches(activity, filters.participants)) &&
     (!filters.implementation || activity.difficulty === filters.implementation)
   );
   const optionCount = (key, value) => { const before = filters[key]; filters[key] = value; const count = matches().length; filters[key] = before; return count; };
   const countLabel = count => `${count} ${count === 1 ? 'activitate' : 'activități'}`;
+  const selectedValidationAges = activity => {
+    const supported = normalizedActivityAges(activity);
+    if (filters.age) return supported.includes(filters.age) ? [filters.age] : [];
+    if (filters.ageRange) return ages.slice(filters.ageRange.min, filters.ageRange.max + 1).filter(age => supported.includes(age));
+    return supported;
+  };
+  const activityIsValidated = activity => {
+    const selectedAges = selectedValidationAges(activity);
+    if (!selectedAges.length || !filters.participants) return false;
+    return selectedAges.every(age => (activity.validations || []).some(validation =>
+      validation.age_category === age &&
+      validation.participant_category === filters.participants &&
+      validation.validation_status === 'validated'
+    ));
+  };
+  const validationBadge = activity => {
+    const validated = activityIsValidated(activity);
+    return `<span class="library-card-validation ${validated ? 'is-validated' : 'is-untested'}" aria-label="${validated ? 'Activitate testată pentru selecția curentă' : 'Activitate netestată pentru selecția curentă'}"><b aria-hidden="true">${validated ? '✓' : '×'}</b><span>${validated ? 'Testată' : 'Netestată'}</span><small>pentru selecția ta</small></span>`;
+  };
   const choiceIcon = (key, value) => {
     const values = { age: ages, participants: groups, implementation: implementations }[key] || [];
     const icons = filterIcons[key] || [];
@@ -147,6 +175,24 @@
     return fetch(path, { headers });
   }
 
+  function applyValidationCoverage(payload) {
+    const byActivity = new Map((payload?.library_activities || []).map(activity => [activity.id, activity.validations || []]));
+    activities.forEach(activity => { activity.validations = byActivity.get(activity.id) || []; });
+  }
+
+  async function refreshValidationCoverage() {
+    try {
+      const response = await apiFetch('/api/admin/pedagogic-coverage');
+      if (!response.ok) return;
+      applyValidationCoverage(await response.json());
+      if (step === 'results') root.querySelectorAll('[data-activity]').forEach(card => {
+        const activity = activities.find(item => item.id === card.dataset.activity);
+        const current = card.querySelector('.library-card-validation');
+        if (activity && current) current.outerHTML = validationBadge(activity);
+      });
+    } catch {}
+  }
+
   function breadcrumb() {
     const labels = { category: 'Categorie', age: 'Vârstă', participants: 'Număr copii', implementation: 'Implementare', results: 'Activități', activity: 'Activitate' };
     const current = steps.indexOf(step);
@@ -168,13 +214,48 @@
       participants: ['Câți copii participă?', groups, filterIcons.participants, ['coral','green','orange','blue']],
       implementation: ['Amploarea pregătirii activității', implementations, filterIcons.implementation, ['blue','green','orange','purple']]
     }[step];
-    return `<div class="library-step-copy"><small>PASUL ${step === 'age' ? '1' : step === 'participants' ? '2' : '3'} DIN 3</small><h1>${config[0]}</h1><p>Alege o singură opțiune pentru a continua.</p></div><div class="library-options library-options-${step}">${config[1].map((value,index) => option(value,config[2][index],step,config[3][index])).join('')}</div>`;
+    return `<div class="library-step-copy"><small>PASUL ${step === 'participants' ? '1' : step === 'age' ? '2' : '3'} DIN 3</small><h1>${config[0]}</h1><p>Alege o singură opțiune pentru a continua.</p></div><div class="library-options library-options-${step}">${config[1].map((value,index) => option(value,config[2][index],step,config[3][index])).join('')}</div>`;
+  }
+
+  function ageRangeView() {
+    const candidates = all().filter(activity =>
+      (!filters.category || (activity.category || 'Gândește') === filters.category) &&
+      (!filters.participants || activityParticipantMatches(activity, filters.participants)),
+    );
+    const available = ages.map((age, index) => ({
+      age,
+      index,
+      count: candidates.filter(activity => normalizedActivityAges(activity).includes(age)).length,
+    }));
+    const availableIndexes = available.filter(item => item.count > 0).map(item => item.index);
+    const firstAvailable = availableIndexes[0] ?? 0;
+    const lastAvailable = availableIndexes.at(-1) ?? ages.length - 1;
+    const commonCount = (min, max) => candidates.filter(activity => activityMatchesAgeRange(activity, { min, max })).length;
+    const validRanges = availableIndexes.flatMap(min => availableIndexes
+      .filter(max => max >= min && commonCount(min, max) > 0)
+      .map(max => ({ min, max, count: commonCount(min, max) })))
+      .sort((left, right) => (right.max - right.min) - (left.max - left.min) || right.count - left.count || left.min - right.min);
+    const widestValid = validRanges[0] || { min: firstAvailable, max: lastAvailable };
+    const requested = filters.ageRange || {
+      min: filters.age ? Math.max(0, ages.indexOf(filters.age)) : widestValid.min,
+      max: filters.age ? Math.max(0, ages.indexOf(filters.age)) : widestValid.max,
+    };
+    const clamped = {
+      min: availableIndexes.find(index => index >= requested.min) ?? lastAvailable,
+      max: [...availableIndexes].reverse().find(index => index <= requested.max) ?? firstAvailable,
+    };
+    if (clamped.min > clamped.max) clamped.max = clamped.min;
+    const active = commonCount(clamped.min, clamped.max) > 0 ? clamped : widestValid;
+    const label = ageRangeLabel(active.min, active.max);
+    const tones = ['purple','green','orange','blue','purple'];
+    const cards = available.map((item, index) => `<button type="button" class="library-option tone-${tones[index]}" data-age-card="${item.index}" ${item.count ? '' : 'disabled'}><span><img src="${iconBase}${safe(filterIcons.age[index])}" alt=""></span><div><strong>${safe(item.age)}</strong><small>${item.count ? countLabel(item.count) : 'Fără activități'}</small></div><i>→</i></button>`).join('');
+    return `<div class="library-step-copy"><small>PASUL 2 DIN 3</small><h1>Pentru ce vârste?</h1><p>Alege un card pentru a continua imediat cu o singură vârstă.</p></div><div class="library-options library-options-age library-age-cards">${cards}</div><div class="library-age-custom-divider"><span>sau alege un interval personalizat</span></div><section class="library-age-range" aria-label="Filtru personalizat de vârstă"><div class="library-age-range-heading"><div><small>INTERVAL SELECTAT</small><strong data-age-range-label>${safe(label)}</strong></div><span data-age-range-count>${countLabel(candidates.filter(activity => activityMatchesAgeRange(activity, active)).length)}</span></div><div class="library-age-range-track"><div class="library-age-range-fill" data-age-range-fill></div><input type="range" min="0" max="4" step="1" value="${active.min}" data-age-range="min" aria-label="Vârsta minimă"><input type="range" min="0" max="4" step="1" value="${active.max}" data-age-range="max" aria-label="Vârsta maximă"></div><div class="library-age-range-ticks">${available.map(item => `<button type="button" class="${item.count ? 'has-activities' : ''}" data-age-pick="${item.index}" ${item.count ? '' : 'disabled'}><b>${safe(item.age)}</b><small>${item.count ? countLabel(item.count) : 'Fără activități'}</small></button>`).join('')}</div><button type="button" class="library-age-range-continue" data-age-range-continue>Continuă cu acest interval <span aria-hidden="true">→</span></button></section>`;
   }
 
   function resultsView() {
     const activities = matches();
     const development = categoryDevelopment[filters.category] || 'dezvoltarea copilului';
-    return `<div class="library-step-copy"><small>ACTIVITĂȚI</small><h1>Activități recomandate pentru ${safe(development)}</h1><p>${countLabel(activities.length)} după filtrele alese.</p></div><div class="library-results-grid">${activities.map(activity => { const [icon, tone] = categoryPresentation[activity.category] || ['✦', 'teal']; const artwork = activity.displayImage || activity.image; const age = filters.age || activity.age; const participants = filters.participants || groupKind(activity.participants); const implementation = filters.implementation || activity.difficulty; return `<button class="tone-${tone}" data-activity="${activity.id}"><div class="library-card-art">${artwork ? `<img src="${safe(artwork)}" alt="">` : '<span class="library-result-placeholder">✦</span>'}</div><div class="library-result-copy"><small><b>${icon}</b>${safe(activity.category || 'Activitate')}</small><strong>${safe(activity.title)}</strong><p>${safe(activity.subtitle || '')}</p></div><div class="library-card-choices">${cardChoice('age', age)}${cardChoice('participants', participants)}${cardChoice('implementation', implementation)}</div></button>`; }).join('') || '<div class="library-empty"><strong>Nicio activitate potrivită</strong><p>Întoarce-te și schimbă unul dintre filtre.</p></div>'}</div>`;
+    return `<div class="library-step-copy"><small>ACTIVITĂȚI</small><h1>Activități recomandate pentru ${safe(development)}</h1><p>${countLabel(activities.length)} după filtrele alese.</p></div><div class="library-results-grid">${activities.map(activity => { const [icon, tone] = categoryPresentation[activity.category] || ['✦', 'teal']; const artwork = activity.displayImage || activity.image; const age = filters.age || activityAgeLabel(activity); const participants = filters.participants || groupKind(activity.participants); const implementation = filters.implementation || activity.difficulty; return `<button class="tone-${tone}" data-activity="${activity.id}">${validationBadge(activity)}<div class="library-card-art">${artwork ? `<img src="${safe(artwork)}" alt="">` : '<span class="library-result-placeholder">✦</span>'}</div><div class="library-result-copy"><small><b>${icon}</b>${safe(activity.category || 'Activitate')}</small><strong>${safe(activity.title)}</strong><p>${safe(activity.subtitle || '')}</p></div><div class="library-card-choices">${cardChoice('age', age)}${cardChoice('participants', participants)}${cardChoice('implementation', implementation)}</div></button>`; }).join('') || '<div class="library-empty"><strong>Nicio activitate potrivită</strong><p>Întoarce-te și schimbă unul dintre filtre.</p></div>'}</div>`;
   }
 
   function activityView() {
@@ -211,7 +292,7 @@
     modal.querySelector('form').onsubmit = async event => { event.preventDefault(); const form = new FormData(event.currentTarget); const payload = { activity_id: selectedActivity.id, tested_at: form.get('tested_at'), age_categories: form.getAll('age_categories'), participants: form.get('participants'), result: form.get('result'), observed: String(form.get('observed') || '').trim(), interpreted: String(form.get('interpreted') || '').trim(), hypothesized: String(form.get('hypothesized') || '').trim(), action: String(form.get('action') || '').trim(), behaviors: [...modal.querySelectorAll('.library-behavior-row')].map(row => ({ label: row.querySelector('[data-behavior-label]').value.trim(), status: row.querySelector('[data-behavior-status]').value })).filter(item => item.label) }; const response = await api(item ? `/api/admin/activity-observations/${encodeURIComponent(item.id)}` : '/api/admin/activity-observations', { method: item ? 'PATCH' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }); if (!response.ok) return; modal.remove(); await loadObservations(); };
   }
   function bindObservationEvents() { const section = root.querySelector('.library-observations'); if (!section) return; section.querySelector('[data-add-observation]')?.addEventListener('click', () => observationModal()); section.querySelectorAll('[data-expand-observation]').forEach(button => button.addEventListener('click', () => button.closest('.library-observation-card').classList.toggle('is-expanded'))); section.querySelectorAll('[data-edit-observation]').forEach(button => button.addEventListener('click', () => { const item = activityObservations.find(item => item.id === button.closest('[data-observation-id]').dataset.observationId); if (item) observationModal(item); })); section.querySelectorAll('[data-delete-observation]').forEach(button => button.addEventListener('click', async () => { const id = button.closest('[data-observation-id]').dataset.observationId; if (!window.confirm('Ștergi această testare?')) return; const response = await api(`/api/admin/activity-observations/${encodeURIComponent(id)}`, { method: 'DELETE' }); if (response.ok) await loadObservations(); })); }
-  function body() { if (step === 'category') return categoryView(); if (['age','participants','implementation'].includes(step)) return choiceView(); if (step === 'results') return resultsView(); return activityView(); }
+  function body() { if (step === 'category') return categoryView(); if (step === 'age') return ageRangeView(); if (['participants','implementation'].includes(step)) return choiceView(); if (step === 'results') return resultsView(); return activityView(); }
 
   function render(direction = 'forward') {
     root.innerHTML = `<section class="library-shell"><header><button data-back ${step === 'category' ? 'disabled' : ''}>← Înapoi</button>${breadcrumb()}<button data-reset>Începe din nou</button></header><div class="library-viewport"><div class="library-screen enter-${direction}">${body()}</div></div></section>`;
@@ -229,26 +310,75 @@
     if (step === 'activity') { mountObservations(); loadObservations(); }
     root.querySelectorAll('[data-choice]').forEach(button => button.addEventListener('click', () => {
       const key = button.dataset.choice;
-      const next = { category: 'age', age: 'participants', participants: 'implementation', implementation: 'results' }[key];
+      const next = { category: 'participants', participants: 'age', age: 'implementation', implementation: 'results' }[key];
       move(next, () => { filters[key] = button.dataset.value; });
     }));
+    if (step === 'age') {
+      const minInput = root.querySelector('[data-age-range="min"]');
+      const maxInput = root.querySelector('[data-age-range="max"]');
+      const label = root.querySelector('[data-age-range-label]');
+      const count = root.querySelector('[data-age-range-count]');
+      const fill = root.querySelector('[data-age-range-fill]');
+      const continueButton = root.querySelector('[data-age-range-continue]');
+      const candidates = all().filter(activity => (!filters.category || (activity.category || 'Gândește') === filters.category) && (!filters.participants || activityParticipantMatches(activity, filters.participants)));
+      const availableIndexes = ages.map((age, index) => candidates.some(activity => normalizedActivityAges(activity).includes(age)) ? index : -1).filter(index => index >= 0);
+      let previousMin = Number(minInput.value);
+      let previousMax = Number(maxInput.value);
+      const nearestAvailable = (value, previous) => {
+        if (availableIndexes.includes(value)) return value;
+        if (value > previous) return availableIndexes.find(index => index > value) ?? availableIndexes.at(-1);
+        return [...availableIndexes].reverse().find(index => index < value) ?? availableIndexes[0];
+      };
+      const refreshRange = changedInput => {
+        let min = Number(minInput.value); let max = Number(maxInput.value);
+        if (changedInput === minInput) min = nearestAvailable(min, previousMin);
+        if (changedInput === maxInput) max = nearestAvailable(max, previousMax);
+        if (min > max) { if (document.activeElement === minInput) min = max; else max = min; }
+        let matching = candidates.filter(activity => activityMatchesAgeRange(activity, { min, max }));
+        if (changedInput && matching.length === 0) {
+          if (changedInput === minInput) min = previousMin;
+          if (changedInput === maxInput) max = previousMax;
+          matching = candidates.filter(activity => activityMatchesAgeRange(activity, { min, max }));
+        }
+        minInput.value = min; maxInput.value = max;
+        label.textContent = ageRangeLabel(min, max);
+        const matchCount = matching.length;
+        count.textContent = countLabel(matchCount);
+        continueButton.disabled = matchCount === 0;
+        fill.style.left = `${min * 25}%`; fill.style.right = `${(4 - max) * 25}%`;
+        previousMin = min; previousMax = max;
+      };
+      minInput?.addEventListener('input', event => refreshRange(event.currentTarget)); maxInput?.addEventListener('input', event => refreshRange(event.currentTarget)); refreshRange();
+      root.querySelectorAll('[data-age-card]').forEach(button => button.addEventListener('click', () => {
+        const value = Number(button.dataset.ageCard);
+        move('implementation', () => { filters.age = ages[value]; filters.ageRange = null; });
+      }));
+      root.querySelectorAll('[data-age-pick]').forEach(button => button.addEventListener('click', () => {
+        const value = Number(button.dataset.agePick);
+        minInput.value = value; maxInput.value = value; refreshRange();
+      }));
+      root.querySelector('[data-age-range-continue]')?.addEventListener('click', () => move('implementation', () => { filters.age = ''; filters.ageRange = { min: Number(minInput.value), max: Number(maxInput.value) }; }));
+    }
     root.querySelectorAll('[data-activity]').forEach(button => button.addEventListener('click', () => move('activity', () => { selectedActivity = all().find(activity => activity.id === button.dataset.activity) || null; activityObservations = []; })));
     root.querySelector('[data-results-back]')?.addEventListener('click', () => move('results', null, 'back'));
-    root.querySelector('[data-reset]')?.addEventListener('click', () => move('category', () => { filters = { category:'',age:'',participants:'',implementation:'' }; selectedActivity = null; }, 'back'));
-    root.querySelector('[data-back]')?.addEventListener('click', () => { const previous = { age:'category',participants:'age',implementation:'participants',results:'implementation',activity:'results' }[step]; if (previous) move(previous, null, 'back'); });
+    root.querySelector('[data-reset]')?.addEventListener('click', () => move('category', () => { filters = { category:'',age:'',ageRange:null,participants:'',implementation:'' }; selectedActivity = null; }, 'back'));
+    root.querySelector('[data-back]')?.addEventListener('click', () => { const previous = { participants:'category',age:'participants',implementation:'age',results:'implementation',activity:'results' }[step]; if (previous) move(previous, null, 'back'); });
   }
 
   (async () => {
-    const response = await apiFetch('/api/workspaces');
+    const [response, coverageResponse] = await Promise.all([apiFetch('/api/workspaces'), apiFetch('/api/admin/pedagogic-coverage').catch(() => null)]);
     if (response.status === 401) return location.replace('/admin?view=children');
     const data = await response.json();
     const workspace = data.workspaces?.find(item => item.id === 'children') || {};
     const legacyActivities = Array.isArray(workspace.activityPages) ? workspace.activityPages.flatMap(page => page.activities || []) : [];
     activities = Array.isArray(workspace.activities) && workspace.activities.length ? workspace.activities : legacyActivities;
+    if (coverageResponse?.ok) applyValidationCoverage(await coverageResponse.json());
     await Promise.all(activities.map(async activity => { activity.displayImage = await removeConnectedLightBackground(activity.image); }));
     const requestedActivity = new URLSearchParams(location.search).get('activity_id');
     selectedActivity = activities.find(activity => activity.id === requestedActivity) || null;
     if (selectedActivity) step = 'activity';
+    window.addEventListener('focus', refreshValidationCoverage);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshValidationCoverage(); });
     render();
     if (selectedActivity && location.hash === '#testari-observatii') setTimeout(() => document.getElementById('testari-observatii')?.scrollIntoView({ behavior:'smooth', block:'start' }), 300);
   })().catch(() => { root.innerHTML = '<div class="library-loading">Biblioteca nu a putut fi încărcată.</div>'; });

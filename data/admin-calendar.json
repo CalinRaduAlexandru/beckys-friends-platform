@@ -1,57 +1,28 @@
 [
   {
-    "id": "6873a0b5-442d-4da0-bf11-73caa59f3a15",
-    "title": "Închis",
-    "type": "closed",
-    "date": "2026-08-17",
-    "start_time": "15:00",
-    "end_time": "21:00",
-    "note": "",
-    "created_at": "2026-08-17T05:33:51.753Z",
-    "updated_at": "2026-08-17T09:36:58.085Z"
-  },
-  {
-    "id": "6ce3c4b8-ecef-4c1b-88d6-8c7450adda29",
-    "title": "Închis",
-    "type": "closed",
+    "id": "1adab532-874b-4364-855a-4b5c8981a335",
+    "title": "Eveniment privat",
+    "type": "private",
     "date": "2026-08-24",
     "start_time": "15:00",
     "end_time": "21:00",
     "note": "",
-    "created_at": "2026-08-17T05:23:31.948Z",
-    "updated_at": "2026-08-21T12:49:40.777Z"
+    "hide_open_intervals": true,
+    "hide_private_times": true,
+    "created_at": "2026-08-24T11:25:34.099Z",
+    "updated_at": "2026-08-24T11:25:34.099Z"
   },
   {
-    "id": "3c91f0d0-8485-45ce-a3be-c210f615285f",
-    "title": "Eveniment privat",
-    "type": "private",
-    "date": "2026-08-26",
-    "start_time": "18:00",
-    "end_time": "20:00",
-    "note": "",
-    "created_at": "2026-08-20T18:07:10.538Z",
-    "updated_at": "2026-08-21T12:49:40.777Z"
-  },
-  {
-    "id": "98394ed4-f8f3-4ca8-ba7e-0bb10af5462f",
-    "title": "Eveniment privat",
-    "type": "private",
-    "date": "2026-08-28",
-    "start_time": "17:00",
-    "end_time": "19:00",
-    "note": "",
-    "created_at": "2026-08-21T12:49:40.777Z",
-    "updated_at": "2026-08-21T12:49:40.777Z"
-  },
-  {
-    "id": "215ed8f7-dd76-44a2-a5d0-9be90a829c27",
+    "id": "ab95e81e-ca3c-4afd-bb97-90eaacd818fb",
     "title": "Eveniment privat",
     "type": "private",
     "date": "2026-08-30",
-    "start_time": "13:00",
-    "end_time": "18:00",
+    "start_time": "18:00",
+    "end_time": "21:00",
     "note": "",
-    "created_at": "2026-08-21T08:40:03.119Z",
-    "updated_at": "2026-08-21T12:49:40.777Z"
+    "hide_open_intervals": false,
+    "hide_private_times": false,
+    "created_at": "2026-08-24T11:14:16.398Z",
+    "updated_at": "2026-08-24T11:25:34.099Z"
   }
 ]

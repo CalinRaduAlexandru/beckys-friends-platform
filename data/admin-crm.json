@@ -44,6 +44,70 @@
       "continuity": "",
       "created_at": "2026-08-20T13:56:49.967Z",
       "updated_at": "2026-08-20T13:56:49.967Z"
+    },
+    {
+      "id": "89c427be-2c0d-4d84-ab60-12f0f6ca4293",
+      "first_name": "Noa (nu vorbește)",
+      "age": 3,
+      "age_confirmed": true,
+      "interests": "Arată mult cu degetul și prezintă obiecte; folosește puține cuvinte, uneori aceleași pentru mai multe situații; înțelege bine; se joacă funcțional și simbolic normal. Nu a fost observat încă în interacțiune cu alți copii.",
+      "continuity": "Să urmărim intenția de comunicare, imitația fizică și sunetele spontane; fără presiune pentru repetarea cuvintelor. De verificat ulterior auzul și evaluarea la pediatru/logoped.",
+      "game_recommendations": "1. Eu fac – tu faci: bătut în masă, bătut din palme, cub pe cap, sărit; începe fără cuvinte, apoi adaugă „bam”, „hop”, „pa-pa”, „brrr”.\n2. Jocul „mai vreau”: baloane de săpun, mașinuță pe rampă, mingi sau balon; oprește-te 5–10 secunde, modelează „mai?” și răspunde imediat la privire, gest, vocalizare sau arătat.\n3. Alegeri între două obiecte: „minge sau mașină?”; acceptă arătatul și modelează cuvântul fără să ceri repetarea.\n4. Sunete care adaugă valoare jocului: mașina „brrrum”, turnul „BUM!”, mingea „HOP!”, animale „mac”, „ham”, „miau”.\n5. Extinde cuvintele existente în loc să le corectezi: „Vrei apă”, „Nu mai e apă”, „Deschide apa”.\n6. Rutine cu pauză: „Unu, doi, trei… HOP!” și așteaptă orice încercare.\n7. Comentariu în joc paralel, nu interogatoriu: „Cub mare”, „Sus”, „A căzut! BAM!”.\n8. Cărți cu imagini simple și joc de rol: „pisica doarme”, „mmm”, „nani”, „buf”, „mai”.\n9. Jocul „dă-mi / pune / adu” pentru a observa și susține înțelegerea limbajului. Țintește 3–5 cuvinte funcționale repetate natural: „mai”, „gata”, „hop”, „dă”, „bum”.",
+      "created_at": "2026-08-23T12:47:53.758Z",
+      "updated_at": "2026-08-24T12:58:26.812Z"
+    },
+    {
+      "id": "child-ianis-2026-08-22",
+      "first_name": "Ianis (venit cu voucher, ștrengar)",
+      "age": 4,
+      "age_confirmed": true,
+      "interests": "Nota zilnică îl descrie ca având aproximativ 3–4 ani. S-a jucat pe tobogan, balansoar și fotbal; a râs și s-a implicat mai mult când adultul a intrat în joc. Posibilă întârziere menționată ca impresie, neconfirmată.",
+      "continuity": "De urmărit ce activități îl fac să intre rapid în joc și dacă familia revine pentru ziua lui.",
+      "game_recommendations": "Baloane, fotbal, balansoar și jocuri de mișcare cu un adult partener de joacă.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-24T12:58:57.796Z"
+    },
+    {
+      "id": "child-casi-2026-08-23",
+      "first_name": "Casi",
+      "age": 5,
+      "interests": "A participat la o petrecere împreună cu Eli și Celia. Vârsta nu este menționată în nota zilnică și trebuie confirmată.",
+      "continuity": "Confirmă vârsta la următoarea vizită.",
+      "game_recommendations": "Prinselea și ascunselea au fost jucate în grup; adaptează rolul și dificultatea după vârstă.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-23T17:20:59.329Z"
+    },
+    {
+      "id": "child-eli-2026-08-23",
+      "first_name": "Eli (Elizabet Ana-Maria)",
+      "age": 4,
+      "age_confirmed": true,
+      "interests": "Sărbătorita unei petreceri de 3 copii; vârsta menționată în nota zilnică: 4 ani.",
+      "continuity": "A funcționat bine într-un grup mixt cu un copil de 7 ani; urmărește jocurile de mișcare potrivite pentru ambele vârste.",
+      "game_recommendations": "Prinselea și ascunselea, cu reguli simple și spațiu sigur.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-24T12:58:03.788Z"
+    },
+    {
+      "id": "child-celia-2026-08-23",
+      "first_name": "Celia",
+      "age": 7,
+      "interests": "A participat la o petrecere de 3 copii; vârsta menționată în nota zilnică: 7 ani.",
+      "continuity": "A fost într-un grup mixt cu copii mai mici; de urmărit cum poate primi roluri cu mai multă autonomie.",
+      "game_recommendations": "Prinselea și ascunselea, cu roluri de explorator, căutător sau ajutor pentru explicarea regulilor.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "child-estra-2026-08-23",
+      "first_name": "Estra (micița timidă care a venit la recomandare)",
+      "age": 4,
+      "age_confirmed": true,
+      "interests": "A venit la recomandarea părinților lui Ianis; vârsta menționată în nota zilnică: 4 ani. A fost timidă la început, apoi apropierea s-a îmbunătățit treptat.",
+      "continuity": "La început oferă timp de acomodare și intră gradual în joc; evită jocurile de volei în zona cu diferență de nivel.",
+      "game_recommendations": "Jocuri de apropiere graduală, apoi jocuri de mișcare simple; evită voleiul lângă nivelul inferior al subsolului.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-24T12:58:43.465Z"
     }
   ],
   "visits": [
@@ -74,6 +138,62 @@
       "visit_date": "2026-08-18",
       "note": "",
       "created_at": "2026-08-19T08:14:53.219Z"
+    },
+    {
+      "id": "visit-ianis-2026-08-22",
+      "child_id": "child-ianis-2026-08-22",
+      "companion_id": null,
+      "visit_date": "2026-08-22",
+      "note": "S-a jucat pe tobogan, cu baloane, pe balansoar și fotbal.",
+      "created_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "visit-noa-2026-08-23",
+      "child_id": "89c427be-2c0d-4d84-ab60-12f0f6ca4293",
+      "companion_id": null,
+      "visit_date": "2026-08-23",
+      "note": "Joc de imitație fizică și sunete/interjecții; părinții au avut timp separat.",
+      "created_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "visit-casi-2026-08-23",
+      "child_id": "child-casi-2026-08-23",
+      "companion_id": null,
+      "visit_date": "2026-08-23",
+      "note": "Petrecere de 3 copii; prinselea și ascunselea.",
+      "created_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "visit-eli-2026-08-23",
+      "child_id": "child-eli-2026-08-23",
+      "companion_id": null,
+      "visit_date": "2026-08-23",
+      "note": "Petrecere de 3 copii; prinselea și ascunselea.",
+      "created_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "visit-celia-2026-08-23",
+      "child_id": "child-celia-2026-08-23",
+      "companion_id": null,
+      "visit_date": "2026-08-23",
+      "note": "Petrecere de 3 copii; prinselea și ascunselea.",
+      "created_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "visit-estra-2026-08-23",
+      "child_id": "child-estra-2026-08-23",
+      "companion_id": null,
+      "visit_date": "2026-08-23",
+      "note": "A venit la recomandarea părinților lui Ianis; acomodare treptată.",
+      "created_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "visit-iancu-2026-08-20",
+      "child_id": "1af074ca-8868-4d56-ab09-152ff98e5993",
+      "companion_id": null,
+      "visit_date": "2026-08-20",
+      "note": "A rămas pe durata activității de două ore; a căzut alergând în zona de bar.",
+      "created_at": "2026-08-23T13:30:00.000Z"
     }
   ],
   "observations": [
@@ -175,6 +295,78 @@
       "observation": "Autorul nu știe ce activități să propună mamei pentru copilul Iancu, în jur de 2 ani.",
       "created_at": "2026-08-20T15:22:29.987Z",
       "updated_at": "2026-08-20T15:22:29.987Z"
+    },
+    {
+      "id": "noa-observation-2026-08-23-profile",
+      "child_id": "89c427be-2c0d-4d84-ab60-12f0f6ca4293",
+      "visit_id": null,
+      "observed_at": "2026-08-23T12:00:00.000Z",
+      "observation": "NOA are aproximativ 3 ani și urmează să intre la grădiniță; în nota zilei este menționată o întârziere de vorbire.",
+      "created_at": "2026-08-23T13:00:00.000Z",
+      "updated_at": "2026-08-23T13:00:00.000Z"
+    },
+    {
+      "id": "noa-observation-2026-08-23-communication",
+      "child_id": "89c427be-2c0d-4d84-ab60-12f0f6ca4293",
+      "visit_id": null,
+      "observed_at": "2026-08-23T12:00:00.000Z",
+      "observation": "Conform conversației de referință, NOA arată mult cu degetul, prezintă obiecte fără verbalizare, înțelege bine multe lucruri și se joacă normal.",
+      "created_at": "2026-08-23T13:00:00.000Z",
+      "updated_at": "2026-08-23T13:00:00.000Z"
+    },
+    {
+      "id": "noa-observation-2026-08-23-language",
+      "child_id": "89c427be-2c0d-4d84-ab60-12f0f6ca4293",
+      "visit_id": null,
+      "observed_at": "2026-08-23T12:00:00.000Z",
+      "observation": "Folosește puține cuvinte și aceleași cuvinte pentru o gamă largă de situații; imitația verbală nu este deosebit de frecventă.",
+      "created_at": "2026-08-23T13:00:00.000Z",
+      "updated_at": "2026-08-23T13:00:00.000Z"
+    },
+    {
+      "id": "ianis-observation-2026-08-22-play",
+      "child_id": "child-ianis-2026-08-22",
+      "visit_id": null,
+      "observed_at": "2026-08-22T12:00:00.000Z",
+      "observation": "Ianis s-a jucat inițial singur, mai ales pe tobogan; când adultul a intrat în joc, a râs și s-a implicat mai mult. Au fost folosite baloane, balansoarul și fotbalul.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "group-observation-2026-08-23-casi-eli-celia",
+      "child_id": "child-casi-2026-08-23",
+      "visit_id": null,
+      "observed_at": "2026-08-23T12:00:00.000Z",
+      "observation": "Casi a participat la o petrecere împreună cu Eli și Celia; grupul s-a jucat prinselea și ascunselea. Vârsta lui Casi nu este menționată.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "eli-observation-2026-08-23-party",
+      "child_id": "child-eli-2026-08-23",
+      "visit_id": null,
+      "observed_at": "2026-08-23T12:00:00.000Z",
+      "observation": "Eli, sărbătorita de 4 ani, a participat la o petrecere de 3 copii în care s-au jucat prinselea și ascunselea.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "celia-observation-2026-08-23-party",
+      "child_id": "child-celia-2026-08-23",
+      "visit_id": null,
+      "observed_at": "2026-08-23T12:00:00.000Z",
+      "observation": "Celia, 7 ani, a participat la o petrecere de 3 copii în care s-au jucat prinselea și ascunselea.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-23T13:30:00.000Z"
+    },
+    {
+      "id": "estra-observation-2026-08-23-arrival",
+      "child_id": "child-estra-2026-08-23",
+      "visit_id": null,
+      "observed_at": "2026-08-23T12:00:00.000Z",
+      "observation": "Estra, 4 ani, a venit la recomandarea părinților lui Ianis. A fost timidă la început, iar apropierea s-a îmbunătățit treptat. În timpul jocului de volei la subsol a existat un risc de cădere la nivelul inferior.",
+      "created_at": "2026-08-23T13:30:00.000Z",
+      "updated_at": "2026-08-23T13:30:00.000Z"
     }
   ],
   "companions": [

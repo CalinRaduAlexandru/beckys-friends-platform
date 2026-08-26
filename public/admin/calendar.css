@@ -111,6 +111,9 @@
   border-radius: 12px;
   background: #edf8f7;
 }
+.calendar-segment-plain {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
 .calendar-segment-private {
   background: #fff0f1;
 }
@@ -262,6 +265,26 @@
   color: #233448;
   font-size: 12px;
   font-weight: 800;
+}
+.calendar-interval-card .calendar-all-day-option {
+  display: flex;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 13px;
+  border: 1px solid #b4dbde;
+  border-radius: 12px;
+  background: #edf8f7;
+  cursor: pointer;
+}
+.calendar-interval-card .calendar-all-day-option input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #198e9f;
+}
+.calendar-interval-card label.is-hidden {
+  display: none;
 }
 .calendar-interval-card input,
 .calendar-interval-card select {

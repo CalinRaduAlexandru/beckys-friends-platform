@@ -30,13 +30,7 @@
           ? "Închis"
           : "Liber la joacă";
   const typeIcon = (type) =>
-    type === "private"
-      ? "🔒"
-      : type === "event"
-        ? "🎈"
-        : type === "closed"
-          ? "⛔"
-          : "🟢";
+    type === "private" || type === "closed" ? "🔒" : "";
   const pad = (value) => String(value).padStart(2, "0");
   const localDate = (date) =>
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
@@ -67,6 +61,10 @@
   };
   const minutesToTime = (value) =>
     `${pad(Math.floor(value / 60))}:${pad(value % 60)}`;
+  const entryTimeLabel = (entry) =>
+    entry.type === "private" && entry.hide_private_times
+      ? "Eveniment privat"
+      : `${entry.start_time} - ${entry.end_time}`;
 
   function buildDayEntries(date, index, entries) {
     const [openStart, openEnd] = baseHours(index);
@@ -77,6 +75,9 @@
           ["private", "event", "closed"].includes(entry.type),
       )
       .sort((a, b) => a.start_time.localeCompare(b.start_time));
+    if (special.some((entry) => entry.type === "private" && entry.hide_open_intervals)) {
+      return special.map((entry) => ({ ...entry, title: typeLabel(entry.type) }));
+    }
     if (!special.length)
       return [
         {
@@ -93,7 +94,10 @@
     let cursor = timeToMinutes(openStart);
     const end = timeToMinutes(openEnd);
     special.forEach((entry) => {
-      const start = Math.max(cursor, timeToMinutes(entry.start_time));
+      const eventStart = Math.max(cursor, timeToMinutes(entry.start_time));
+      const start = entry.type === "private"
+        ? Math.max(cursor, eventStart - 60)
+        : eventStart;
       const finish = Math.min(end, timeToMinutes(entry.end_time));
       if (finish <= start) return;
       if (start > cursor)
@@ -108,7 +112,7 @@
         });
       result.push({
         ...entry,
-        start_time: minutesToTime(start),
+        start_time: minutesToTime(eventStart),
         end_time: minutesToTime(finish),
         title: typeLabel(entry.type),
       });
@@ -199,47 +203,8 @@
     context.drawImage(buffer, x, y, width, height);
   }
 
-  function drawHeart(context, x, y, size, color) {
-    context.save();
-    context.translate(x, y);
-    context.scale(size / 24, size / 24);
-    context.beginPath();
-    context.moveTo(12, 21);
-    context.bezierCurveTo(10, 18, 2, 13, 2, 7);
-    context.bezierCurveTo(2, 2, 9, 0, 12, 5);
-    context.bezierCurveTo(15, 0, 22, 2, 22, 7);
-    context.bezierCurveTo(22, 13, 14, 18, 12, 21);
-    context.closePath();
-    context.fillStyle = color;
-    context.fill();
-    context.lineWidth = 1.7;
-    context.strokeStyle = "#ffffffcc";
-    context.stroke();
-    context.restore();
-  }
-
-  function drawStar(context, x, y, radius, color) {
-    context.save();
-    context.translate(x, y);
-    context.beginPath();
-    for (let point = 0; point < 10; point += 1) {
-      const angle = -Math.PI / 2 + (point * Math.PI) / 5;
-      const distance = point % 2 ? radius * 0.45 : radius;
-      const px = Math.cos(angle) * distance;
-      const py = Math.sin(angle) * distance;
-      if (!point) context.moveTo(px, py);
-      else context.lineTo(px, py);
-    }
-    context.closePath();
-    context.fillStyle = color;
-    context.fill();
-    context.lineWidth = 2;
-    context.strokeStyle = "#fff8";
-    context.stroke();
-    context.restore();
-  }
-
   function drawEntryIcon(context, type, x, y, accent, duckIcon) {
+    if (!["private", "closed"].includes(type)) return;
     context.save();
     context.translate(x, y);
     context.lineCap = "round";
@@ -254,21 +219,6 @@
       context.moveTo(7, 13);
       context.lineTo(11.5, 17.5);
       context.lineTo(19.5, 8.5);
-      context.stroke();
-      context.restore();
-      return;
-    }
-    if (type === "closed") {
-      context.strokeStyle = "#10264B";
-      context.lineWidth = 3;
-      context.beginPath();
-      context.arc(13, 13, 11, 0, Math.PI * 2);
-      context.stroke();
-      context.beginPath();
-      context.moveTo(8, 8);
-      context.lineTo(18, 18);
-      context.moveTo(18, 8);
-      context.lineTo(8, 18);
       context.stroke();
       context.restore();
       return;
@@ -346,9 +296,7 @@
       context.save();
       if (fullDayClosed) context.globalAlpha = 0.58;
       const centerX = x + width / 2;
-      // Rața este rezervată zilei închise. Pentru zilele deschise folosim
-      // markerul inimă/stea din antet și bifa de lângă interval.
-      const icon = hideDuckIcon;
+      // Ziua și intervalele rămân lizibile fără elemente decorative.
       if (fullDayOpen || fullDayClosed) {
         context.fillStyle = accent;
         context.textAlign = "center";
@@ -357,59 +305,40 @@
         if (fullDayClosed) {
           context.font = `800 28px 'Quicksand', sans-serif`;
           context.fillText(dayNames[index], centerX, y + 34);
-          const titleWidth = context.measureText(dayNames[index]).width;
-          const markerSize = 22;
-          const markerGap = 12;
-          const markerX = centerX - titleWidth / 2 - markerGap - markerSize;
-          drawHeart(context, markerX, y + 15, markerSize, accent);
           context.font = `700 28px 'Quicksand', sans-serif`;
           const closedLabel = "ÎNCHIS";
           const closedLabelWidth = context.measureText(closedLabel).width;
-          const closedMarkerSize = 51;
-          const closedGap = 6;
-          const closedGroupWidth = closedMarkerSize + closedGap + closedLabelWidth;
+          const closedGroupWidth = closedLabelWidth;
           const closedGroupX = centerX - closedGroupWidth / 2;
-          drawThemedContained(context, icon, closedGroupX, y + 44, closedMarkerSize, closedMarkerSize, accent);
           context.textAlign = "left";
           context.letterSpacing = "1.2px";
-          context.fillText(closedLabel, closedGroupX + closedMarkerSize + closedGap, y + 80);
+          context.fillText(closedLabel, closedGroupX, y + 81);
           context.letterSpacing = "0px";
         } else {
-          // Ziua deschisă: markerul rămâne lângă nume, iar bifa lângă orar.
+          // Ziua deschisă: numele și intervalul sunt suficiente.
           context.font = `800 28px 'Quicksand', sans-serif`;
           context.fillText(dayNames[index], centerX, y + 34);
-          const titleWidth = context.measureText(dayNames[index]).width;
-          const markerSize = 22;
-          const markerGap = 12;
-          const markerX = centerX - titleWidth / 2 - markerGap - markerSize;
-          if (index < 5) drawHeart(context, markerX, y + 15, markerSize, accent);
-          else drawStar(context, markerX + markerSize / 2, y + 25, markerSize / 2, accent);
           const time = `${day.entries[0].start_time} - ${day.entries[0].end_time}`;
           context.fillStyle = "#10264B";
           context.font = `800 28px 'Quicksand', sans-serif`;
           const timeWidth = context.measureText(time).width;
-          const checkSize = width > 300 ? 22 : 19;
-          const checkGap = 10;
-          const groupLeft = centerX - (checkSize + checkGap + timeWidth) / 2;
-          drawEntryIcon(context, "open", groupLeft, y + 59, accent);
+          const groupLeft = centerX - timeWidth / 2;
           context.textAlign = "left";
-          context.fillText(time, groupLeft + checkSize + checkGap + 3, y + 81);
+          context.fillText(time, groupLeft, y + 81);
         }
       } else {
         context.fillStyle = accent; context.textAlign = "center"; context.font = `800 28px 'Quicksand', sans-serif`; context.fillText(dayNames[index], centerX, y + 34);
-        const titleWidth = context.measureText(dayNames[index]).width;
-        const markerSize = 22;
-        const markerX = centerX - titleWidth / 2 - 12 - markerSize;
-        if (index < 5) drawHeart(context, markerX, y + 15, markerSize, accent);
-        else drawStar(context, markerX + markerSize / 2, y + 25, markerSize / 2, accent);
         let rowY = y + 80;
         const hasPrivateEvent = day.entries.some((entry) => entry.type === "private");
         const rowStep = (day.entries.length >= 3 ? 42 : 52) + (hasPrivateEvent ? 4 : 0);
         day.entries.forEach(entry => {
           context.fillStyle = "#10264B";
           context.font = `800 28px 'Quicksand', sans-serif`;
-          const time = `${entry.start_time} - ${entry.end_time}`;
-          const privateSuffix = entry.type === "private" ? "(ÎNCHIS)" : "";
+          const time = entryTimeLabel(entry);
+          const privateSuffix =
+            entry.type === "private" && !entry.hide_private_times
+              ? "(ÎNCHIS)"
+              : "";
           const timeWidth = context.measureText(time).width;
           let suffixWidth = 0;
           if (privateSuffix) {
@@ -418,19 +347,16 @@
           }
           context.font = `800 28px 'Quicksand', sans-serif`;
           if (entry.type === "open") {
-            const checkSize = width > 300 ? 20 : 18;
-            const left = centerX - (checkSize + 9 + timeWidth) / 2;
-            drawEntryIcon(context, "open", left, rowY - 22, accent);
+            const left = centerX - timeWidth / 2;
             context.textAlign = "left";
-            context.fillText(time, left + checkSize + 12, rowY);
+            context.fillText(time, left, rowY);
           } else {
-            // Evenimentul privat este indicat printr-un singur lacăt lângă orar;
-            // legenda de sub grilă explică semnificația fără a repeta eticheta.
+            const isLocked = ["private", "closed"].includes(entry.type);
             const lockSize = width > 300 ? 20 : 18;
-            const left = centerX - (lockSize + 9 + timeWidth + suffixWidth + 8) / 2;
-            drawEntryIcon(context, "private", left, rowY - 24, accent);
+            const left = centerX - ((isLocked ? lockSize + 9 : 0) + timeWidth + suffixWidth + (isLocked ? 8 : 0)) / 2;
+            if (isLocked) drawEntryIcon(context, entry.type, left, rowY - 24, accent);
             context.textAlign = "left";
-            const textX = left + lockSize + 12;
+            const textX = left + (isLocked ? lockSize + 12 : 0);
             context.fillStyle = "#10264B";
             context.font = `800 28px 'Quicksand', sans-serif`;
             context.fillText(time, textX, rowY);
@@ -505,19 +431,6 @@
     context.font = `800 ${compact ? 25 : 35}px 'Quicksand', sans-serif`;
     context.fillText(dayNames[index], x + width / 2, y + (compact ? 34 : 45));
     context.textAlign = "left";
-    if (index < 5) {
-      drawHeart(context, x + 20, y + 13, compact ? 20 : 24, accent);
-      drawHeart(
-        context,
-        x + width - (compact ? 40 : 46),
-        y + 13,
-        compact ? 20 : 24,
-        accent,
-      );
-    } else {
-      drawStar(context, x + 28, y + 25, compact ? 11 : 13, accent);
-      drawStar(context, x + width - 28, y + 25, compact ? 11 : 13, accent);
-    }
     if (options.headerBand) {
       context.strokeStyle = `${accent}3d`;
       context.lineWidth = 1.5;
@@ -530,10 +443,10 @@
       const entry = day.entries[0];
       const bodyTop = y + headerHeight;
       const bodyHeight = height - headerHeight;
-      const iconSize = fullDayClosed ? (compact ? 46 : 62) : compact ? 60 : 82;
+      const iconSize = fullDayClosed ? 0 : compact ? 60 : 82;
       const groupHeight = fullDayClosed ? iconSize : compact ? 78 : 98;
       const groupTop = bodyTop + Math.max(12, (bodyHeight - groupHeight) / 2);
-      const stateIcon = fullDayClosed ? hideDuckIcon : happyDuckIcon;
+      const stateIcon = fullDayClosed ? null : happyDuckIcon;
       const narrowCard = width < 360;
       const stateLabel = fullDayClosed ? "Închis" : "Deschis";
       const stateLabelSize = compact ? 19 : 26;
@@ -544,27 +457,17 @@
       if (!fullDayClosed) {
         context.font = `800 ${timeSize}px 'Quicksand', sans-serif`;
         timeWidth = context.measureText(
-          `${entry.start_time} - ${entry.end_time}`,
+          entryTimeLabel(entry),
         ).width;
       }
       const textBlockWidth = Math.max(labelWidth, timeWidth);
       const groupGap = 12;
-      const stateGroupWidth = iconSize + groupGap + textBlockWidth;
+      const stateGroupWidth = fullDayClosed ? textBlockWidth : iconSize + groupGap + textBlockWidth;
       const opticalShift = 6;
       const stateGroupX = x + (width - stateGroupWidth) / 2 - opticalShift;
       const stateIconX = stateGroupX;
       const stateIconY = groupTop + (groupHeight - iconSize) / 2;
-      if (fullDayClosed)
-        drawTintedContained(
-          context,
-          stateIcon,
-          stateIconX,
-          stateIconY,
-          iconSize,
-          iconSize,
-          accent,
-        );
-      else
+      if (!fullDayClosed)
         drawThemedContained(
           context,
           stateIcon,
@@ -574,7 +477,7 @@
           iconSize,
           accent,
         );
-      const stateTextX = stateGroupX + iconSize + groupGap;
+      const stateTextX = fullDayClosed ? stateGroupX : stateGroupX + iconSize + groupGap;
       context.fillStyle = accent;
       context.textAlign = "left";
       context.font = `800 ${stateLabelSize}px 'Quicksand', sans-serif`;
@@ -586,7 +489,7 @@
       if (!fullDayClosed) {
         context.font = `800 ${timeSize}px 'Quicksand', sans-serif`;
         context.fillText(
-          `${entry.start_time} - ${entry.end_time}`,
+          entryTimeLabel(entry),
           stateTextX,
           groupTop + (compact ? 64 : 82),
         );
@@ -619,18 +522,12 @@
         const narrowEntry = width < 360;
         const rowX = x + 18;
         const baseline = entryTop + 29;
-        const timeText = `${entry.start_time} - ${entry.end_time}`;
+        const timeText = entryTimeLabel(entry);
         const entryLabel =
           entry.type === "open" ? "Deschis" : typeLabel(entry.type);
-        drawEntryIcon(
-          context,
-          entry.type,
-          rowX,
-          entryTop + 8,
-          accents[index],
-          duckBulletIcon,
-        );
-        const timeX = rowX + 32;
+        const isLocked = ["private", "closed"].includes(entry.type);
+        if (isLocked) drawEntryIcon(context, entry.type, rowX, entryTop + 8, accents[index], duckBulletIcon);
+        const timeX = rowX + (isLocked ? 32 : 0);
         context.fillStyle = "#10264B";
         context.font = `800 ${narrowEntry ? 16 : 18}px 'Quicksand', sans-serif`;
         context.fillText(timeText, timeX, baseline);
@@ -642,21 +539,15 @@
         context.fillStyle = "#10264B";
         context.font = `800 30px 'Quicksand', sans-serif`;
         context.fillText(
-          `${entry.start_time} - ${entry.end_time}`,
+          entryTimeLabel(entry),
           x + 24,
           entryTop + 33,
         );
-        drawEntryIcon(
-          context,
-          entry.type,
-          x + 21,
-          entryTop + 43,
-          accents[index],
-          duckBulletIcon,
-        );
+        if (["private", "closed"].includes(entry.type))
+          drawEntryIcon(context, entry.type, x + 21, entryTop + 43, accents[index], duckBulletIcon);
         context.fillStyle = "#10264B";
         context.font = `700 28px 'Quicksand', sans-serif`;
-        context.fillText(typeLabel(entry.type), x + 53, entryTop + 70);
+        context.fillText(typeLabel(entry.type), x + (["private", "closed"].includes(entry.type) ? 53 : 24), entryTop + 70);
       }
       entryTop += entryHeight + entryGap;
     });
@@ -670,19 +561,19 @@
     const dividerX = panelX + 420;
 
     context.save();
-    context.shadowColor = "#2334491d";
-    context.shadowBlur = 15;
-    context.shadowOffsetY = 6;
-    context.fillStyle = "#fffdf9f2";
+    context.shadowColor = "#23344918";
+    context.shadowBlur = 13;
+    context.shadowOffsetY = 5;
+    context.fillStyle = "#fffdf9f0";
     context.beginPath();
     context.roundRect(panelX, footerY, panelWidth, panelHeight, 22);
     context.fill();
     context.shadowColor = "transparent";
-    context.strokeStyle = "#decfc4";
-    context.lineWidth = 1.4;
+    context.strokeStyle = "#decfc4e0";
+    context.lineWidth = 1.2;
     context.stroke();
 
-    context.strokeStyle = "#dfd2ca";
+    context.strokeStyle = "#dfd2cacc";
     context.lineWidth = 1;
     context.beginPath();
     context.moveTo(dividerX, footerY + 24);
@@ -1289,7 +1180,7 @@
       }));
       const currentActive = localDate(weekStart) === localDate(todayMonday);
       const nextActive = localDate(weekStart) === localDate(nextMonday);
-      demo.innerHTML = `<div class="calendar-planner-head"><div><span class="eyebrow">PROGRAM BECKY · V1</span><h2>Disponibilitatea săptămânii</h2><p>Modifici doar evenimentele; intervalele libere se calculează automat.</p></div><div class="calendar-planner-actions"><button class="calendar-nav ${currentActive ? "is-active" : ""}" data-calendar-current>Săptămâna în curs</button><button class="calendar-nav ${nextActive ? "is-active" : ""}" data-calendar-next>Săptămâna următoare</button><button class="primary" data-calendar-preview>Preview</button></div></div><div class="calendar-week-label"><button data-calendar-prev aria-label="Săptămâna anterioară">←</button><strong>${safe(formatRange(localDate(weekStart)))}</strong><button data-calendar-forward aria-label="Săptămâna următoare">→</button></div><div class="calendar-day-grid">${activeDays.map((day) => `<article class="calendar-day-card"><header><div><small>${dayNames[day.index]}</small><strong>${safe(day.date)}</strong></div><span>${day.entries.length} intervale</span></header><div class="calendar-segments">${day.entries.map((entry) => `<div class="calendar-segment calendar-segment-${entry.type}"><span>${typeIcon(entry.type)}</span><div><strong>${safe(entry.start_time)} - ${safe(entry.end_time)}</strong><small>${safe(typeLabel(entry.type))}</small></div>${entry.type === "open" ? "" : `<div class="calendar-segment-actions"><button type="button" data-calendar-edit="${safe(entry.id)}" data-calendar-date="${day.date}">Editează</button><button type="button" data-calendar-delete="${safe(entry.id)}" data-calendar-date="${day.date}">Șterge</button></div>`}</div>`).join("")}</div><div class="calendar-day-actions"><button data-calendar-add="event" data-calendar-date="${day.date}">＋ Eveniment</button><button data-calendar-add="private" data-calendar-date="${day.date}">＋ Eveniment privat</button><button data-calendar-add="closed" data-calendar-date="${day.date}">＋ Închis</button><button class="calendar-reset" data-calendar-reset="${day.date}">Resetează ziua</button></div></article>`).join("")}</div><div class="calendar-planner-footer"><span data-calendar-status>Modificările se salvează automat.</span><button class="primary" data-calendar-preview>Vezi preview-ul săptămânii</button></div><section class="calendar-preview-panel hidden" data-calendar-preview-panel><div class="calendar-preview-head"><div><span class="eyebrow">PREVIEW PENTRU POSTARE</span><h3>Programul săptămânii</h3></div><div><button class="calendar-nav" data-calendar-back>← Înapoi la editare</button><button class="primary" data-calendar-download>Descarcă imaginea</button></div></div><div class="calendar-preview-canvas" data-calendar-canvas></div></section>`;
+      demo.innerHTML = `<div class="calendar-planner-head"><div><span class="eyebrow">PROGRAM BECKY · V1</span><h2>Disponibilitatea săptămânii</h2><p>Modifici doar evenimentele; intervalele libere se calculează automat.</p></div><div class="calendar-planner-actions"><button class="calendar-nav ${currentActive ? "is-active" : ""}" data-calendar-current>Săptămâna în curs</button><button class="calendar-nav ${nextActive ? "is-active" : ""}" data-calendar-next>Săptămâna următoare</button><button class="primary" data-calendar-preview>Preview</button></div></div><div class="calendar-week-label"><button data-calendar-prev aria-label="Săptămâna anterioară">←</button><strong>${safe(formatRange(localDate(weekStart)))}</strong><button data-calendar-forward aria-label="Săptămâna următoare">→</button></div><div class="calendar-day-grid">${activeDays.map((day) => `<article class="calendar-day-card"><header><div><small>${dayNames[day.index]}</small><strong>${safe(day.date)}</strong></div><span>${day.entries.length} intervale</span></header><div class="calendar-segments">${day.entries.map((entry) => `<div class="calendar-segment calendar-segment-${entry.type} ${typeIcon(entry.type) ? "calendar-segment-locked" : "calendar-segment-plain"}">${typeIcon(entry.type) ? `<span aria-hidden="true">${typeIcon(entry.type)}</span>` : ""}<div><strong>${safe(entryTimeLabel(entry))}</strong><small>${safe(typeLabel(entry.type))}</small></div>${entry.type === "open" ? "" : `<div class="calendar-segment-actions"><button type="button" data-calendar-edit="${safe(entry.id)}" data-calendar-date="${day.date}">Editează</button><button type="button" data-calendar-delete="${safe(entry.id)}" data-calendar-date="${day.date}">Șterge</button></div>`}</div>`).join("")}</div><div class="calendar-day-actions"><button data-calendar-add="event" data-calendar-date="${day.date}">＋ Eveniment</button><button data-calendar-add="private" data-calendar-date="${day.date}">＋ Eveniment privat</button><button data-calendar-add="closed" data-calendar-date="${day.date}">＋ Închis</button><button class="calendar-reset" data-calendar-reset="${day.date}">Resetează ziua</button></div></article>`).join("")}</div><div class="calendar-planner-footer"><span data-calendar-status>Modificările se salvează automat.</span><button class="primary" data-calendar-preview>Vezi preview-ul săptămânii</button></div><section class="calendar-preview-panel hidden" data-calendar-preview-panel><div class="calendar-preview-head"><div><span class="eyebrow">PREVIEW PENTRU POSTARE</span><h3>Programul săptămânii</h3></div><div><button class="calendar-nav" data-calendar-back>← Înapoi la editare</button><button class="primary" data-calendar-download>Descarcă imaginea</button></div></div><div class="calendar-preview-canvas" data-calendar-canvas></div></section>`;
       const status = (text) => {
         const node = demo.querySelector("[data-calendar-status]");
         if (node) node.textContent = text;
@@ -1299,7 +1190,9 @@
         const dayIndex = dates.indexOf(date);
         const selectedType = existing?.type || type;
         modal.className = "calendar-interval-modal";
-        modal.innerHTML = `<form class="calendar-interval-card"><div><span class="eyebrow">${safe(dayNames[dayIndex])}</span><h3>${existing ? "Editează intervalul" : safe(typeLabel(selectedType))}</h3><p>Alege intervalul. Restul zilei rămâne automat „Liber la joacă”.</p></div>${existing ? `<label>Tip<select name="type"><option value="event" ${selectedType === "event" ? "selected" : ""}>Eveniment</option><option value="private" ${selectedType === "private" ? "selected" : ""}>Eveniment privat</option><option value="closed" ${selectedType === "closed" ? "selected" : ""}>Închis</option></select></label>` : ""}<label>De la<input name="start_time" type="time" required value="${safe(existing?.start_time || baseHours(dayIndex)[0])}"></label><label>Până la<input name="end_time" type="time" required value="${safe(existing?.end_time || baseHours(dayIndex)[1])}"></label><div class="calendar-interval-actions"><button type="button" class="calendar-nav" data-modal-close>Anulează</button><button class="primary">${existing ? "Salvează modificarea" : "Adaugă interval"}</button></div></form>`;
+        const hideOpenIntervals = Boolean(existing?.hide_open_intervals);
+        const hidePrivateTimes = Boolean(existing?.hide_private_times);
+        modal.innerHTML = `<form class="calendar-interval-card"><div><span class="eyebrow">${safe(dayNames[dayIndex])}</span><h3>${existing ? "Editează intervalul" : safe(typeLabel(selectedType))}</h3><p>Alege intervalul. Poți ascunde intervalele libere sau orele evenimentului privat.</p></div>${existing ? `<label>Tip<select name="type"><option value="event" ${selectedType === "event" ? "selected" : ""}>Eveniment</option><option value="private" ${selectedType === "private" ? "selected" : ""}>Eveniment privat</option><option value="closed" ${selectedType === "closed" ? "selected" : ""}>Închis</option></select></label>` : ""}${selectedType === "private" || existing ? `<label class="calendar-all-day-option"><input name="hide_open_intervals" type="checkbox" ${hideOpenIntervals ? "checked" : ""}> Ascunde intervalele libere / deschise</label><label class="calendar-all-day-option"><input name="hide_private_times" type="checkbox" ${hidePrivateTimes ? "checked" : ""}> Afișează doar „Eveniment privat”</label>` : ""}<label>De la<input name="start_time" type="time" required value="${safe(existing?.start_time || baseHours(dayIndex)[0])}"></label><label>Până la<input name="end_time" type="time" required value="${safe(existing?.end_time || baseHours(dayIndex)[1])}"></label><div class="calendar-interval-actions"><button type="button" class="calendar-nav" data-modal-close>Anulează</button><button class="primary">${existing ? "Salvează modificarea" : "Adaugă interval"}</button></div></form>`;
         document.body.appendChild(modal);
         modal.querySelector("[data-modal-close]").onclick = () =>
           modal.remove();
@@ -1310,7 +1203,7 @@
           const end = form.get("end_time");
           const effectiveType = form.get("type") || selectedType;
           const [baseStart, baseEnd] = baseHours(dayIndex);
-          if (start < baseStart || end > baseEnd || start >= end) return;
+          if (!start || !end || start < baseStart || end > baseEnd || start >= end) return;
           const current = activeDays.find((day) => day.date === date);
           const specials = current.entries.filter(
             (entry) =>
@@ -1331,6 +1224,8 @@
             start_time: start,
             end_time: end,
             note: existing?.note || "",
+            hide_open_intervals: effectiveType === "private" && form.get("hide_open_intervals") === "on",
+            hide_private_times: effectiveType === "private" && form.get("hide_private_times") === "on",
           };
           activeDays[dayIndex].entries = buildDayEntries(date, dayIndex, [
             ...specials,
@@ -1396,7 +1291,7 @@
               !day ||
               !entry ||
               !window.confirm(
-                `Ștergi intervalul ${entry.start_time} - ${entry.end_time}?`,
+                `Ștergi intervalul ${entryTimeLabel(entry)}?`,
               )
             )
               return;

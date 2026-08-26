@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const sharp = require('sharp');
 
 const ROOT = __dirname;
 const PORT = Number(process.env.PORT || 3000);
@@ -30,6 +31,7 @@ const ADMIN_BECKY_BRIEF_FILE = process.env.BECKY_BRIEF_STORE_FILE || path.join(R
 const ADMIN_BECKY_MEMORY_FILE = process.env.BECKY_MEMORY_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-memory-signals.json');
 const ADMIN_BECKY_ATTENTION_FILE = process.env.BECKY_ATTENTION_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-attention-candidates.json');
 const PUBLIC = path.join(ROOT, 'public');
+const BECKY_SYMBOLIC_STYLE_REFERENCE = path.join(PUBLIC, 'becky-symbolic-style-reference.png');
 const beckyInboxCorePromise = import('./src/becky-inbox/core.mjs');
 const beckyInboxAnalyzePromise = import('./src/becky-inbox/analyze.mjs');
 const beckyMemoryCorePromise = import('./src/becky-memory/core.mjs');
@@ -345,10 +347,12 @@ function normalizeCalendarEntry(input, existing = {}) {
   const startTime = String(input?.start_time ?? existing.start_time ?? '').trim();
   const endTime = String(input?.end_time ?? existing.end_time ?? '').trim();
   const note = String(input?.note ?? existing.note ?? '').trim();
+  const hideOpenIntervals = Boolean(input?.hide_open_intervals ?? existing.hide_open_intervals ?? false);
+  const hidePrivateTimes = Boolean(input?.hide_private_times ?? existing.hide_private_times ?? false);
   if (!id || !title || !['open', 'event', 'private', 'closed'].includes(type) || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(startTime) || !/^\d{2}:\d{2}$/.test(endTime)) throw new Error('Calendar entry invalid');
   if (startTime >= endTime) throw new Error('Calendar entry time invalid');
   const now = new Date().toISOString();
-  return { id, title, type, date, start_time: startTime, end_time: endTime, note, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+  return { id, title, type, date, start_time: startTime, end_time: endTime, note, hide_open_intervals: hideOpenIntervals, hide_private_times: hidePrivateTimes, created_at: existing.created_at || input?.created_at || now, updated_at: now };
 }
 
 function calendarWeekDates(weekStart) {
@@ -376,9 +380,11 @@ function normalizeCrmChild(input, existing = {}) {
   const age = Number(input?.age ?? existing.age);
   const interests = String(input?.interests ?? existing.interests ?? '').trim();
   const continuity = String(input?.continuity ?? existing.continuity ?? '').trim();
-  if (!id || !firstName || !Number.isInteger(age) || age < 0 || age > 18 || interests.length > 240 || continuity.length > 500) throw new Error('CRM child invalid');
+  const gameRecommendations = String(input?.game_recommendations ?? existing.game_recommendations ?? '').trim();
+  if (!id || !firstName || !Number.isInteger(age) || age < 0 || age > 18 || interests.length > 1000 || continuity.length > 1000 || gameRecommendations.length > 5000) throw new Error('CRM child invalid');
   const now = new Date().toISOString();
-  return { id, first_name: firstName, age, interests, continuity, created_at: existing.created_at || input?.created_at || now, updated_at: now };
+  const ageConfirmed = input?.age_confirmed === undefined ? (existing.age_confirmed !== false) : Boolean(input.age_confirmed);
+  return { id, first_name: firstName, age, age_confirmed: ageConfirmed, interests, continuity, game_recommendations: gameRecommendations, created_at: existing.created_at || input?.created_at || now, updated_at: now };
 }
 
 function normalizeCrmCompanion(input, existing = {}) {
@@ -439,8 +445,79 @@ function readRequestJson(req, res, maxBytes, callback) {
 }
 function readRequestJsonAsync(req, maxBytes) { return new Promise((resolve, reject) => { let raw=''; req.on('data', chunk => { raw += chunk; if (Buffer.byteLength(raw) > maxBytes) reject(Object.assign(new Error('Request too large'), { status:413 })); }); req.on('end', () => { try { resolve(JSON.parse(raw || '{}')); } catch { reject(Object.assign(new Error('Invalid request'), { status:400 })); } }); req.on('error', reject); }); }
 
+async function cleanTransparentArtwork(imageBase64) {
+  const raw = await sharp(Buffer.from(imageBase64, 'base64')).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  for (let index = 3; index < raw.data.length; index += 4) {
+    const alpha = raw.data[index];
+    raw.data[index] = alpha < 128 ? 0 : Math.min(255, Math.round((alpha - 128) * 2.01));
+  }
+  return sharp(raw.data, { raw: { width: raw.info.width, height: raw.info.height, channels: 4 } }).png({ compressionLevel: 9 }).toBuffer();
+}
+
+async function removeWhiteBackground(imageBase64) {
+  const raw = await sharp(Buffer.from(imageBase64, 'base64')).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height } = raw.info;
+  for (let offset = 0; offset < raw.data.length; offset += 4) {
+    const redDistance = 255 - raw.data[offset];
+    const greenDistance = 255 - raw.data[offset + 1];
+    const blueDistance = 255 - raw.data[offset + 2];
+    const distanceFromWhite = Math.sqrt(redDistance ** 2 + greenDistance ** 2 + blueDistance ** 2);
+    const backgroundAlpha = distanceFromWhite <= 2
+      ? 0
+      : distanceFromWhite >= 18
+        ? 255
+        : Math.round(((distanceFromWhite - 2) / 16) * 255);
+    const cleanAlpha = backgroundAlpha < 32
+      ? 0
+      : Math.round(((backgroundAlpha - 32) / 223) * 255);
+    raw.data[offset + 3] = Math.min(raw.data[offset + 3], cleanAlpha);
+  }
+  return sharp(raw.data, { raw: { width, height, channels: 4 } }).png({ compressionLevel: 9 }).toBuffer();
+}
+
+async function generateBeckySymbolicArtwork(apiKey, prompt, quality = 'medium', allowPeople = false) {
+  if (!apiKey) throw Object.assign(new Error('OPENAI_API_KEY lipsește din mediul local'), { status: 503 });
+  if (!fs.existsSync(BECKY_SYMBOLIC_STYLE_REFERENCE)) throw Object.assign(new Error('Referința vizuală Becky lipsește; generarea generică a fost oprită.'), { status: 503 });
+  const reference = fs.readFileSync(BECKY_SYMBOLIC_STYLE_REFERENCE).toString('base64');
+  const contentRequirement = allowPeople
+    ? 'The request explicitly names a person. Fill every real part of that person with a clearly non-white pastel: use visible pale peach for skin and pale blue or lavender for normally white clothing.'
+    : 'STRICT OBJECT-ONLY CONTENT GATE: generate zero people and zero human body parts. Do not reproduce, adapt or include the child shown in the style reference. Communicate the subject using one to three literal, familiar objects in their normal form. The meaning must be obvious immediately. No invented hybrids, transformations, surreal combinations, ambiguous metaphors, rebuses or visual puns.';
+  const response = await fetch('https://api.openai.com/v1/responses', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: localSecret('OPENAI_IMAGE_TOOL_MODEL') || 'gpt-5.6',
+      input: [{
+        role: 'user',
+        content: [
+          { type: 'input_text', text: `${prompt}\n\n${contentRequirement}\n\nTECHNICAL OUTPUT REQUIREMENT: render on one perfectly uniform pure white background with no glow, halo, shadow, vignette or colored pixels outside the subject. Every actual part of the subject must have a clearly non-white Becky pastel fill. Never leave a subject region pure white. Keep every negative space or hole between separate parts pure background white. The server will remove every white region after generation, including enclosed holes.` },
+          { type: 'input_image', image_url: `data:image/png;base64,${reference}`, detail: 'high' }
+        ]
+      }],
+      tools: [{
+        type: 'image_generation',
+        action: 'generate',
+        background: 'opaque',
+        quality,
+        size: '1024x1024',
+        output_format: 'png'
+      }]
+    })
+  });
+  const result = await response.json().catch(() => ({}));
+  const imageCall = Array.isArray(result.output) ? result.output.find(item => item?.type === 'image_generation_call' && item.result) : null;
+  if (!response.ok || !imageCall?.result) {
+    console.error('OpenAI Becky reference generation failed', response.status, result.error?.code || result.error?.message || 'no image result');
+    const message = response.status === 401 ? 'Cheia OpenAI nu este validă. Configurează OPENAI_API_KEY în .dev.vars.' : response.status === 429 ? 'Limita OpenAI a fost atinsă. Încearcă din nou în câteva momente.' : 'Ilustrația Becky nu a putut fi generată în stilul de referință.';
+    throw Object.assign(new Error(message), { status: response.status === 429 ? 429 : 502 });
+  }
+  const output = await removeWhiteBackground(imageCall.result);
+  return { image: output.toString('base64'), mimeType: 'image/png', model: 'Becky symbolic · GPT Image' };
+}
+
 async function generateCarouselArtwork(apiKey, prompt, quality = 'medium', transparent = false) {
   if (!apiKey) throw Object.assign(new Error('OPENAI_API_KEY lipsește din mediul local'), { status: 503 });
+  const outputFormat = transparent ? 'png' : 'webp';
   const response = await fetch('https://api.openai.com/v1/images/generations', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -449,9 +526,8 @@ async function generateCarouselArtwork(apiKey, prompt, quality = 'medium', trans
       prompt,
       size: '1024x1024',
       quality,
-      output_format: 'webp',
-      output_compression: 82,
-      ...(transparent ? { background: 'transparent' } : {})
+      output_format: outputFormat,
+      ...(transparent ? { background: 'transparent' } : { output_compression: 82 })
     })
   });
   const result = await response.json().catch(() => ({}));
@@ -460,7 +536,11 @@ async function generateCarouselArtwork(apiKey, prompt, quality = 'medium', trans
     const message = response.status === 401 ? 'Cheia OpenAI nu este validă. Configurează OPENAI_API_KEY în .dev.vars.' : response.status === 429 ? 'Limita OpenAI a fost atinsă. Încearcă din nou în câteva momente.' : 'Generarea imaginii nu a reușit';
     throw Object.assign(new Error(message), { status: response.status === 401 ? 503 : response.status === 429 ? 429 : 502 });
   }
-  return { image: result.data[0].b64_json, mimeType: 'image/webp', model: 'gpt-image-2' };
+  let output = Buffer.from(result.data[0].b64_json, 'base64');
+  if (transparent) {
+    output = await cleanTransparentArtwork(result.data[0].b64_json);
+  }
+  return { image: output.toString('base64'), mimeType: `image/${outputFormat}`, model: 'gpt-image-2' };
 }
 
 async function generateCarouselPlan(apiKey, context, brand, mode = 'standard') {
@@ -468,8 +548,8 @@ async function generateCarouselPlan(apiKey, context, brand, mode = 'standard') {
   const headingPart = { type: 'object', additionalProperties: false, properties: { text: { type: 'string' }, color: { type: 'string', enum: ['teal', 'coral'] }, breakBefore: { type: 'boolean' } }, required: ['text', 'color', 'breakBefore'] };
   const slide = { type: 'object', additionalProperties: false, properties: { heading: { type: 'string' }, body: { type: 'string' }, headingParts: { type: 'array', minItems: 2, maxItems: 2, items: headingPart }, artworkInstruction: { type: 'string' } }, required: ['heading', 'body', 'headingParts', 'artworkInstruction'] };
   const storyMode = mode === 'story-of-day';
-  const schema = { type: 'object', additionalProperties: false, properties: { slides: { type: 'array', minItems: storyMode ? 3 : 5, maxItems: storyMode ? 5 : 5, items: slide }, caption: { type: 'string', minLength: 40, maxLength: 500 } }, required: ['slides', 'caption'] };
-  const storyInstructions = 'Creează draftul final al unui carousel narativ Becky’s Garden, în limba română, pornind strict din candidatul editorial și dovezile lui. Acesta este storytelling despre conexiune, nu un carousel pedagogic de tip problemă + sfaturi. Vocea este la persoana I a lui Radu. Alege flexibil 3–5 slide-uri, strict cât are nevoie povestea; fiecare slide conține o singură idee și foarte puțin text. Păstrează arcul concret: situație → moment/tensiune → schimbare → ce a rezultat → sens proporțional cu dovada. Nu inventa citate, reacții, emoții, cronologie, intenții sau rezultate. Nu transforma o interpretare în fapt și nu universaliza un caz singular. Nu folosi clișee de brand precum „momente magice”, „la Becky credem că”, „ne reamintește cât de important”, „mai mult decât” sau „conexiuni autentice”. Primul heading pornește din scenă, nu din teză. REGULĂ DE CONFIDENȚIALITATE: nu reproduce numele copilului din nota-sursă; folosește un pseudonim coerent. Ultimul slide nu este CTA comercial. Headerele au 3–10 cuvinte, body-urile maximum 35 de cuvinte. headingParts conține exact două fragmente care recompun heading-ul: primul teal cu breakBefore true, al doilea coral cu breakBefore false. artworkInstruction descrie o singură scenă relevantă; adultul este Radu, bazat pe RADU.png. Captionul este o introducere fidelă, nu un rezumat și nu adaugă fapte.';
+  const schema = { type: 'object', additionalProperties: false, properties: { slides: { type: 'array', minItems: storyMode ? 4 : 5, maxItems: storyMode ? 7 : 5, items: slide }, caption: { type: 'string', minLength: 40, maxLength: 500 } }, required: ['slides', 'caption'] };
+  const storyInstructions = 'Creează draftul final al unui carousel narativ Becky’s Garden, în limba română, pornind strict din candidatul editorial și dovezile lui. Acesta este storytelling despre conexiune, nu un carousel pedagogic de tip problemă + sfaturi. Vocea este la persoana I a lui Radu. Alege flexibil 4–7 slide-uri, strict cât are nevoie povestea: nu umple artificial și nu comprima momente care merită un slide separat. Fiecare slide conține o singură idee și foarte puțin text. Construiește un arc lizibil cu începutul situației, punctul de tensiune/culminant, schimbarea, deznodământul și concluzia proporțională cu ce s-a observat; unele etape pot ocupa mai mult de un slide doar dacă adaugă o idee nouă. Nu inventa citate, reacții, emoții, cronologie, intenții sau rezultate. Nu transforma o interpretare în fapt și nu universaliza un caz singular. Nu folosi clișee de brand precum „momente magice”, „la Becky credem că”, „ne reamintește cât de important”, „mai mult decât” sau „conexiuni autentice”. Primul heading pornește din scenă, nu din teză. REGULĂ DE CONFIDENȚIALITATE: nu reproduce numele copilului din nota-sursă; folosește un pseudonim coerent. Ultimul slide nu este CTA comercial. Headerele au 3–10 cuvinte, body-urile maximum 35 de cuvinte. headingParts conține exact două fragmente care recompun heading-ul: primul teal cu breakBefore true, al doilea coral cu breakBefore false. artworkInstruction descrie o singură scenă relevantă; adultul este Radu, bazat pe RADU.png. Captionul este o introducere fidelă, nu un rezumat și nu adaugă fapte.';
   const standardInstructions = 'Creează direct draftul final de text pentru un carousel social media Becky’s Garden în limba română. Obiectiv unic: awareness prin informație de calitate, prezentată matur, profesionist și atractiv. Firul argumentului este obligatoriu: slide 1 identifică problema părintelui și promite concret 3 modalități de ajutor; slide-urile 2–4 sunt trei soluții practice, distincte și aplicabile; slide 5 arată firesc, fără reclamă forțată, cum spațiul Becky aplică exact principiile prezentate. Hook-ul și conținutul trebuie să livreze aceeași promisiune. Dacă slide-urile oferă strategii pentru schimbarea unui comportament, hook-ul formulează scurt comportamentul recognoscibil și nu întreabă „De ce?” decât dacă explică motive. Nu inventa studii, cifre sau concluzii. Headerele au 4–10 cuvinte, descrierile maximum 24 de cuvinte. Pentru orice slide, headingParts conține exact două fragmente care recompun heading-ul: primul teal cu breakBefore true, al doilea coral cu breakBefore false. artworkInstruction descrie o singură ilustrație simplă, fără text.';
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST',
@@ -498,7 +578,7 @@ async function generateStoryCandidates(apiKey, noteText) {
   if (!apiKey) throw Object.assign(new Error('OPENAI_API_KEY lipsește din mediul local'), { status: 503 });
   const frame = { type: 'object', additionalProperties: false, properties: { text: { type: 'string' }, visual_direction: { type: 'string' } }, required: ['text', 'visual_direction'] };
   const narrative = { type: 'object', additionalProperties: false, properties: { before: { type: 'string' }, moment: { type: 'string' }, turn: { type: 'string' }, after: { type: 'string' }, meaning: { type: 'string' } }, required: ['before', 'moment', 'turn', 'after', 'meaning'] };
-  const candidate = { type: ['object', 'null'], additionalProperties: false, properties: { content_type: { type: 'string', enum: ['growth_story', 'behind_the_scenes', 'authority_expertise', 'reusable_insight'] }, angle: { type: 'string' }, why_this_story: { type: 'string' }, source_excerpts: { type: 'array', minItems: 1, maxItems: 5, items: { type: 'string' } }, narrative, story_frames: { type: 'array', minItems: 3, maxItems: 5, items: frame }, caption_seed: { type: 'string' }, privacy_flags: { type: 'array', items: { type: 'string' } } }, required: ['content_type', 'angle', 'why_this_story', 'source_excerpts', 'narrative', 'story_frames', 'caption_seed', 'privacy_flags'] };
+  const candidate = { type: ['object', 'null'], additionalProperties: false, properties: { content_type: { type: 'string', enum: ['growth_story', 'behind_the_scenes', 'authority_expertise', 'reusable_insight'] }, angle: { type: 'string' }, why_this_story: { type: 'string' }, source_excerpts: { type: 'array', minItems: 1, maxItems: 7, items: { type: 'string' } }, narrative, story_frames: { type: 'array', minItems: 4, maxItems: 7, items: frame }, caption_seed: { type: 'string' }, privacy_flags: { type: 'array', items: { type: 'string' } } }, required: ['content_type', 'angle', 'why_this_story', 'source_excerpts', 'narrative', 'story_frames', 'caption_seed', 'privacy_flags'] };
   const schema = { type: 'object', additionalProperties: false, properties: { story_worthy: { type: 'boolean' }, reason: { type: 'string' }, candidate }, required: ['story_worthy', 'reason', 'candidate'] };
   const instructions = `Ești gate-ul editorial pentru Daily Note → Story Candidate al Becky’s Garden. Mai întâi decizi dacă există o poveste; abia apoi scrii un singur candidat. Zero povești este un rezultat bun și preferabil fillerului.
 
@@ -510,7 +590,7 @@ VOCE: observată, specifică, umană, simplă, inteligentă, caldă fără sirop
 
 INTERZIS: „momente magice”, „fiecare copil este unic”, „la Becky credem că”, „ne reamintește cât de important este”, „în lumea celor mici”, „zâmbete și voie bună”, „o experiență de neuitat”, „mai mult decât”, „nu este doar X, este Y”, „uneori cele mai mici momente”, „lecții prețioase”, „conexiuni autentice” și clișee echivalente.
 
-Dacă este eligibil, generează UN singur candidat și 3–5 cadre de Story pentru Instagram/Facebook, numai câte adaugă valoare. Fiecare cadru are o singură idee, foarte puțin text, fără paragraf. Hook-ul pornește din scenă, nu din teză și nu este clickbait. Concluzia rămâne proporțională cu dovada. Alege content_type numai după ce story-worthiness este confirmat; nu fabrica autoritate dintr-un singur caz. visual_direction descrie numai acțiunea explicită din notă, cu personaje anonime; nu adăuga expresii faciale, emoții, gesturi, obiecte sau decor nespecificate.
+Generează UN singur candidat și 4–7 cadre de Story pentru Instagram/Facebook, numai câte adaugă valoare. Numărul este flexibil: fiecare cadru are o singură idee, iar povestea trebuie să aibă început, punct culminant/tensiune, deznodământ și concluzie; nu crea cadre de umplutură. Fiecare cadru are foarte puțin text, fără paragraf. Hook-ul pornește din scenă, nu din teză și nu este clickbait. Concluzia rămâne proporțională cu dovada. Alege content_type numai după ce story-worthiness este confirmat; nu fabrica autoritate dintr-un singur caz. visual_direction descrie numai acțiunea explicită din notă, cu personaje anonime; nu adăuga expresii faciale, emoții, gesturi, obiecte sau decor nespecificate.
 
 Înainte de răspuns verifică: scenă, tensiune/schimbare, specificitate, fidelitate, valoare peste reformulare, extrapolare limitată, hook real, inteligibilitate fără context intern și dacă este realmente mai bun decât a nu posta nimic. Dacă ultima condiție nu este îndeplinită: story_worthy=false, candidate=null.`;
   const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: localSecret('OPENAI_TEXT_MODEL') || 'gpt-4.1-mini', instructions, input: noteText, text: { format: { type: 'json_schema', name: 'becky_story_candidate_gate', strict: true, schema } } }) });
@@ -532,7 +612,7 @@ Dacă este eligibil, generează UN singur candidat și 3–5 cadre de Story pent
 
 Nu permite emoții, expresii faciale, gesturi, citate, intenții, cauzalitate, cronologie, obiecte, decor, rezultate sau semnificații care nu sunt explicit susținute. Direcțiile vizuale pot reprezenta numai acțiunile și contextul menționate în notă; nu adăuga zâmbete, tristețe, brațe încrucișate, planșe, fișe sau recuzită. Nu transforma o experiență singulară într-o soluție replicabilă ori principiu despre copii.
 
-source_excerpts rămân citate exacte și pot conține identitatea internă. În toate celelalte câmpuri publice anonimizează numele copilului ca „un copil”/„o fetiță”/„un băiat”, numai dacă genul este susținut; altfel „un copil”. Păstrează 3–5 cadre, o idee scurtă per cadru. Elimină clișeele și limbajul de soluție/autoritate.
+source_excerpts rămân citate exacte și pot conține identitatea internă. În toate celelalte câmpuri publice anonimizează numele copilului ca „un copil”/„o fetiță”/„un băiat”, numai dacă genul este susținut; altfel „un copil”. Păstrează 4–7 cadre, în funcție de arcul real, o idee scurtă per cadru. Elimină clișeele și limbajul de soluție/autoritate.
 Păstrează vocea firească la persoana I a lui Radu: „Un copil mi-a spus...”, „Am început...”, nu formulări clinice precum „copilul exprimă” sau „adultul propune”. angle este un hook scurt extras din scena concretă, nu o explicație de tip „Cum X a transformat Y”. Fiecare frame trebuie să poată fi citit direct pe social media, cald și simplu, dar fără niciun fapt nou.`,
       input: JSON.stringify({ original_note: noteText, proposed_candidate: assessment.candidate }),
       text: { format: { type: 'json_schema', name: 'becky_story_candidate_fidelity_audit', strict: true, schema: auditSchema } }
@@ -544,7 +624,7 @@ Păstrează vocea firească la persoana I a lui Radu: „Un copil mi-a spus...�
   const audited = JSON.parse(auditText);
   const auditedExcerptsAreExact = audited.candidate?.source_excerpts?.every(excerpt => excerpt && noteText.includes(excerpt));
   if (audited.candidate?.story_frames?.length) {
-    const groundedFrameLimit = Math.max(3, Math.min(5, audited.candidate.source_excerpts.length));
+    const groundedFrameLimit = Math.max(4, Math.min(7, audited.candidate.story_frames.length));
     audited.candidate.story_frames = audited.candidate.story_frames.slice(0, groundedFrameLimit);
     audited.candidate.angle = audited.candidate.story_frames[0].text;
   }
@@ -1148,7 +1228,10 @@ const server = http.createServer(async (req, res) => {
         const prompt = typeof body?.prompt === 'string' ? body.prompt.trim() : '';
         const quality = ['low', 'medium', 'high'].includes(body?.quality) ? body.quality : 'medium';
         if (!prompt || prompt.length > 8_000) return send(res, 400, { error: 'Descrierea imaginii este invalidă' });
-        send(res, 200, await generateCarouselArtwork(localSecret('OPENAI_API_KEY'), prompt, quality, body?.transparent === true));
+        const apiKey = localSecret('OPENAI_API_KEY');
+        send(res, 200, body?.beckySymbolicStyle === true
+          ? await generateBeckySymbolicArtwork(apiKey, prompt, quality, body?.allowPeople === true)
+          : await generateCarouselArtwork(apiKey, prompt, quality, body?.transparent === true));
       } catch (error) {
         send(res, error.status || 500, { error: error.message || 'Generarea imaginii nu a reușit' });
       }

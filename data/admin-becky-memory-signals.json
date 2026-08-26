@@ -734,5 +734,215 @@
         "destination_updated_at": "2026-08-20T15:22:29.987Z"
       }
     ]
+  },
+  {
+    "id": "ec4cee85-9299-40a8-a48d-4656d71f296c",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-23",
+    "source_version": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_hash": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_date": "2026-08-23",
+    "exact_source_excerpt": "Noah a fost primul copil venit azi, de vreo 3 ani (intra imediat la grădiniță). Are o întârziere de vorbire și simt că pot să îl ajut.",
+    "normalized_observation": "Noah, copil de aproximativ 3 ani, a venit primul azi și are întârziere de vorbire.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Noah",
+        "id": null,
+        "resolution": "not_found"
+      }
+    ],
+    "topics": [
+      "întârziere de vorbire",
+      "copii mici"
+    ],
+    "age_categories": [
+      "3"
+    ],
+    "possible_canonical_context": [],
+    "confidence": 0.95,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-23T12:46:56.920Z",
+    "updated_at": "2026-08-23T12:46:56.920Z",
+    "dedupe_key": "7fc496c85f6bbf9a26ff6ddfa0002a6066809482277319583146403630c71215"
+  },
+  {
+    "id": "b99e3588-04be-457b-9835-84b126038cda",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-23",
+    "source_version": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_hash": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_date": "2026-08-23",
+    "exact_source_excerpt": "Acum înțeleg că nu trebuie să îl forțez să zică cuvinte... ci să „simtă” că exprimarea verbală este o formă de comunicare... deci să ne jucăm un joc de imitație fizică... și când prinde gustul... fac gesturile dar și cu interjectii..",
+    "normalized_observation": "Nu trebuie forțat pe Noah să spună cuvinte, ci trebuie să înțeleagă exprimarea verbală ca formă de comunicare prin joc de imitație fizică cu gesturi și interjecții.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Noah",
+        "id": null,
+        "resolution": "not_found"
+      }
+    ],
+    "topics": [
+      "dezvoltare limbaj",
+      "joc imitativ"
+    ],
+    "age_categories": [
+      "3"
+    ],
+    "possible_canonical_context": [],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-23T12:46:56.922Z",
+    "updated_at": "2026-08-23T12:46:56.922Z",
+    "dedupe_key": "717b49a362218b378dcd27cf7a08766e9295769a3a6d8a1557f14445fb38280d"
+  },
+  {
+    "id": "969cc86b-ae27-4f0e-90f2-32c39c1f87d9",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-23",
+    "source_version": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_hash": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_date": "2026-08-23",
+    "exact_source_excerpt": "În punctul acesta... să se atașeze de ideea sunetelor care aduc valoare jocului este mai importanta decât să îi cresc forțat cu toate interacțiunile vocabularul.",
+    "normalized_observation": "Este mai important ca Noah să se atașeze de ideea sunetelor care adaugă valoare jocului decât să i se forțeze creșterea vocabularului prin toate interacțiunile.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Noah",
+        "id": null,
+        "resolution": "not_found"
+      }
+    ],
+    "topics": [
+      "dezvoltare comunicare",
+      "prioritizare obiective"
+    ],
+    "age_categories": [
+      "3"
+    ],
+    "possible_canonical_context": [],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-23T12:46:56.923Z",
+    "updated_at": "2026-08-23T12:46:56.923Z",
+    "dedupe_key": "2741f4f549a9ecca62abc28dc8e4b520841d6e0048c8d6813b9970db66bf438c"
+  },
+  {
+    "id": "1bb14dca-996b-4b00-a316-5ef5228451ad",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-23",
+    "source_version": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_hash": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_date": "2026-08-23",
+    "exact_source_excerpt": "Părinții au stat separați cât eu mi-am petrecut timp cu Noah. Simt că le-a prins bine să nu stea toată ziua concentrați pe copil, să aibă și un timp de respiro.",
+    "normalized_observation": "Părinții lui Noah au stat separat cât timp eu am lucrat cu el, ceea ce le-a oferit un timp de respiro benefic.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Noah",
+        "id": null,
+        "resolution": "not_found"
+      }
+    ],
+    "topics": [
+      "părinți",
+      "management stres"
+    ],
+    "age_categories": [
+      "3"
+    ],
+    "possible_canonical_context": [],
+    "confidence": 0.85,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-23T12:46:56.923Z",
+    "updated_at": "2026-08-23T12:46:56.923Z",
+    "dedupe_key": "cd235e3a3688f8a1e4f46e3e0654377e3b94eeedf2e9e91c8a632b00f3c92808"
+  },
+  {
+    "id": "6904d21c-a16d-42ee-9c2b-0d89ad84ba58",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-23",
+    "source_version": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_hash": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_date": "2026-08-23",
+    "exact_source_excerpt": "Nu știu ce au făcut cât nu ne-au urmărit de aproape ce facem (ne puteau vedea pe camere, dar eu nu îi vedeam, bine-înțeles).",
+    "normalized_observation": "Autorul nu știe ce au făcut părinții lui Noah când nu i-au urmărit îndeaproape, fiind observați doar prin camere.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Noah",
+        "id": null,
+        "resolution": "not_found"
+      }
+    ],
+    "topics": [
+      "observare",
+      "monitorizare"
+    ],
+    "age_categories": [
+      "3"
+    ],
+    "possible_canonical_context": [],
+    "confidence": 0.8,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-23T12:46:56.923Z",
+    "updated_at": "2026-08-23T12:46:56.923Z",
+    "dedupe_key": "a1d79539ca863071ecf1b793063b46f41d08bc4f037c0b17bf4ac725eef5f03b"
+  },
+  {
+    "id": "c42dae18-6842-40ea-b168-1ed45ce98582",
+    "source_type": "daily_note",
+    "source_note_id": "2026-08-23",
+    "source_version": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_hash": "df76f474d0edc59bc6747b0ed155b356b30e6ca6d9535f1647c9079e8e31055e",
+    "source_date": "2026-08-23",
+    "exact_source_excerpt": "Este mult mai important să facă omonime și sunete pentru a se expriam decât să scoată substantive clare și folositoare în context.",
+    "normalized_observation": "Este mult mai important pentru Noah să producă omonime și sunete ca formă de exprimare decât să rostească substantive clare și contextuale.",
+    "epistemic_type": "observed",
+    "entities": [
+      {
+        "type": "child",
+        "label": "Noah",
+        "id": null,
+        "resolution": "not_found"
+      }
+    ],
+    "topics": [
+      "dezvoltare limbaj",
+      "expressie verbală"
+    ],
+    "age_categories": [
+      "3"
+    ],
+    "possible_canonical_context": [],
+    "confidence": 0.9,
+    "provenance": {
+      "source": "daily_note",
+      "verified_excerpt": true
+    },
+    "created_at": "2026-08-23T12:46:56.924Z",
+    "updated_at": "2026-08-23T12:46:56.924Z",
+    "dedupe_key": "d3193aedf63c91192133a7040916cb0f3638ae14202b6e104d921b9d53a7d680"
   }
 ]

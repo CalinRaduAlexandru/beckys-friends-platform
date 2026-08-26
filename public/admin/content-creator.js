@@ -12,6 +12,7 @@
     selectedContentItemKey: '',
     contentDetailTab: 'manual',
     creationEntry: 'own',
+    illustrationMode: 'advice',
     activeCampaignId: 'becky-organic',
     campaigns: [
       {
@@ -123,7 +124,7 @@
   const formats = {
     hybrid: { label: 'Reel hibrid', detail: 'Talking head + cadre reale + motion typography', when: 'Când vrei reach și o voce umană, nu doar un post salvat.', you: 'Dai un video scurt sau o idee de filmare și aprobi textul.', ai: 'Propune structura, textul pe cadre și indicații de montaj; nu filmează în locul tău.' },
     carousel: { label: 'Carousel 1:1', detail: 'Imagini generate automat · 4–6 slide-uri + CTA', when: 'Când vrei să explici o idee în pași și să poată fi salvată sau distribuită.', you: 'Alegi direcția, aprobi textele și ceri modificări pe slide-uri.', ai: 'Generează imaginile, compoziția și varianta finală descărcabilă.' },
-    story: { label: 'Story sequence', detail: '3–5 cadre scurte, construite pentru răspuns', when: 'Când vrei reacții rapide: reply, poll, întrebare sau mesaj direct.', you: 'Alegi oferta/întrebarea și verifici ordinea cadrelor înainte de publicare.', ai: 'Scrie cele 3–5 cadre și propune stickerul/interacțiunea potrivită; nu publică automat.' }
+    story: { label: 'Story sequence', detail: '4–7 cadre scurte, construite pentru răspuns', when: 'Când vrei reacții rapide: reply, poll, întrebare sau mesaj direct.', you: 'Alegi oferta/întrebarea și verifici ordinea cadrelor înainte de publicare.', ai: 'Scrie 4–7 cadre, strict cât cere povestea, și propune stickerul/interacțiunea potrivită; nu publică automat.' }
   };
 
   const carouselVariants = {
@@ -406,6 +407,7 @@ Ce vă place să descoperiți împreună?`;
       return {
         ...defaults,
         ...saved,
+        illustrationMode: saved.illustrationMode || (saved.creationEntry === 'story-of-day' ? 'story' : 'advice'),
         contentItemId: saved.contentItemId || '',
         campaigns: Array.isArray(saved.campaigns) ? saved.campaigns : defaults.campaigns.map(item => ({ ...item })),
         savedIdeas: Array.isArray(saved.savedIdeas) ? saved.savedIdeas : [],
@@ -439,6 +441,10 @@ Ce vă place să descoperiți împreună?`;
   let slideRegeneratingIndex = -1;
   let textApplyBusy = -1;
   let slideAssistantMessage = '';
+  let illustrationPrompt = '';
+  let illustrationResult = null;
+  let illustrationBusy = false;
+  let illustrationError = '';
   let previewCompositionRevision = 0;
   const GENERATED_DB_NAME = 'becky-content-director-generated-v1';
   const GENERATED_DB_STORE = 'carousel-drafts';
@@ -631,7 +637,12 @@ Ce vă place să descoperiți împreună?`;
       database.close();
     }
     if (!payload?.state) throw new Error('Draftul nu mai este disponibil.');
-    state = { ...defaults, ...cloneValue(payload.state), contentView: 'create' };
+    state = {
+      ...defaults,
+      ...cloneValue(payload.state),
+      illustrationMode: payload.state.illustrationMode || (payload.state.creationEntry === 'story-of-day' ? 'story' : 'advice'),
+      contentView: 'create'
+    };
     generatedSlides = Array.isArray(payload.slides) ? cloneValue(payload.slides) : [];
     frozenComposedSlides = Array.isArray(payload.composedSlides) ? cloneValue(payload.composedSlides) : [];
     frozenComposedSlides = frozenComposedSlides.map(() => null);
@@ -754,6 +765,7 @@ Ce vă place să descoperiți împreună?`;
     state = {
       ...defaults,
       ...cloneValue(payload.state),
+      illustrationMode: payload.state.illustrationMode || (payload.state.creationEntry === 'story-of-day' ? 'story' : 'advice'),
       brandSettings: { ...defaults.brandSettings, ...currentBrandSettings },
       campaigns: currentCampaigns,
       activeCampaignId: currentCampaigns.some(item => item.id === payload.state.activeCampaignId) ? payload.state.activeCampaignId : state.activeCampaignId,
@@ -836,6 +848,7 @@ Ce vă place să descoperiți împreună?`;
 
   const contentViews = [
     ['home', 'Acasă'],
+    ['illustrations', 'Ilustrații'],
     ['story', 'Povestea de azi'],
     ['create', 'Creează'],
     ['ideas', 'Idei'],
@@ -950,6 +963,7 @@ Ce vă place să descoperiți împreună?`;
       <section class="cc-start-grid" aria-label="Începe conținut nou">
         <button type="button" data-cc-start="ideas"><span>✦</span><div><small>VREAU O DIRECȚIE NOUĂ</small><strong>Dă-mi idei</strong><p>Primești perspective, hook-uri și o structură de carousel din care alegi.</p></div><b>→</b></button>
         <button type="button" data-cc-start="own"><span>＋</span><div><small>ȘTIU DEJA CE VREAU</small><strong>Încep cu ideea mea</strong><p>Scrii contextul, alegi obiectivul și construim postarea împreună.</p></div><b>→</b></button>
+        <button type="button" class="cc-illustration-start" data-cc-view="illustrations"><span>✦</span><div><small>VREAU O IMAGINE</small><strong>Generator de ilustrații</strong><p>Scrii ce vrei să reprezinte imaginea și primești ilustrația watercolor Becky, exact ca în carousel.</p></div><b>→</b></button>
       </section>
       ${drafts.length ? `<section class="cc-dashboard-section"><div class="cc-section-title"><div><small>ÎN LUCRU</small><h3>Continuă ce ai început</h3></div><button type="button" data-cc-view="content">Vezi toate cele ${drafts.length} →</button></div>${draftListMarkup(drafts.slice(0, 3))}</section>` : ''}
       <div class="cc-dashboard-columns">
@@ -958,6 +972,12 @@ Ce vă place să descoperiți împreună?`;
       </div>
       <section class="cc-brand-shortcut"><div><span>Aa</span><div><small>VOCEA BRANDULUI</small><strong>${safe(state.brandSettings.voice)}</strong><p>Regulile folosite pentru ton, vocabular și CTA.</p></div></div><button type="button" data-cc-view="brand">Modifică vocea →</button></section>
     </main>`;
+  }
+
+  function illustrationGeneratorView() {
+    const image = illustrationResult?.image ? `data:${illustrationResult.mimeType || 'image/webp'};base64,${illustrationResult.image}` : '';
+    const resultMarkup = illustrationBusy ? `<div class="cc-illustration-magic-loading" role="status" aria-live="polite"><div class="cc-magic-orbit"><i></i><i></i><i></i><span>✦</span><b>✧</b><em>★</em></div><strong>Ilustrația prinde formă…</strong><p>Amestec culorile, lumina și ideea ta într-un desen Becky.</p><div class="cc-magic-progress"><i></i></div><small>Mai este puțin. Magia lucrează.</small></div>` : illustrationResult ? `<img src="${image}" alt="Ilustrație generată Becky"><div><strong>Ilustrația este gata.</strong><small>${safe(illustrationResult.model || 'Stil Becky · watercolor')}</small><button type="button" class="cc-back" data-cc-download-illustration>↓ Descarcă imaginea</button></div>` : `<span>✦</span><strong>Aici apare ilustrația ta</strong><small>Scrie ideea din stânga și apasă generează.</small>`;
+    return `<main class="cc-os-page cc-illustration-page"><header class="cc-page-intro"><div><small>ILUSTRAȚII · BECKY</small><h2>Generează o ilustrație<br><em>dintr-o singură idee.</em></h2><p>Scrie exact ce vrei să reprezinte desenul. Primești o ilustrație foarte fină, pală și aproape iconografică, pe fundal transparent.</p></div></header><section class="cc-illustration-generator"><div class="cc-illustration-form"><div class="cc-card-kicker">DESCRIEREA ILUSTRAȚIEI</div><label>Ce vrei să reprezinte ilustrația?<textarea data-cc-illustration-prompt maxlength="3000" placeholder="Ex: un copil care se gândește înainte să aleagă între două variante, desen simplu, fără text">${safe(illustrationPrompt)}</textarea></label><p class="cc-illustration-hint">O singură idee vizuală, fără scenă detaliată. Generatorul păstrează linia fină și paleta pastelată din referințe.</p><button type="button" class="cc-primary" data-cc-generate-illustration ${illustrationBusy ? 'disabled' : ''}>${illustrationBusy ? '✦ Generez ilustrația…' : '✦ Generează ilustrația'}</button>${illustrationError ? `<p class="cc-generation-error">${safe(illustrationError)}</p>` : ''}</div><div class="cc-illustration-result ${illustrationResult && !illustrationBusy ? 'has-image' : ''} ${illustrationBusy ? 'is-magic-loading' : ''}">${resultMarkup}</div></section></main>`;
   }
 
   const preparedCarouselPosts = [
@@ -1176,7 +1196,7 @@ Ce vă place să descoperiți împreună?`;
       if (!storyResponse.ok) throw new Error(assessment.error || 'Verificarea editorială nu a putut fi finalizată.');
       const item = assessment.story_worthy ? assessment.candidate : null;
       const frames = Array.isArray(item?.story_frames) ? item.story_frames.map(frame => ({ text: publicStoryText(frame.text), visual_direction: publicStoryText(frame.visual_direction) })) : [];
-      const candidates = item && frames.length >= 3 ? [{
+      const candidates = item && frames.length >= 4 ? [{
         ...item,
         title: publicStoryText(item.angle),
         summary: frames.slice(0, 2).map(frame => frame.text).join(' '),
@@ -1495,12 +1515,9 @@ Ce vă place să descoperiți împreună?`;
     });
   }
 
-  function artworkPrompt(slide) {
+  function artworkPrompt(slide, illustrationMode = state.illustrationMode) {
     const variant = carouselVariants[state.carouselVariant] || carouselVariants['story-cards'];
-    const storyCharacter = state.creationEntry === 'story-of-day'
-      ? ' This is Radu’s first-person story: Radu is the adult facilitator who spends the day with the children at Becky, not a child and not an educator in a generic institution. When the story needs a recurring person, use a warm illustrated adult character based on the profile reference asset /assets/content_assets/RADU.png; create a different meaningful pose or situation on each slide while preserving the same identity, hairstyle, clothing palette and watercolor treatment. If a child named Erdu appears, anonymize her as “Domnișoara E.”. Do not show a real photograph, readable text or an identifiable child.'
-      : '';
-    if (state.creationEntry === 'story-of-day') {
+    if (illustrationMode === 'story') {
       return `Create one emotionally clear watercolor story moment for a square Becky’s Garden carousel. This slide belongs to one continuous true story told in the first person by Radu, the adult facilitator at Becky. Use the illustrated profile asset /assets/content_assets/RADU.png as the identity reference for Radu and preserve his recognizable face, hairstyle, proportions and clothing palette across the entire carousel, while changing his pose and expression to match this exact moment. Slide text: “${slide.heading}” — “${slide.body}”. Visual direction: ${slide.change || 'show only the single interaction or emotional beat described by this slide'}. Children must remain anonymous, softly illustrated and non-identifiable; never render their names. One intimate scene only, with at most Radu and two children, no collage and no unrelated symbols. Premium warm watercolor, gentle Becky palette, expressive body language, generous clean white margins and a perfectly uniform white background for automatic placement. No written text, letters, logos, clouds, frame, pagination, watermark, photorealism or extra decorative objects.`;
     }
     if (slide.role === 'cover') {
@@ -1518,12 +1535,33 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       }
       return `Create one warm, simple isolated watercolor symbol for the conversational CTA of a square Becky’s Garden carousel. The CTA asks: “${slide.heading}” and invites: “${slide.body}”. Visual direction: a speech bubble with one small heart and one spark of courage. Make it feel welcoming, social and immediately readable, with ONE central symbol and at most two tiny accents. Pure uniform white background with generous margins, prepared for automatic background removal. Palette accents only: coral #F96B76, teal #238B9A, soft yellow, pale purple and pale blue. No text, letters, numbers, logos, pagination, clouds, UI, ducks, mascots, people, scenes, collage, border or watermark.`;
     }
-    const style = state.carouselVariant === 'photo-editorial'
-      ? 'delicate watercolor line art with one tactile paper detail'
-      : state.carouselVariant === 'playful-guide'
-        ? 'playful hand-drawn line icon with one small watercolor accent'
-        : 'simple expressive watercolor line icon';
-    return `Create one VERY SIMPLE isolated visual symbol for a square Becky’s Garden carousel. Style reference: airy premium children’s poster, ${style}, lots of white space. Use only one visual idea for: “${slide.heading}” — “${slide.body}”.${storyCharacter} ${slide.change ? `Requested adjustment: ${slide.change}.` : ''} Palette accents only: coral #F96B76, teal #238B9A, soft yellow, pale purple and pale blue. The result must be minimal and immediately readable: one icon, one object, or at most three tiny symbolic marks. No scene, no collage, no montage, no hands doing multiple activities, no room, no detailed background, no visual storytelling with many objects. Place the isolated symbol in the center on a perfectly uniform pure white background with very generous empty margins, prepared for automatic background removal. No paper texture, backdrop, vignette, square panel, cast shadow, floor, or border. Do not render text, letters, numbers, logos, pagination, clouds, UI, ducks, mascots, people, or watermarks. Keep the same thin hand-drawn/watercolor treatment across the five-slide set. Variant: ${variant.label}.`;
+    return adviceIllustrationPrompt(adviceIllustrationSubject(slide));
+  }
+
+  function adviceIllustrationSubject(slide) {
+    const requested = cleanCarouselText(slide?.change || '');
+    if (requested) return requested;
+    return [cleanCarouselText(slide?.heading || ''), cleanCarouselText(slide?.body || '')].filter(Boolean).join(' — ');
+  }
+
+  function adviceIllustrationAllowsPeople(subject) {
+    const normalized = String(subject || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    return /\b(copil|copii|baiat|baieti|fata|fete|bebelus|bebelusi|mama|tata|parinte|parinti|adult|adulti|persoana|persoane|om|oameni|familie|familii|educator|educatoare|child|children|kid|kids|boy|boys|girl|girls|baby|babies|parent|parents|mother|father|person|people|family|families|teacher|teachers|woman|women|man|men)\b/.test(normalized);
+  }
+
+  function adviceIllustrationPrompt(subject, allowPeople = adviceIllustrationAllowsPeople(subject)) {
+    const subjectRule = allowPeople
+      ? 'The request explicitly names a person, so a single simplified human figure is allowed only as needed to communicate that exact subject.'
+      : 'STRICT OBJECT-ONLY RULE: the request does not explicitly name a person. Depict it with one to three literal, familiar objects or universally understood symbols shown in their normal form. Include ZERO children, adults, people, human silhouettes, faces, heads, hands, arms, legs or human body parts. Image 1 contains a child, but that child is style evidence only and must not appear in the new image.';
+    return `Image 1 is the AUTHORITATIVE BECKY STYLE REFERENCE, not an edit target. Generate a completely new illustration for this subject: “${subject}”.
+
+${subjectRule}
+
+The new subject must look like it belongs to the exact same illustration system as Image 1: rounded geometric forms, consistent medium-weight teal contour, very few internal lines, flat front-facing composition, sparse translucent watercolor fills, and only coral, teal, warm yellow, pale lavender and pale blue. Make the meaning obvious in under one second. Prefer direct depiction with familiar objects over metaphor or visual cleverness.
+
+Preserve the subject but reduce it to the minimum recognizable Becky symbol. Output a new isolated illustration on a perfectly uniform pure white background with generous margins, prepared for clean background extraction. Fill every real part of the subject with a non-white Becky pastel: skin must have a visible pale peach wash, and shoes or clothing that would normally be white must use pale blue or lavender. Pure white is reserved exclusively for background and negative-space holes between body parts or objects. Do not copy the child or swing unless the requested subject is a child on a swing.
+
+ABSOLUTELY FORBIDDEN: invented object hybrids, objects transforming into other objects, surreal combinations, ambiguous metaphors, rebus-like concepts, clever visual puns, realistic or semi-realistic anatomy, individual hair strands, eyelashes, fingers, fabric folds, texture detail, lighting, shading, depth, perspective, 3D volume, cinematic pose, detailed children's-book rendering, anime, kawaii, glossy digital paint, thin pencil sketch, scenery, room, landscape, ground plane, decorative objects, text, logo, shadow, glow, halo, border or background.`;
   }
 
   function characterForSlide() { return null; }
@@ -1756,12 +1794,20 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
     return { image: btoa(emptyArtwork), mimeType: 'image/svg+xml', model: 'becky-brand-system' };
   }
 
-  async function requestArtwork(slide, index) {
+  async function requestArtwork(slide, index, modeOverride = '') {
     if (DEVELOPMENT_SINGLE_IMAGE_MODE && index !== DEVELOPMENT_GENERATED_SLIDE_INDEX) return emptyArtworkResult();
+    const illustrationMode = modeOverride || state.illustrationMode;
+    const unifiedAdviceEngine = illustrationMode === 'advice' && slide.role === 'content';
+    const adviceSubject = unifiedAdviceEngine ? adviceIllustrationSubject(slide) : '';
+    const allowPeople = unifiedAdviceEngine && adviceIllustrationAllowsPeople(adviceSubject);
     const response = await apiFetch('/api/content/carousel/image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: artworkPrompt(slide), quality: state.carouselQuality })
+      body: JSON.stringify({
+        prompt: unifiedAdviceEngine ? adviceIllustrationPrompt(adviceSubject, allowPeople) : artworkPrompt(slide, illustrationMode),
+        quality: unifiedAdviceEngine ? 'medium' : state.carouselQuality,
+        ...(unifiedAdviceEngine ? { transparent: true, beckySymbolicStyle: true, allowPeople } : {})
+      })
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok || !result.image) throw new Error(result.error || 'Generarea imaginii nu a reușit.');
@@ -2381,6 +2427,7 @@ Render it as one clean, centered watercolor illustration on a perfectly uniform 
       carouselSlides: defaults.carouselSlides.map(item => ({ ...item })),
       tasks: {},
       creationEntry: entry,
+      illustrationMode: entry === 'story-of-day' ? 'story' : 'advice',
       contentView: 'create'
     };
   }
@@ -2663,13 +2710,14 @@ async function beginNewContent(entry = 'own', branch = '') {
       const candidate = state.storyCandidates?.[Number(button.dataset.ccStoryChoice)];
       if (!candidate) return;
       button.disabled = true; button.textContent = 'Construiesc draftul…';
-      const started = await beginNewContent('own');
+      const started = await beginNewContent('story-of-day');
       if (!started) return;
       state.context = [candidate.title, candidate.why_this_story, ...candidate.story_frames.map(frame => frame.text)].filter(Boolean).join('\n\n');
       state.selectedIdeaPlan = candidate.story_frames.map(storyFrameToSlide);
       state.postCaption = candidate.caption_seed || '';
       state.postCaptionAuto = !candidate.caption_seed;
       state.creationEntry = 'story-of-day';
+      state.illustrationMode = 'story';
       state.storySourceDate = state.storyDate;
       await buildCarouselDraft();
     }));
@@ -2738,6 +2786,33 @@ async function beginNewContent(entry = 'own', branch = '') {
       save(false);
       render();
     }));
+    demo.querySelector('[data-cc-illustration-prompt]')?.addEventListener('input', event => {
+      illustrationPrompt = event.target.value;
+    });
+    demo.querySelector('[data-cc-generate-illustration]')?.addEventListener('click', async () => {
+      const prompt = illustrationPrompt.trim();
+      if (!prompt) return demo.querySelector('[data-cc-illustration-prompt]')?.focus();
+      if (illustrationBusy) return;
+      illustrationBusy = true;
+      illustrationError = '';
+      render(true);
+      try {
+        illustrationResult = await requestArtwork({ role: 'content', heading: '', body: '', change: prompt, layout: {} }, 1, 'advice');
+      } catch (error) {
+        illustrationError = error.message || 'Generarea ilustrației nu a reușit.';
+      } finally {
+        illustrationBusy = false;
+        render(true);
+      }
+    });
+    demo.querySelector('[data-cc-download-illustration]')?.addEventListener('click', () => {
+      if (!illustrationResult?.image) return;
+      const source = `data:${illustrationResult.mimeType || 'image/webp'};base64,${illustrationResult.image}`;
+      const link = document.createElement('a');
+      link.href = source;
+      link.download = `becky-ilustratie-${new Date().toISOString().slice(0, 10)}.${illustrationResult.mimeType === 'image/png' ? 'png' : 'webp'}`;
+      link.click();
+    });
     demo.querySelectorAll('[data-cc-open-content]').forEach(button => button.addEventListener('click', () => {
       state.contentView = 'content';
       state.selectedContentItemKey = button.dataset.ccOpenContent;
@@ -3244,6 +3319,7 @@ async function beginNewContent(entry = 'own', branch = '') {
     const activeStep = state.step === 4 ? briefStep() : contextStep();
     const view = state.contentView || 'home';
     const activeView = view === 'home' ? homeView()
+      : view === 'illustrations' ? illustrationGeneratorView()
       : view === 'story' ? storyView()
       : view === 'ideas' ? ideasView()
       : view === 'campaigns' ? campaignsView()

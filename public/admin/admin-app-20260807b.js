@@ -6,6 +6,8 @@ let activeWorkspace = null;
 let cssWasOpen = false;
 let currentView = 'preview';
 let activeRoute = new URLSearchParams(location.search).get('view') || 'overview';
+let navigationRequestId = 0;
+let navigationQueue = Promise.resolve();
 const workspaceStateKey = () => `becky-admin-workspace-state-${activeRoute}`;
 const sidebarStateKey = 'becky-admin-sidebar-open';
 const $ = id => document.getElementById(id);
@@ -107,8 +109,60 @@ function workspaceIsDemo() { return activeRoute==='parents'||activeRoute==='chil
 function workspaceDocument(workspace) { return {title:workspace.label,blocks:workspace.items.map(item=>({id:item.id,type:'menu',html:item.html||`<h2>${escapeHtml(item.name)}</h2>\n<p>${escapeHtml(item.description)}</p>`}))}; }
 function loadWorkspaceContext() { document.body.dataset.workspace=activeRoute;document.querySelector('.top-actions')?.classList.remove('overview-actions-hidden');document.querySelectorAll('.side-link').forEach(link=>link.classList.toggle('active',activeRoute==='manual'?link.getAttribute('href')==='/admin':link.href.includes(`view=${activeRoute}`)));if(!workspaceIsDemo()){document.querySelector('.topbar h1').textContent='Manualul comunității';document.querySelector('.topbar .subtitle').textContent='Locul unde ne întâlnim — document viu, editabil.';return;}activeWorkspace=workspaceData.workspaces.find(item=>item.id===activeRoute);if(!activeWorkspace)return;doc=workspaceDocument(activeWorkspace);document.querySelector('.topbar h1').textContent=activeWorkspace.label;document.querySelector('.topbar .subtitle').textContent=activeWorkspace.description;}
 function applyWorkspaceColorOverrides() { let style=document.getElementById('becky-workspace-colors');if(!style){style=document.createElement('style');style.id='becky-workspace-colors';document.body.appendChild(style);}style.textContent=`.sidebar .side-link[href*="view=parties"] span{color:#E19AA7!important}.sidebar .side-link[href*="view=events"] span{color:#E4B643!important}.sidebar .side-link[href*="view=parents"] span{color:#DB9E7C!important}.sidebar .side-link[href*="view=children"] span{color:#77B0B2!important}.sidebar .side-link[href="/admin"] span{color:#A994BC!important}body[data-workspace="parents"] .sidebar .side-link.active{background:#FFF9F4;background:color-mix(in srgb,#F6B28B 12%,#fffdfa)}body[data-workspace="parents"] .icon-btn{background:#F6B28B;color:#754D3C}body[data-workspace="children"] .sidebar .side-link.active{background:#F4FAFA;background:color-mix(in srgb,#84C3C6 15%,#fffdfa)}body[data-workspace="children"] .icon-btn{background:#84C3C6;color:#315F62}body[data-workspace="parties"] .sidebar .side-link.active{background:#FFF7F8;background:color-mix(in srgb,#FAABB9 15%,#fffdfa)}body[data-workspace="parties"] .icon-btn{background:#FAABB9;color:#8A4B59}body[data-workspace="events"] .sidebar .side-link.active{background:#FFFDF3;background:color-mix(in srgb,#FDCB4B 15%,#fffdfa)}body[data-workspace="events"] .icon-btn{background:#FDCB4B;color:#6C5410}body[data-workspace="manual"] .sidebar .side-link.active{background:#FCFAFD;background:color-mix(in srgb,#CBBAD8 15%,#fffdfa)}body[data-workspace="manual"] .icon-btn{background:#CBBAD8;color:#5B477B}body[data-workspace="parents"] .topbar h1{color:#DB9E7C!important}body[data-workspace="children"] .topbar h1{color:#77B0B2!important}body[data-workspace="parties"] .topbar h1{color:#E19AA7!important}body[data-workspace="events"] .topbar h1{color:#E4B643!important}body[data-workspace="manual"] .topbar h1{color:#A994BC!important}body[data-workspace="parents"] .manual-content h1,body[data-workspace="parents"] .manual-content h2,body[data-workspace="parents"] .manual-content h3,body[data-workspace="parents"] .panel-heading h2,body[data-workspace="parents"] .editor-toolbar h2{color:#DB9E7C!important}body[data-workspace="children"] .manual-content h1,body[data-workspace="children"] .manual-content h2,body[data-workspace="children"] .manual-content h3,body[data-workspace="children"] .panel-heading h2,body[data-workspace="children"] .editor-toolbar h2{color:#77B0B2!important}body[data-workspace="parties"] .manual-content h1,body[data-workspace="parties"] .manual-content h2,body[data-workspace="parties"] .manual-content h3,body[data-workspace="parties"] .panel-heading h2,body[data-workspace="parties"] .editor-toolbar h2{color:#E19AA7!important}body[data-workspace="events"] .manual-content h1,body[data-workspace="events"] .manual-content h2,body[data-workspace="events"] .manual-content h3,body[data-workspace="events"] .panel-heading h2,body[data-workspace="events"] .editor-toolbar h2{color:#E4B643!important}body[data-workspace="manual"] .manual-content h1,body[data-workspace="manual"] .manual-content h2,body[data-workspace="manual"] .manual-content h3,body[data-workspace="manual"] .panel-heading h2,body[data-workspace="manual"] .editor-toolbar h2{color:#A994BC!important}`;}
-async function navigateWorkspace(route) { if(route===activeRoute){if(route==='content')window.renderContentCreator?.({home:true});if(route==='children')await window.renderChildrenActivityEditor?.();if(route==='calendar')await window.renderCalendarAdmin?.();if(route==='inbox')await window.renderInboxAdmin?.();if(route==='crm')await window.renderCrmAdmin?.();return;} persistWorkspaceState();activeRoute=route;history.pushState({},'',route==='manual'?'/admin?view=manual':`/admin?view=${route}`);selected=null;cssWasOpen=false;currentView='preview';if(route==='content'){window.renderContentCreator?.({home:true});return;}if(route==='children'){await window.renderChildrenActivityEditor?.();return;}if(route==='calendar'){await window.renderCalendarAdmin?.();return;}if(route==='inbox'){await window.renderInboxAdmin?.();return;}if(route==='crm'){await window.renderCrmAdmin?.();return;}const manualResponse=await apiFetch('/api/manual');doc=await manualResponse.json();if(route==='overview'){renderOverviewHub();return;}loadWorkspaceContext();applyWorkspaceColorOverrides();renderOutline();$('css-workspace').classList.add('hidden');$('empty').classList.add('hidden');$('workspace-demo')?.classList.add('hidden');document.querySelector('.workspace')?.classList.remove('hidden');$('editor').classList.remove('hidden');if(doc.blocks.length)select(0);}
-function setupWorkspaceNavigation() { document.querySelectorAll('.side-link').forEach(link=>link.addEventListener('click',event=>{const url=new URL(link.href,location.href);const route=url.searchParams.get('view')||(url.pathname==='/admin'?'manual':'overview');if(route==='parties'||route==='events')return;event.preventDefault();navigateWorkspace(route); }));window.addEventListener('popstate',()=>{const route=new URLSearchParams(location.search).get('view')||'overview';if(route!=='parties'&&route!=='events')navigateWorkspace(route);}); }
+function navigateWorkspace(route, { historyMode = 'push' } = {}) {
+  const requestId = ++navigationRequestId;
+  persistWorkspaceState();
+  if (historyMode === 'push') history.pushState({}, '', route === 'manual' ? '/admin?view=manual' : `/admin?view=${route}`);
+  navigationQueue = navigationQueue.catch(() => {}).then(async () => {
+    if (requestId !== navigationRequestId) return;
+    activeRoute = route;
+    selected = null;
+    cssWasOpen = false;
+    currentView = 'preview';
+    if (route === 'events') { await renderEventsDashboard(); return; }
+    if (route === 'playground') { await renderPlaygroundDashboard(); return; }
+    if (route === 'overview') { await renderOverviewHub(); return; }
+    if (route === 'overview-tasks') { await hydrateOverviewTasks(); if (requestId === navigationRequestId) renderOverview(); return; }
+    if (route === 'content') { window.renderContentCreator?.({ home: true }); return; }
+    if (route === 'children') { await window.renderChildrenActivityEditor?.(); return; }
+    if (route === 'calendar') { await window.renderCalendarAdmin?.(); return; }
+    if (route === 'inbox') { await window.renderInboxAdmin?.(); return; }
+    if (route === 'crm') { await window.renderCrmAdmin?.(); return; }
+    if (route === 'monthly-report') { await window.renderMonthlyReportAdmin?.(); return; }
+    if (route === 'becky-inbox') { await window.renderBeckyInboxAdmin?.(); return; }
+    const manualResponse = await apiFetch('/api/manual');
+    if (requestId !== navigationRequestId) return;
+    doc = await manualResponse.json();
+    if (requestId !== navigationRequestId) return;
+    loadWorkspaceContext();
+    applyWorkspaceColorOverrides();
+    renderOutline();
+    $('css-workspace').classList.add('hidden');
+    $('empty').classList.add('hidden');
+    $('workspace-demo')?.classList.add('hidden');
+    document.querySelector('.workspace')?.classList.remove('hidden');
+    $('editor').classList.remove('hidden');
+    if (doc.blocks.length) select(0);
+  });
+  return navigationQueue;
+}
+function setupWorkspaceNavigation() {
+  const spaRoutes = new Set(['manual','parents','children','events','playground','overview','overview-tasks','calendar','inbox','crm','monthly-report','becky-inbox','content']);
+  document.addEventListener('click', event => {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = event.target.closest('.sidebar .side-link');
+    if (!link) return;
+    const url = new URL(link.href, location.href);
+    const route = url.searchParams.get('view') || (url.pathname === '/admin' ? 'manual' : 'overview');
+    if (!spaRoutes.has(route)) return;
+    event.preventDefault();
+    navigateWorkspace(route);
+  });
+  window.addEventListener('popstate', () => {
+    const route = new URLSearchParams(location.search).get('view') || 'overview';
+    if (spaRoutes.has(route)) navigateWorkspace(route, { historyMode: 'none' });
+  });
+}
 async function load() { const [manualResponse, cssResponse, workspaceResponse]=await Promise.all([apiFetch('/api/manual'),apiFetch('/api/styles'),apiFetch('/api/workspaces')]); doc=await manualResponse.json(); customCss=(await cssResponse.json()).css||''; workspaceData=await workspaceResponse.json(); applyGlobalCss(); applyTypographyPolicy(); applyWorkspaceColorOverrides(); if(activeRoute==='events'){await renderEventsDashboard();await revealApp();return;}if(activeRoute==='playground'){await renderPlaygroundDashboard();await revealApp();return;}if(activeRoute==='overview'){await renderOverviewHub();await revealApp();return;}if(activeRoute==='overview-tasks'){await hydrateOverviewTasks();renderOverview();await revealApp();return;}if(activeRoute==='calendar'){await window.renderCalendarAdmin?.();await revealApp();return;}if(activeRoute==='inbox'){await window.renderInboxAdmin?.();await revealApp();return;}if(activeRoute==='crm'){await window.renderCrmAdmin?.();await revealApp();return;}if(activeRoute==='monthly-report'){await window.renderMonthlyReportAdmin?.();await revealApp();return;}if(activeRoute==='becky-inbox'){await window.renderBeckyInboxAdmin?.();await revealApp();return;}if(activeRoute==='content'){window.renderContentCreator?.({home:true});await revealApp();return;}if(activeRoute==='children'){await window.renderChildrenActivityEditor?.();await revealApp();return;} loadWorkspaceContext(); renderOutline(); setState('Gata de editare',true); restoreWorkspaceState(); if(workspaceIsDemo()&&activeRoute!=='overview'&&selected===null&&doc.blocks.length)select(0); await revealApp(); }
 $('save').onclick=async()=>{ if(selected!==null) doc.blocks[selected].html=$('code').value;if(workspaceIsDemo()){activeWorkspace.items=doc.blocks.map(block=>{const temp=document.createElement('div');temp.innerHTML=block.html;return {id:block.id,type:'menu',name:temp.querySelector('h1,h2,h3')?.textContent.trim()||'Meniu nou',description:temp.querySelector('p')?.textContent.trim()||'',html:block.html};});const r=await apiFetch('/api/workspaces',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(workspaceData)});if(r.ok){workspaceData=await r.json();setState('Salvat acum',true);}else setState('Eroare la salvare');return;} const r=await apiFetch('/api/manual',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(doc)}); if(r.ok){doc=await r.json();setState('Salvat acum',true);renderOutline();}else setState('Eroare la salvare'); };
 $('download').addEventListener('click',async event=>{if(!adminSession?.access_token)return;event.preventDefault();const response=await apiFetch('/api/manual/download');if(!response.ok){setState('Descărcarea nu a reușit');return}const url=URL.createObjectURL(await response.blob());const link=document.createElement('a');link.href=url;link.download='becky-friends-manual.html';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
@@ -259,26 +313,15 @@ renderOverviewHub = async function renderOverviewWithMonthlyReport() {
     const sections = ['scope','objectives','metrics','done','evidence','learned','next_step'];
     const labels = ['În parametri','Necesită atenție','În urmă','Fără suficiente date'];
     const complete = report.roles.reduce((sum, role) => sum + sections.filter(key => String(role.sections?.[key] || '').trim()).length, 0);
+    const total = report.roles.length * sections.length;
+    const remaining = Math.max(0, total - complete);
+    const progress = total ? Math.round((complete / total) * 100) : 0;
     const due = new Date(`${report.due_date}T00:00:00`); const today = new Date(); today.setHours(0,0,0,0); const days = Math.ceil((due - today) / 86400000);
+    const dueLabel = new Intl.DateTimeFormat('ro-RO', { day: 'numeric', month: 'long' }).format(due);
+    const statusClasses = ['on-track','attention','behind','unknown'];
+    const statusGroups = labels.map((status, index) => ({ status, tone: statusClasses[index], roles: report.roles.filter(role => role.status === status) })).filter(group => group.roles.length);
     card.classList.add('monthly-report-overview-card');
-    card.innerHTML = `<header><span class="overview-final-icon">📊</span><div><small>REZUMAT</small><h3>Raport lunar</h3></div><b>→</b></header><div class="monthly-report-overview-progress"><strong>${complete} / 48 secțiuni completate</strong><span>${days >= 0 ? `${days} zile până la 2 septembrie` : 'Termen depășit'}</span></div><div class="monthly-report-overview-roles">${report.roles.map(role => `<a class="monthly-report-overview-role" href="/admin?view=monthly-report&role=${encodeURIComponent(role.id)}"><span>${overviewCalendarSafe(role.label)}</span><em>${overviewCalendarSafe(labels.includes(role.status) ? role.status : 'Fără suficiente date')}</em></a>`).join('')}</div><footer>Deschide Raportul Lunar</footer>`;
-    const progressLabel = card.querySelector('.monthly-report-overview-progress strong'); if (progressLabel) progressLabel.textContent = `${complete} / 56 secțiuni completate`;
+    card.innerHTML = `<header><span class="overview-final-icon">📊</span><div><small>REZUMAT</small><h3>Raport lunar</h3></div><b>→</b></header><div class="monthly-report-overview-summary"><section class="monthly-report-overview-progress"><div class="monthly-report-overview-progress-copy"><strong><b>${complete}</b><span>din ${total} secțiuni</span></strong><em>${progress}% completat</em></div><div class="monthly-report-overview-progress-track"><i style="width:${progress}%"></i></div><small>${remaining ? `${remaining} secțiuni rămase` : 'Raport complet'}</small></section><aside class="monthly-report-overview-deadline ${days < 0 ? 'is-overdue' : ''}"><small>TERMEN</small><strong>${days >= 0 ? `${days} zile` : `${Math.abs(days)} zile întârziere`}</strong><span>${days >= 0 ? `până la ${overviewCalendarSafe(dueLabel)}` : `termen: ${overviewCalendarSafe(dueLabel)}`}</span></aside></div><div class="monthly-report-overview-statuses">${statusGroups.map(group => `<section class="monthly-report-overview-status is-${group.tone}"><div class="monthly-report-overview-status-title"><i></i><strong>${group.roles.length}</strong><span>${overviewCalendarSafe(group.status)}</span></div><div>${group.roles.map(role => `<a href="/admin?view=monthly-report&role=${encodeURIComponent(role.id)}">${overviewCalendarSafe(role.label)}<b>→</b></a>`).join('')}</div></section>`).join('')}</div><footer>Deschide raportul complet <b>→</b></footer>`;
     card.addEventListener('click', event => { if (!event.target.closest('a')) window.location.href = '/admin?view=monthly-report'; });
   } catch {}
-};
-const beckyNavigateWorkspace = navigateWorkspace;
-navigateWorkspace = async function navigateWithMonthlyReport(route) {
-  if (route === 'monthly-report') {
-    activeRoute = route;
-    history.pushState({}, '', `/admin?view=${route}`);
-    await window.renderMonthlyReportAdmin?.();
-    return;
-  }
-  if (route === 'becky-inbox') {
-    activeRoute = route;
-    history.pushState({}, '', `/admin?view=${route}`);
-    await window.renderBeckyInboxAdmin?.();
-    return;
-  }
-  return beckyNavigateWorkspace(route);
 };
