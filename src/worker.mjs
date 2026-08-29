@@ -9,6 +9,7 @@ const ROUTES = new Map([
   ['/admin/', '/admin/index.html'],
   ['/admin/biblioteca-copii', '/admin/children-library.html'],
   ['/admin/biblioteca-activitati-copii', '/admin/children-library.html'],
+  ['/p', '/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf'],
   ['/petreceri', '/petreceri.html'],
   ['/evenimente', '/evenimente.html'],
   ['/comunitate', '/comunitate.html'],
