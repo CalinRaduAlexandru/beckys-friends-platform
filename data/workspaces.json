@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-08-21T17:00:34.660Z",
+  "updatedAt": "2026-08-26T10:48:00.000Z",
   "workspaces": [
     {
       "id": "parties",
@@ -99,9 +99,9 @@
     },
     {
       "id": "children",
-      "label": "Meniu Activități Copii",
+      "label": "Biblioteca Becky",
       "eyebrow": "WORKSPACE / COPII",
-      "description": "Descoperă activități care dezvoltă joaca, curiozitatea și prieteniile.",
+      "description": "Activități publice și interne, interacțiuni fizice și magie, organizate în biblioteci distincte.",
       "items": [
         {
           "id": "child-play",
@@ -128,10 +128,11 @@
           "description": "Idei noi, provocări și momente de împărtășit."
         }
       ],
-      "activityEditorVersion": 2,
+      "activityEditorVersion": 3,
       "activities": [
         {
           "id": "activity-scaunele-muzicale",
+          "libraryType": "public",
           "title": "Scaunele muzicale",
           "subtitle": "Dansează cât timp se aude muzica și găsește rapid un loc când se oprește.",
           "age": "3–4 ani · 5–6 ani · 7–8 ani",
@@ -171,6 +172,7 @@
         },
         {
           "id": "activity-6f0e43cd",
+          "libraryType": "public",
           "title": "Prinde mingea cu șezutul!",
           "subtitle": "Urmărește mingea și oprește-o așezându-te pe ea.",
           "age": "3–4 ani · 5–6 ani · 7–8 ani",
@@ -206,6 +208,7 @@
         },
         {
           "id": "activity-0f47d05b",
+          "libraryType": "public",
           "title": "Activitate nouă",
           "subtitle": "asdsad",
           "age": "1–2 ani · 3–4 ani · 5–6 ani · 7–8 ani",
@@ -245,6 +248,7 @@
         },
         {
           "id": "activity-c161a567",
+          "libraryType": "public",
           "title": "Activitate nouă",
           "subtitle": "",
           "age": "1–2 ani · 3–4 ani · 5–6 ani · 7–8 ani",
@@ -284,6 +288,7 @@
         },
         {
           "id": "activity-6c6c7bdd",
+          "libraryType": "public",
           "title": "Activitate nouă",
           "subtitle": "",
           "age": "1–2 ani · 3–4 ani · 5–6 ani · 7–8 ani",
@@ -323,6 +328,7 @@
         },
         {
           "id": "activity-63fa1189",
+          "libraryType": "public",
           "title": "Activitate nouă",
           "subtitle": "",
           "age": "1–2 ani · 3–4 ani · 5–6 ani · 7–8 ani",
@@ -362,6 +368,7 @@
         },
         {
           "id": "activity-fb2d8773",
+          "libraryType": "public",
           "title": "Activitate nouă",
           "subtitle": "",
           "age": "1–2 ani · 3–4 ani · 5–6 ani · 7–8 ani",
@@ -401,6 +408,7 @@
         },
         {
           "id": "activity-traseul-coordonarii",
+          "libraryType": "public",
           "title": "Traseul coordonării",
           "subtitle": "Mână aici, picior acolo, minte clară!",
           "age": "5–6 ani · 7–8 ani · 9+ ani",
@@ -436,6 +444,92 @@
           "illustrationStyle": "activity",
           "illustrationPrompt": "Children following a floor coordination trail made of colorful hand and foot markers, one child advancing while others wait their turn, isolated Becky’s Garden watercolor activity illustration",
           "image": "/assets/activity-library-illustrations/traseul-coordonarii.png"
+        },
+        {
+          "id": "activity-internal-cutia-senzoriala-becky",
+          "libraryType": "internal",
+          "title": "Cutia senzorială Becky",
+          "subtitle": "Copiii explorează, compară și descriu obiectele dintr-un set pregătit de facilitator.",
+          "age": "3–4 ani · 5–6 ani",
+          "ageCategories": [
+            "3–4 ani",
+            "5–6 ani"
+          ],
+          "duration": "15 min",
+          "durationPreset": "15 min",
+          "durationRange": "",
+          "durationCategories": [
+            "15 min"
+          ],
+          "participants": "2–3 copii · 4–9 copii",
+          "participantCategories": [
+            "2–3 copii",
+            "4–9 copii"
+          ],
+          "category": "Gândește",
+          "difficulty": "Set dedicat Becky",
+          "skills": "observație, vocabular descriptiv, comparație, așteptarea rândului",
+          "materials": "Cutia senzorială Becky\nSăculeți opaci\nObiecte cu texturi și forme diferite\nCartonașe de sortare",
+          "steps": "Așază obiectele în săculeți fără ca participanții să le vadă.\nFiecare copil explorează un obiect doar prin atingere și spune ce observă.\nScoateți obiectele și comparați descrierile cu ceea ce vedeți.\nSortați obiectele folosind cartonașele din set.",
+          "rules": "Explorăm fără să privim în săculeț.\nDescriem ce simțim fără să grăbim răspunsul.\nDăm săculețul mai departe după fiecare tură.",
+          "facilitator": "Spune-mi ce observă mâinile tale înainte să vedem obiectul.",
+          "easier": "Folosește obiecte foarte diferite și oferă două cuvinte dintre care copilul poate alege.",
+          "harder": "Folosește obiecte cu forme apropiate și cere două indicii înainte de identificare.",
+          "caution": "Verifică obiectele înainte de joc și exclude piesele mici pentru copiii care le-ar putea duce la gură.",
+          "reflection": "Ce indiciu te-a ajutat cel mai mult să recunoști obiectul?",
+          "illustrationStyle": "activity",
+          "illustrationPrompt": "Two children exploring textured objects from a Becky sensory box with a facilitator, isolated watercolor activity illustration",
+          "image": ""
+        }
+      ],
+      "physicalInteractions": [
+        {
+          "id": "physical-balansul-in-doi",
+          "title": "Balansul în doi",
+          "subtitle": "Un balans lent și controlat, cu contact permanent și ieșire clară.",
+          "ageCategories": [
+            "5–6 ani",
+            "7–8 ani"
+          ],
+          "participantCategories": [
+            "Individual"
+          ],
+          "facilitatorDifficulty": "Începător",
+          "learningStatus": "De învățat",
+          "setup": "Alege o zonă liberă și o saltea stabilă.\nFacilitatorul și copilul stau față în față, cu tălpile bine sprijinite.\nStabiliți semnalul verbal «stop» înainte de prima mișcare.",
+          "execution": "Prindeți ambele mâini fără a trage de articulații.\nTransferați greutatea foarte puțin înainte și înapoi.\nPăstrați ritmul lent și opriți după trei balansări.",
+          "exit": "Reveniți amândoi în poziție verticală.\nEliberați mâinile doar după ce tălpile sunt stabile.\nÎntreabă copilul dacă dorește să repete.",
+          "safety": "Nu folosi mișcări bruște și nu ridica copilul de la sol. Oprește imediat dacă pierde sprijinul, spune «stop» sau pare inconfortabil.",
+          "variations": "Micșorează amplitudinea pentru prima încercare. Pentru mai mult control, executați mișcarea numărând împreună până la trei.",
+          "materials": "Saltea antiderapantă, dacă suprafața este tare",
+          "image": "",
+          "video": "",
+          "mediaReference": ""
+        }
+      ],
+      "magicTricks": [
+        {
+          "id": "magic-moneda-care-dispare",
+          "title": "Moneda care dispare",
+          "subtitle": "O monedă este arătată clar, acoperită pentru o clipă și apoi dispare.",
+          "ageCategories": [
+            "5–6 ani",
+            "7–8 ani",
+            "9+ ani"
+          ],
+          "approximateDuration": "5 min",
+          "learningStatus": "De învățat",
+          "effectSeenByChild": "Facilitatorul pune o monedă în palmă, o acoperă cu o batistă, iar moneda nu mai este acolo când batista este ridicată.",
+          "props": "O monedă mare\nO batistă opacă\nUn buzunar ușor accesibil",
+          "setup": "Pune moneda în buzunarul din care poate fi recuperată ușor.\nVerifică unghiul din care privesc copiii.\nȚine a doua monedă pregătită în palmă.",
+          "method": "Folosește transferul fals exersat separat.\nSimulează depunerea monedei în cealaltă palmă.\nPăstrează mâna care ascunde moneda relaxată și coboar-o natural spre buzunar.",
+          "patter": "Moneda aceasta este foarte timidă. Dacă o acoperim o clipă, crede că nimeni nu o mai vede.",
+          "performanceSteps": "Arată moneda și lasă copiii să o observe.\nExecută transferul fals.\nAcoperă palma aparent plină cu batista.\nSpune replica, ridică batista și deschide palma.\nLasă un moment pentru reacție înainte să continui.",
+          "reset": "Recuperează moneda discret din buzunar înainte de următoarea demonstrație.",
+          "safety": "Folosește o monedă suficient de mare și nu o oferi copiilor mici pentru manipulare nesupravegheată.",
+          "image": "",
+          "video": "",
+          "mediaReference": ""
         }
       ]
     }

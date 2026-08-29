@@ -1,0 +1,28 @@
+import { CATEGORIES } from './data/tracks.js';
+import { getCatalog, saveCatalog, resetCatalog, getFavorites, setFavorite, getProviderMode, setProviderMode, normalizeTrack } from './lib/store.js';
+import { registerPwa } from './lib/pwa.js';
+
+const root=document.getElementById('parent-app');
+const categories=CATEGORIES.filter(category=>category.id!=='favorites');
+let tracks=getCatalog();
+let favorites=getFavorites();
+let message='';
+let saveTimer=null;
+const esc=value=>String(value??'').replace(/[&<>"']/g,character=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' })[character]);
+
+function editor(track,index){return `<article class="track-editor" data-editor="${esc(track.id)}"><header><span class="editor-index">${String(index+1).padStart(2,'0')}</span><div><strong>${esc(track.title)}</strong><small>${esc(track.artist)}</small></div><span class="editor-toggles"><label><input type="checkbox" data-enabled ${track.enabled?'checked':''}> Activă</label><label><input type="checkbox" data-favorite ${favorites.has(track.id)?'checked':''}> ★</label></span></header><div class="editor-fields"><label>Titlu<input data-field="title" value="${esc(track.title)}"></label><label>Artist<input data-field="artist" value="${esc(track.artist)}"></label><label>Categorie<select data-field="category">${categories.map(category=>`<option value="${category.id}" ${category.id===track.category?'selected':''}>${esc(category.label)}</option>`).join('')}</select></label><label>ID YouTube<input data-field="youtubeVideoId" value="${esc(track.youtubeVideoId||'')}" maxlength="11" placeholder="11 caractere"></label><label class="wide">URL oficial YouTube / YouTube Music<input data-field="url" type="url" value="${esc(track.url)}" placeholder="https://www.youtube.com/watch?v=..."></label><label class="wide">Keywords, separate prin virgulă<input data-keywords value="${esc((track.keywords||[]).join(', '))}" placeholder="dans, vesel, film"></label></div></article>`;}
+
+function render(){favorites=getFavorites();root.innerHTML=`<main class="music-shell parent-shell"><header class="parent-top"><div class="hero"><span class="brand-mark">♪</span><div><small>ZONĂ PĂRINTE</small><h1>Catalog muzical</h1></div></div><a href="/music-for-kids/">Vezi aplicația copilului →</a></header><p class="parent-note">Adaugă numai linkuri oficiale, aprobate de tine. Căutarea copilului rămâne limitată la piesele active din acest catalog.</p><section class="settings-card"><label>Mod de redare<select data-provider-mode><option value="embedded" ${getProviderMode()==='embedded'?'selected':''}>Embedded protejat — fără ieșire oferită copilului</option><option value="external" ${getProviderMode()==='external'?'selected':''}>External — deschide YouTube</option></select></label><div class="parent-actions"><button data-add>＋ Adaugă piesă</button><button data-export>Export JSON</button><label class="import-label">Import JSON<input data-import type="file" accept="application/json"></label><button class="danger" data-reset>Revino la demo</button></div><div class="save-state" data-save-state>${esc(message)}</div></section><section class="track-section"><header><h2>Piese</h2><span>${tracks.length}</span></header><div class="parent-list">${tracks.map(editor).join('')}</div></section></main>`;bind();}
+
+function persist(note='Salvat local'){tracks=saveCatalog(tracks);message=note;const state=root.querySelector('[data-save-state]');if(state)state.textContent=message;clearTimeout(saveTimer);saveTimer=setTimeout(()=>{message='';if(state)state.textContent='';},1800);}
+
+function bind(){
+  root.querySelector('[data-provider-mode]').addEventListener('change',event=>{setProviderMode(event.target.value);message='Modul de redare a fost salvat';render();});
+  root.querySelectorAll('[data-editor]').forEach(card=>{const id=card.dataset.editor;const track=tracks.find(item=>item.id===id);if(!track)return;card.querySelectorAll('[data-field]').forEach(input=>input.addEventListener('change',()=>{track[input.dataset.field]=input.value.trim();persist();render();}));card.querySelector('[data-keywords]').addEventListener('change',event=>{track.keywords=event.target.value.split(',').map(value=>value.trim()).filter(Boolean);persist();});card.querySelector('[data-enabled]').addEventListener('change',event=>{track.enabled=event.target.checked;persist();});card.querySelector('[data-favorite]').addEventListener('change',event=>{favorites=setFavorite(track.id,event.target.checked);message='Favoritele au fost salvate';render();});});
+  root.querySelector('[data-add]').addEventListener('click',()=>{const id=`track-${Date.now()}`;tracks.push(normalizeTrack({id,title:'Piesă nouă',artist:'Artist',category:'happy',url:'',enabled:false},tracks.length));persist('Piesa a fost adăugată');render();});
+  root.querySelector('[data-export]').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(tracks,null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const link=document.createElement('a');link.href=url;link.download='music-for-kids-catalog.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
+  root.querySelector('[data-import]').addEventListener('change',async event=>{const file=event.target.files?.[0];if(!file)return;try{const value=JSON.parse(await file.text());if(!Array.isArray(value))throw new Error();tracks=saveCatalog(value);message=`Au fost importate ${tracks.length} piese`;render();}catch{message='Fișierul nu conține un catalog valid';render();}});
+  root.querySelector('[data-reset]').addEventListener('click',()=>{if(!confirm('Revii la catalogul demo? Modificările locale vor fi înlocuite.'))return;tracks=resetCatalog();message='Catalogul demo a fost restaurat';render();});
+}
+
+registerPwa();render();

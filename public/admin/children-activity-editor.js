@@ -1,6 +1,7 @@
 (() => {
   const emptyActivity = () => ({
     id: `activity-${crypto.randomUUID().slice(0, 8)}`,
+    libraryType: 'public',
     title: 'Activitate nouă',
     subtitle: '',
     age: '5–6 ani · 7–8 ani',
@@ -91,7 +92,8 @@
       ? activity.participantCategories.filter(value => participantFilters.includes(value))
       : participantFilters.filter(value => participantRangeMatches(activity.participants, value));
     const participantCategories = matchedParticipants.length ? participantFilters.slice(participantFilters.indexOf(matchedParticipants[0]), participantFilters.indexOf(matchedParticipants.at(-1)) + 1) : [];
-    return { ...emptyActivity(), ...activity, ageCategories: ageCategories.length ? ageCategories : ['5–6 ani'], age: ageSelectionLabel(ageCategories.length ? ageCategories : ['5–6 ani']), durationCategories, durationPreset, durationRange, duration: durationSelectionLabel(durationCategories), participantCategories: participantCategories.length ? participantCategories : [participantKind(activity.participants)], participants: participantSelectionLabel(participantCategories.length ? participantCategories : [participantKind(activity.participants)]), category: activity.category || 'Gândește', difficulty: difficulty || 'Fără echipament', id: activity.id || `activity-${crypto.randomUUID().slice(0, 8)}` };
+    const libraryType = activity.libraryType === 'internal' ? 'internal' : 'public';
+    return { ...emptyActivity(), ...activity, libraryType, ageCategories: ageCategories.length ? ageCategories : ['5–6 ani'], age: ageSelectionLabel(ageCategories.length ? ageCategories : ['5–6 ani']), durationCategories, durationPreset, durationRange, duration: durationSelectionLabel(durationCategories), participantCategories: participantCategories.length ? participantCategories : [participantKind(activity.participants)], participants: participantSelectionLabel(participantCategories.length ? participantCategories : [participantKind(activity.participants)]), category: activity.category || 'Gândește', difficulty: libraryType === 'internal' ? 'Set dedicat Becky' : (difficulty || 'Fără echipament'), id: activity.id || `activity-${crypto.randomUUID().slice(0, 8)}` };
   }
   function setCurrent(activityId) { selectedActivityId = activities.some(item => item.id === activityId) ? activityId : activities[0]?.id || ''; }
 
@@ -108,7 +110,9 @@
     updateSaveLabel();
     workspace.activities = activities;
     delete workspace.activityPages;
-    workspace.activityEditorVersion = 2;
+    workspace.activityEditorVersion = 3;
+    workspace.physicalInteractions ||= [];
+    workspace.magicTricks ||= [];
     payload.updatedAt = new Date().toISOString();
     try {
       const response = await api('/api/workspaces', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -143,7 +147,7 @@
     const tone = categoryTone(activity);
     return `<article class="activity-sheet-card tone-${tone} ${activity.image ? 'has-image' : ''}" data-preview-activity="${safe(activity.id)}">
       <header class="activity-sheet-hero">
-        <div class="activity-sheet-card-head"><small>${safe(activity.category || 'Activitate Becky')}</small><h2>${safe(activity.title)}</h2>${activity.subtitle ? `<p>${safe(activity.subtitle)}</p>` : ''}<div class="activity-sheet-meta">${metaChip('VÂRSTĂ', ageLabel(activity))}${metaChip('DURATĂ', durationLabel(activity))}${metaChip('GRUP', participantLabel(activity))}${metaChip('IMPLEMENTARE', activity.difficulty)}</div></div>
+        <div class="activity-sheet-card-head"><small>${activity.libraryType === 'internal' ? 'ACTIVITATE INTERNĂ BECKY · ' : ''}${safe(activity.category || 'Activitate Becky')}</small><h2>${safe(activity.title)}</h2>${activity.subtitle ? `<p>${safe(activity.subtitle)}</p>` : ''}<div class="activity-sheet-meta">${metaChip('VÂRSTĂ', ageLabel(activity))}${metaChip('DURATĂ', durationLabel(activity))}${metaChip('GRUP', participantLabel(activity))}${metaChip('IMPLEMENTARE', activity.difficulty)}</div></div>
         <div class="activity-sheet-illustration ${activity.image ? '' : 'is-empty'}">${activity.image ? `<img src="${safe(activity.image)}" alt="">` : '<span>✦</span>'}</div>
       </header>
       ${activity.skills ? `<section class="activity-sheet-skills"><b>CE EXERSĂM</b><span>${safe(activity.skills)}</span></section>` : ''}
@@ -166,7 +170,7 @@
   }
 
   function field(label, key, value, options = {}) {
-    if (options.select) return `<label>${safe(label)}<select data-activity-field="${key}">${options.select.map(item => `<option ${item === value ? 'selected' : ''}>${safe(item)}</option>`).join('')}</select></label>`;
+    if (options.select) return `<label>${safe(label)}<select data-activity-field="${key}">${options.select.map(item => { const optionValue = typeof item === 'object' ? item.value : item; const optionLabel = typeof item === 'object' ? item.label : item; return `<option value="${safe(optionValue)}" ${optionValue === value ? 'selected' : ''}>${safe(optionLabel)}</option>`; }).join('')}</select></label>`;
     const placeholder = options.placeholder ? ` placeholder="${safe(options.placeholder)}"` : '';
     const control = options.long
       ? `<textarea data-activity-field="${key}"${placeholder}>${safe(value)}</textarea>`
@@ -327,7 +331,7 @@
   }
 
   function renderLibrary() {
-    return `<aside class="activity-library"><header><div><small>BIBLIOTECĂ</small><h2>Activitățile Becky</h2></div><div class="activity-library-head-actions"><a href="/admin/biblioteca-activitati-copii">Deschide biblioteca</a><button data-activity-add title="Activitate nouă">＋</button></div></header><div class="activity-library-stage" data-library-stage>${libraryBody()}</div></aside>`;
+    return `<aside class="activity-library"><header><div><small>BIBLIOTECA BECKY</small><h2>Editor de activități</h2></div><div class="activity-library-head-actions"><a href="/admin/biblioteca-activitati-copii">Deschide hub-ul</a><button data-activity-add title="Activitate nouă">＋</button></div></header><div class="activity-library-stage" data-library-stage>${libraryBody()}</div></aside>`;
   }
 
   function nextLibraryStep(type) {
@@ -375,13 +379,14 @@
       ['image', '4. Ilustrație']
     ];
     const formFields = activeFormTab === 'essential' ? `
+          ${field('Bibliotecă', 'libraryType', activity.libraryType, { select: [{ value:'public', label:'Activități publice' }, { value:'internal', label:'Activități interne Becky' }] })}
           ${field('Titlu', 'title', activity.title, { wide: true })}
           ${field('Subtitlu', 'subtitle', activity.subtitle, { wide: true })}
           ${ageCategoryField(activity)}
           ${durationField(activity)}
           ${participantCategoryField(activity)}
           ${field('Categorie', 'category', activity.category, { select: activityCategories.map(item => item[0]) })}
-          ${field('Implementare', 'difficulty', activity.difficulty, { select: ['Fără echipament', 'Cu o recuzită la îndemână', 'Cu o recuzită specială', 'Cu set de materiale dedicate'] })}
+          ${field('Implementare', 'difficulty', activity.difficulty, { select: activity.libraryType === 'internal' ? ['Set dedicat Becky'] : ['Fără echipament', 'Cu o recuzită la îndemână', 'Cu o recuzită specială', 'Cu set de materiale dedicate'] })}
           ${field('Ce exersăm', 'skills', activity.skills, { long: true, wide: true })}` : activeFormTab === 'play' ? `
           ${field('Materiale · câte unul pe rând', 'materials', activity.materials, { long: true, wide: true })}
           ${field('Pași · câte unul pe rând', 'steps', activity.steps, { long: true, wide: true })}
@@ -423,7 +428,7 @@
     document.getElementById('empty')?.classList.add('hidden');
     document.getElementById('editor')?.classList.add('hidden');
     document.querySelector('.top-actions')?.classList.add('overview-actions-hidden');
-    document.querySelector('.topbar h1').textContent = 'Meniu Activități Copii';
+    document.querySelector('.topbar h1').textContent = 'Biblioteca Becky';
     document.querySelector('.topbar .subtitle').textContent = 'Creează și salvează activități care intră direct în filtrarea bibliotecii.';
     document.querySelectorAll('.sidebar .side-link').forEach(link => link.classList.toggle('active',link.href.includes('view=children')));
     root.className = 'workspace-demo children-activity-workspace';
@@ -553,7 +558,15 @@
     document.querySelectorAll('[data-activity-participants]').forEach(button => button.addEventListener('click', () => toggleParticipantCategory(button.dataset.activityParticipants)));
     document.querySelectorAll('[data-illustration-style]').forEach(button => button.addEventListener('click', () => { mutateActivity('illustrationStyle', button.dataset.illustrationStyle); render(); }));
     document.querySelector('[data-activity-add]')?.addEventListener('click', () => { const activity = emptyActivity(); activities.push(activity); setCurrent(activity.id); scheduleSave(); render(); });
-    document.querySelectorAll('[data-activity-field]').forEach(input => input.addEventListener('input', () => mutateActivity(input.dataset.activityField, input.value)));
+    document.querySelectorAll('[data-activity-field]:not([data-activity-field="libraryType"])').forEach(input => input.addEventListener('input', () => mutateActivity(input.dataset.activityField, input.value)));
+    document.querySelector('[data-activity-field="libraryType"]')?.addEventListener('change', event => {
+      const activity = selectedActivity();
+      if (!activity) return;
+      activity.libraryType = event.target.value === 'internal' ? 'internal' : 'public';
+      if (activity.libraryType === 'internal') activity.difficulty = 'Set dedicat Becky';
+      scheduleSave();
+      render();
+    });
     document.querySelector('[data-activity-field="difficulty"]')?.addEventListener('change', event => mutateActivity('difficulty', event.target.value));
     document.querySelector('[data-activity-delete]')?.addEventListener('click', () => { if (activities.length <= 1 || !confirm('Ștergi această activitate?')) return; activities = activities.filter(item => item.id !== selectedActivityId); setCurrent(activities[0].id); scheduleSave(); render(); });
     document.querySelector('[data-activity-save]')?.addEventListener('click', save);

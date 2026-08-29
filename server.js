@@ -14,6 +14,7 @@ const EVENT_FUNNEL_FILE = path.join(ROOT, 'data', 'event-survey-funnel-events.js
 const PLAYGROUND_SURVEY_FILE = path.join(ROOT, 'data', 'playground-survey-responses.json');
 const PLAYGROUND_FUNNEL_FILE = path.join(ROOT, 'data', 'playground-survey-funnel-events.json');
 const PLAYGROUND_RAFFLE_FILE = path.join(ROOT, 'data', 'playground-survey-raffle.json');
+const COMMUNITY_INTEREST_FILE = process.env.BECKY_COMMUNITY_INTEREST_FILE || path.join(ROOT, 'data', 'community-interest.json');
 const ADMIN_TASKS_FILE = path.join(ROOT, 'data', 'admin-tasks.json');
 const ADMIN_CALENDAR_FILE = path.join(ROOT, 'data', 'admin-calendar.json');
 const ADMIN_CRM_FILE = process.env.BECKY_CRM_FILE || path.join(ROOT, 'data', 'admin-crm.json');
@@ -281,7 +282,8 @@ function readWorkspaces() {
 
 function send(res, status, body, type = 'application/json; charset=utf-8') {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-store' });
-  res.end(type.includes('json') ? JSON.stringify(body) : body);
+  const shouldSerialize = type.includes('json') && !Buffer.isBuffer(body) && typeof body !== 'string';
+  res.end(shouldSerialize ? JSON.stringify(body) : body);
 }
 
 function readArrayFile(file) {
@@ -682,7 +684,7 @@ function localSecret(name) {
 }
 
 function serve(res, pathname) {
-  const routes = {'/':'/index.html','/admin':'/admin/index.html','/admin/biblioteca-copii':'/admin/children-library.html','/admin/biblioteca-activitati-copii':'/admin/children-library.html','/petreceri':'/petreceri.html','/evenimente':'/evenimente.html','/comunitate':'/comunitate.html','/chestionare':'/chestionare.html','/chestionar-evenimente':'/chestionar-evenimente.html','/chestionar-loc-de-joaca':'/chestionar-loc-de-joaca.html'};
+  const routes = {'/':'/index.html','/admin':'/admin/index.html','/admin/biblioteca-copii':'/admin/children-library.html','/admin/biblioteca-activitati-copii':'/admin/children-library.html','/music-for-kids':'/music-for-kids/index.html','/music-for-kids/':'/music-for-kids/index.html','/music-for-kids/parent':'/music-for-kids/parent.html','/p':'/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf','/petreceri':'/petreceri.html','/evenimente':'/evenimente.html','/comunitate':'/comunitate.html','/chestionare':'/chestionare.html','/chestionar-evenimente':'/chestionar-evenimente.html','/chestionar-loc-de-joaca':'/chestionar-loc-de-joaca.html'};
   let decodedPathname;
   try { decodedPathname = decodeURIComponent(pathname); }
   catch { return send(res, 400, { error: 'Invalid path' }); }
@@ -692,7 +694,7 @@ function serve(res, pathname) {
   fs.readFile(file, (err, data) => {
     if (err) return send(res, 404, { error: 'Not found' });
     const ext = path.extname(file);
-    const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
+    const types = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8', '.webmanifest': 'application/manifest+json; charset=utf-8', '.pdf': 'application/pdf', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp' };
     send(res, 200, data, types[ext] || 'application/octet-stream');
   });
 }
@@ -758,6 +760,21 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/manual') return send(res, 200, readDocument());
   if (req.method === 'GET' && url.pathname === '/api/styles') return send(res, 200, { css: fs.existsSync(CSS_FILE) ? fs.readFileSync(CSS_FILE, 'utf8') : '' });
   if (req.method === 'GET' && url.pathname === '/api/workspaces') return send(res, 200, readWorkspaces());
+  if (req.method === 'GET' && url.pathname === '/api/calendar') {
+    try {
+      const entries = readCalendarEntries().map(({ date, type, start_time, end_time, hide_open_intervals, hide_private_times }) => ({
+        date, type, start_time, end_time, hide_open_intervals: Boolean(hide_open_intervals), hide_private_times: Boolean(hide_private_times)
+      }));
+      return send(res, 200, { entries });
+    } catch { return send(res, 500, { error: 'Calendar unavailable' }); }
+  }
+  if (req.method === 'GET' && url.pathname === '/api/admin/community-interest') {
+    try {
+      const entries = readJsonStore(COMMUNITY_INTEREST_FILE, 'community interest')
+        .sort((a, b) => String(b.updated_at || b.created_at).localeCompare(String(a.updated_at || a.created_at)));
+      return send(res, 200, { entries, total: entries.length, generatedAt: new Date().toISOString() });
+    } catch { return send(res, 500, { error: 'Înscrierile pentru comunitate nu sunt disponibile.' }); }
+  }
   if (url.pathname === '/api/admin/becky-memory/signals' && req.method === 'GET') { try { const sourceId=String(url.searchParams.get('source_note_id')||'');const report=readMonthlyReport();const inboxCore=await beckyInboxCorePromise;const memoryCore=await beckyMemoryCorePromise;let signals=readBeckyMemory().filter(item=>(!sourceId||item.source_note_id===sourceId)&&!memoryCore.isSpeculativeMemorySignal(item.exact_source_excerpt)&&!memoryCore.isSpeculativeMemorySignal(item.normalized_observation));const hashes=new Map();for(const item of signals){if(!hashes.has(item.source_note_id))hashes.set(item.source_note_id,await inboxCore.sha256(String(report.notes?.[item.source_note_id]||'')));}signals=signals.map(item=>({...item,stale:hashes.get(item.source_note_id)!==item.source_hash})).sort((a,b)=>`${b.source_date}${b.created_at}`.localeCompare(`${a.source_date}${a.created_at}`));return send(res,200,{signals});}catch(error){return send(res,500,{error:error.message||'Memoria Becky nu este disponibilă'});} }
   if (url.pathname === '/api/admin/becky-memory/attention' && req.method === 'GET') { try { return send(res,200,{candidates:readBeckyAttention().filter(item=>item.status==='active'||item.status==='investigating').sort((a,b)=>String(b.updated_at).localeCompare(String(a.updated_at)))}); } catch(error){return send(res,500,{error:error.message||'Atenția Becky nu este disponibilă'});} }
   if (url.pathname === '/api/admin/becky-memory/analyze' && req.method === 'POST') { try { const body=await readRequestJsonAsync(req,100_000);const date=String(body?.date||'');const report=readMonthlyReport();const noteText=String(report.notes?.[date]||'').trim();if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!noteText)return send(res,400,{error:'Nota zilei nu există sau este goală.'});const context=localBeckyContext();const historicContext=await localMemoryContext();let analysis;if(process.env.BECKY_INBOX_TEST_MODE==='1'&&Array.isArray(body.memory_override))analysis={memory_signals:body.memory_override,attention_candidates:Array.isArray(body.attention_override)?body.attention_override:[]};else{const analyzer=await beckyMemoryAnalyzePromise;analysis=await analyzer.analyzeDailyNoteForMemory({apiKey:localSecret('OPENAI_API_KEY'),model:localSecret('OPENAI_TEXT_MODEL')||'gpt-4.1-mini',noteDate:date,noteText,children:context.children,activities:context.activities,historicContext});}return send(res,201,await buildLocalMemory(date,noteText,analysis.memory_signals,analysis.attention_candidates));}catch(error){return send(res,error.status||500,{error:error.message||'Nota nu a putut fi procesată.'});} }
@@ -1114,6 +1131,31 @@ const server = http.createServer(async (req, res) => {
         writeCalendarEntries(entries);
         send(res, 200, entries.find(entry => entry.id === id));
       } catch { send(res, 400, { error: 'Calendar entry invalid' }); }
+    });
+    return;
+  }
+  if (req.method === 'POST' && url.pathname === '/api/community-interest') {
+    readRequestJson(req, res, 30_000, body => {
+      try {
+        if (String(body?.website || '').trim()) return send(res, 201, { ok: true });
+        const name = String(body?.name || '').trim().replace(/\s+/g, ' ');
+        const email = String(body?.email || '').trim().toLowerCase();
+        const phone = String(body?.phone || '').trim();
+        const phoneNormalized = phone.replace(/\D/g, '');
+        const motivation = String(body?.motivation || '').trim();
+        if (body?.consent !== true || name.length < 2 || name.length > 100 || email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || phone.length > 30 || phoneNormalized.length < 9 || phoneNormalized.length > 15 || motivation.length > 1000) throw new Error('Community interest invalid');
+        const entries = readJsonStore(COMMUNITY_INTEREST_FILE, 'community interest');
+        const now = new Date().toISOString();
+        const existingIndex = entries.findIndex(entry => entry.email === email || entry.phone_normalized === phoneNormalized);
+        const previous = existingIndex >= 0 ? entries[existingIndex] : null;
+        const entry = { id: previous?.id || crypto.randomUUID(), name, email, phone, phone_normalized: phoneNormalized, motivation: motivation || null, consent: true, source: 'community_page', created_at: previous?.created_at || now, updated_at: now };
+        if (existingIndex >= 0) entries[existingIndex] = entry;
+        else entries.push(entry);
+        writeJsonStore(COMMUNITY_INTEREST_FILE, entries);
+        return send(res, existingIndex >= 0 ? 200 : 201, { id: entry.id, submittedAt: entry.updated_at });
+      } catch {
+        return send(res, 400, { error: 'Verifică numele, emailul, telefonul și acordul pentru comunicări.' });
+      }
     });
     return;
   }

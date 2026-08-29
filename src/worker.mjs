@@ -9,6 +9,9 @@ const ROUTES = new Map([
   ['/admin/', '/admin/index.html'],
   ['/admin/biblioteca-copii', '/admin/children-library.html'],
   ['/admin/biblioteca-activitati-copii', '/admin/children-library.html'],
+  ['/music-for-kids', '/music-for-kids/index.html'],
+  ['/music-for-kids/', '/music-for-kids/index.html'],
+  ['/music-for-kids/parent', '/music-for-kids/parent.html'],
   ['/p', '/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf'],
   ['/petreceri', '/petreceri.html'],
   ['/evenimente', '/evenimente.html'],
@@ -676,6 +679,18 @@ async function handleAdminCalendar(request, env) {
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
 }
 
+async function handlePublicCalendar(request, env) {
+  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405, { Allow: 'GET' });
+  const response = await supabaseRequest(env, `/rest/v1/calendar_becky_entries?select=${CALENDAR_COLUMNS}&order=date.asc,start_time.asc`);
+  const entries = (await response.json()).map(({ date, type, start_time, end_time }) => ({
+    date,
+    type,
+    start_time,
+    end_time,
+  }));
+  return json({ entries });
+}
+
 async function getDocument(env, key) {
   const response = await supabaseRequest(env, `/rest/v1/app_documents?key=eq.${encodeURIComponent(key)}&select=payload&limit=1`);
   const rows = await response.json();
@@ -1175,6 +1190,7 @@ async function handleApi(request, env, pathname) {
     testingMode: env.APP_ENV === 'testing'
   });
   if (pathname.startsWith('/api/auth/')) return handleAuth(request, env, pathname);
+  if (pathname === '/api/calendar') return handlePublicCalendar(request, env);
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
   if (pathname === '/api/admin/becky-memory/analyze' || pathname === '/api/admin/becky-memory/signals' || pathname.startsWith('/api/admin/becky-memory/signals/') || pathname === '/api/admin/becky-memory/attention' || pathname.startsWith('/api/admin/becky-memory/attention/')) return handleBeckyMemory(request, env);
   if (pathname === '/api/admin/becky-inbox/context' || pathname === '/api/admin/becky-inbox/brief' || pathname === '/api/admin/becky-inbox/analyze' || pathname === '/api/admin/becky-inbox/proposals' || pathname.startsWith('/api/admin/becky-inbox/proposals/')) return handleBeckyInbox(request, env);

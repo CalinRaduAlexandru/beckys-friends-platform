@@ -529,6 +529,32 @@
     @media(max-width:620px){.site-header .nav-logo-full{left:-48px!important;width:290px!important;height:121px!important}.site-header:not(.is-scrolled) .nav-logo-full{top:-20px!important}.site-header.is-scrolled .nav-logo-full{left:-48px!important;transform:translate(14px,-20px) scale(.74)!important}}
   </style>
   <style>.brand-lockup,.brand-lockup>span,.hero h1,.intro-section h2,.contact-section h2,.feature-card h3,.location-copy h2{font-family:'DynaPuff',sans-serif!important}</style>
+  <style>
+    .location-section{grid-template-columns:minmax(330px,.88fr) minmax(0,1.12fr);grid-template-rows:auto auto auto;gap:22px 38px;padding:42px}
+    .location-copy{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:0;height:auto;padding:20px 8px 4px;align-self:end}
+    .location-copy .location-kicker{margin:0 0 12px}.location-copy>p{max-width:500px;margin:18px 0 0;padding-top:18px;border-top:2px dotted rgba(51,169,186,.32);font-size:16px}
+    .public-calendar{grid-column:2;grid-row:1/3}
+    .public-calendar{position:relative;min-width:0;padding:18px;border:1px solid rgba(180,219,222,.72);border-radius:28px;background:linear-gradient(145deg,rgba(255,255,255,.94),rgba(255,249,242,.92));box-shadow:0 14px 30px rgba(35,52,72,.1)}
+    .public-calendar-head{display:none;align-items:center;justify-content:space-between;gap:18px;margin:0 3px 14px}.public-calendar-head>span:first-child{color:#233449;font:800 12px/1 'Nunito',sans-serif;letter-spacing:.14em;text-transform:uppercase}.public-calendar-range{display:inline-flex;align-items:center;min-height:34px;padding:7px 13px;border-radius:999px;background:#FB7176;color:#fff;font-size:13px;font-weight:900;white-space:nowrap;box-shadow:0 6px 13px rgba(251,113,118,.2)}
+    .public-calendar-poster{position:relative;display:grid;place-items:center;overflow:hidden;aspect-ratio:1;border-radius:20px;background:#fffaf5}.public-calendar-loading{color:#74869E;font-size:14px;font-weight:800}.public-calendar-canvas{display:block;width:100%;height:auto}.public-calendar-error{max-width:280px;margin:auto;color:#52677D;text-align:center}.public-calendar-mobile{display:none}
+    .location-map-column{grid-column:1;grid-row:2;justify-content:center;padding:18px;border:1px solid rgba(180,219,222,.55);border-radius:28px;background:rgba(255,255,255,.6)}
+    .location-address-card{position:relative;display:flex;align-items:center;gap:18px;width:100%;min-height:154px;padding:28px;border:2px solid rgba(180,219,222,.9);border-radius:24px;background:linear-gradient(135deg,#fff 0%,#FFF9F1 58%,#EEF9F9 100%);color:#233449;text-decoration:none;box-shadow:0 12px 25px rgba(35,52,72,.1);transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+    .location-address-card:hover{transform:translateY(-3px);border-color:#33A9BA;box-shadow:0 17px 30px rgba(35,52,72,.15)}
+    .location-address-pin{display:grid;place-items:center;flex:0 0 68px;width:68px;height:68px;border-radius:50%;background:#FB7176;box-shadow:0 9px 18px rgba(251,113,118,.25)}.location-address-pin img{display:block;width:34px;height:34px;object-fit:contain;filter:brightness(0) invert(1)}
+    .location-address-copy{display:flex;min-width:0;flex-direction:column}.location-address-copy small{margin-bottom:5px;color:#238B9A;font-size:11px;font-weight:900;letter-spacing:.13em;text-transform:uppercase}.location-address-copy strong{font:700 clamp(20px,2.1vw,28px)/1.2 'DynaPuff',sans-serif}.location-address-copy span{margin-top:6px;color:#74869E;font-size:14px;font-weight:700}.location-address-arrow{margin-left:auto;color:#238B9A;font-size:27px;font-weight:900;line-height:1}
+    @media(max-width:900px){.location-section{grid-template-columns:1fr;grid-template-rows:auto;gap:24px}.location-copy,.public-calendar,.location-map-column{grid-column:1;grid-row:auto;width:100%}.location-copy{gap:12px;padding:0}.location-copy>p{max-width:none;margin:0;padding:0;border:0}}
+    @media(max-width:620px){.location-section{gap:20px;padding:24px 16px}.location-copy{gap:10px;padding:0 5px}.location-copy .location-kicker{margin-bottom:0;line-height:1.35}.location-copy>p{font-size:15px}.public-calendar{padding:15px;border-radius:23px}.public-calendar-head{display:flex;align-items:flex-start;flex-direction:column;gap:9px;margin-bottom:14px}.public-calendar-poster{display:none}.public-calendar-mobile{display:grid;gap:10px}.public-calendar-day{overflow:hidden;border:1px solid rgba(180,219,222,.6);border-radius:17px;background:rgba(255,255,255,.92)}.public-calendar-day>header{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:linear-gradient(90deg,#DDF2F3,#F3FAFA);color:#233449}.public-calendar-day>header span{font:700 17px/1.2 'DynaPuff',sans-serif}.public-calendar-day>header time{color:#238B9A;font-size:12px;font-weight:900;text-transform:uppercase}.public-calendar-intervals{display:grid;gap:1px}.public-calendar-interval{display:grid;grid-template-columns:11px minmax(0,1fr);align-items:center;gap:10px;padding:10px 13px;color:#233449;background:#fff}.public-calendar-status-dot{width:9px;height:9px;border-radius:50%;background:#33A9BA;box-shadow:0 0 0 4px rgba(51,169,186,.12)}.public-calendar-interval-private .public-calendar-status-dot,.public-calendar-interval-closed .public-calendar-status-dot{background:#FB7176;box-shadow:0 0 0 4px rgba(251,113,118,.12)}.public-calendar-interval strong,.public-calendar-interval small{display:block}.public-calendar-interval strong{font-size:14px}.public-calendar-interval small{margin-top:2px;color:#74869E;font-size:12px;font-weight:700}.location-map-column{padding:12px;border-radius:23px}.location-address-card{min-height:124px;gap:13px;padding:19px 16px;border-radius:19px}.location-address-pin{flex-basis:50px;width:50px;height:50px}.location-address-pin img{width:26px;height:26px}.location-address-copy strong{font-size:18px}.location-address-copy span{font-size:12px}.location-address-arrow{font-size:22px}}
+  </style>
+  <style>
+    .feature-grid .feature-card.is-coming-soon,.feature-grid .feature-card.is-coming-soon *{cursor:default}
+    .feature-grid .feature-card.is-coming-soon:before{display:none!important}
+    .feature-grid .feature-card.is-coming-soon .feature-bg,.feature-grid .feature-card.is-coming-soon:hover .feature-bg{transform:scale(.97)!important}
+    .feature-grid.feature-reveal.is-visible .feature-card.is-coming-soon,.feature-grid.feature-reveal.is-visible .feature-card.is-coming-soon:hover{transform:translate3d(0,-40px,0) scale(1)!important;scale:1!important;filter:none!important;box-shadow:0 16px 38px rgba(35,52,72,.1)!important;z-index:auto!important}
+    .feature-grid.feature-reveal.is-reveal-complete .feature-card.is-coming-soon{transition:none!important}
+    .feature-grid .feature-card.is-coming-soon .feature-action{pointer-events:none;background-image:linear-gradient(135deg,#75C5CC,#4AAEB8)!important;box-shadow:0 7px 16px rgba(51,169,186,.16)!important}
+    .feature-grid .feature-card.is-coming-soon .feature-action:before{display:none}
+  </style>
+  <link rel="stylesheet" href="/index-mobile.css?v=20260828-3">
 </head>
 <body class="is-loading">
   <header class="site-header" data-shared-header></header>
@@ -574,7 +600,7 @@
     <section class="intro-section" id="explore">
       <p class="eyebrow"><img class="section-heart" src="/assets/heart_little.png" alt=""> CE DOREȘTI ALĂTURI DE COPILUL TĂU? <img class="section-heart" src="/assets/heart_little.png" alt=""></p>
       <h2 class="experience-title"><span class="experience-teal">Alege </span><span class="experience-coral">experiența</span><br><span class="experience-teal">care vi se </span><span class="experience-coral">potrivește.</span></h2>
-      <p class="section-lead experience-lead">Fie că organizezi o aniversare sau cauți următorul eveniment pentru familie, aici începe povestea voastră.</p>
+      <p class="section-lead experience-lead">Fie că organizezi o aniversare sau aștepți primele noastre evenimente pentru familie, aici începe povestea voastră.</p>
     </section>
 
     <section class="feature-grid feature-reveal" aria-label="Descoperă Becky Friends">
@@ -584,20 +610,20 @@
         <span class="feature-kicker">SĂRBĂTORIM ÎMPREUNĂ</span>
         <h3><span class="feature-title-accent">Dorim să plănuim</span><br><span class="feature-title-dark">o aniversare</span></h3>
         <img class="feature-line" src="/assets/line-separator.png" alt="">
-        <p>Tot ce ai nevoie pentru o zi specială, creată exact pentru copilul tău.</p>
-        <div class="feature-points"><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/spatii-tematice.png" alt=""></span><span><strong>Spații tematice de poveste</strong><small>Decoruri magice și săli dedicate.</small></span></div><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/pachete_all_inclusie.png" alt=""></span><span><strong>Pachete all inclusive</strong><small>Mâncare, tort, jocuri și surprize.</small></span></div><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/echipa-dedicata.png" alt=""></span><span><strong>Echipă dedicată</strong><small>Ne ocupăm de tot, tu te bucuri.</small></span></div></div>
-        <div class="feature-cta-bar"><span class="feature-action primary-cta">Descoperă pachetele <span aria-hidden="true">→</span></span></div>
+        <p>Pachet aniversar pentru 10 copii, cu joacă și meniu incluse.</p>
+        <div class="feature-points"><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/pachete_all_inclusie.png" alt=""></span><span><strong>Pachet pentru 10 copii</strong><small>1.275 lei.</small></span></div><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/meniu_copii.png" alt=""></span><span><strong>Meniu la alegere</strong><small>Crispy strips sau pizza.</small></span></div><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/activitati.png" alt=""></span><span><strong>3 ore de joacă liberă</strong><small>La Becky’s Garden.</small></span></div></div>
+        <div class="feature-cta-bar"><span class="feature-action primary-cta">Vezi pachetul <span aria-hidden="true">→</span></span></div>
       </a>
-      <a class="feature-card card-yellow" id="events" href="/evenimente">
+      <article class="feature-card card-yellow is-coming-soon" id="events" aria-disabled="true">
         <img class="feature-bg" src="/assets/carduri/background-card-eveniment-extins.png" alt="">
         <span class="feature-icon" aria-hidden="true">🎉</span>
-        <span class="feature-kicker feature-kicker-teal">Căutăm experiențe să ne apropie</span>
-        <h3><span class="feature-title-accent">Dorim să participăm</span><br><span class="feature-title-dark">la un eveniment</span></h3>
+        <span class="feature-kicker feature-kicker-teal">Pregătim ceva frumos</span>
+        <h3><span class="feature-title-accent">Primele evenimente</span><br><span class="feature-title-dark">Becky</span></h3>
         <img class="feature-line" src="/assets/teal_line_separator.png" alt="">
-        <p>Descoperă toate evenimentele pentru familii și alege următoarea experiență împreună.</p>
-        <div class="feature-points"><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/calendar.png" alt=""></span><span><strong>Calendar plin de aventuri</strong><small>Ateliere, spectacole și zile tematice.</small></span></div><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/activitati.png" alt=""></span><span><strong>Activități pentru toată familia</strong><small>De la cei mici la cei mari.</small></span></div><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/locuri-limitate.png" alt=""></span><span><strong>Locuri limitate</strong><small>Rezervă din timp experiența preferată.</small></span></div></div>
-        <div class="feature-cta-bar"><span class="feature-action primary-cta">Vezi evenimentele <span aria-hidden="true">→</span></span></div>
-      </a>
+        <p>Prind contur cu grijă. Le anunțăm curând, cu drag.</p>
+        <div class="feature-points"><div class="feature-point"><span class="feature-point-icon"><img src="/assets/Iconuri/calendar.png" alt=""></span><span><strong>Urmează să le anunțăm</strong><small>Revenim curând cu primele detalii.</small></span></div></div>
+        <div class="feature-cta-bar"><span class="feature-action primary-cta">Evenimente în curând <span aria-hidden="true">♡</span></span></div>
+      </article>
       <a class="feature-card card-orange" id="community" href="/comunitate">
         <span class="feature-icon" aria-hidden="true">👨‍👩‍👧</span>
         <span class="feature-kicker">BECKY FRIENDS</span>
@@ -625,19 +651,27 @@
 
   </main>
 
-  <section class="location-section" aria-labelledby="location-title">
+  <section class="location-section" id="location" aria-labelledby="location-title">
     <div class="location-copy">
       <span class="location-kicker"><img src="/assets/heart_little.png" alt="">Locație și alte informații utile<img src="/assets/heart_little.png" alt=""></span>
       <h2 id="location-title"><span class="location-title-teal location-title-intro">Hai să ne vedem la</span><br><span class="location-title-coral">Becky’s</span> <span class="location-title-teal">Garden!</span></h2>
       <p><span class="location-description-line">Fie că organizezi o petrecere, vii la un eveniment Becky sau cauți câteva ore de joacă alături de copilul tău, la Becky’s Garden găsești un spațiu plin de surprize și posibilități.</span></p>
-      <div class="location-hours-frame"><div class="location-hours-mask"><img class="location-hours-image" src="/assets/orar.png" alt="Program Becky’s Garden: luni–vineri 14–21, sâmbătă–duminică 10–21"></div></div>
     </div>
+    <hr class="location-mobile-separator" aria-hidden="true">
+    <section class="public-calendar" data-public-calendar aria-labelledby="public-calendar-title">
+      <div class="public-calendar-head"><span id="public-calendar-title">Programul săptămânii</span><span class="public-calendar-range" data-public-calendar-range>Se încarcă…</span></div>
+      <div class="public-calendar-poster" data-public-calendar-poster><span class="public-calendar-loading">Pregătim programul…</span></div>
+      <div class="public-calendar-mobile" data-public-calendar-mobile aria-live="polite"></div>
+    </section>
+    <hr class="location-mobile-separator" aria-hidden="true">
     <div class="location-map-column">
-      <a class="location-cta" href="https://maps.app.goo.gl/T6DeCWtZt5B2ZKRx5" target="_blank" rel="noopener noreferrer"><img src="/assets/Iconuri/google-maps-logo.png" alt=""><span>Deschide locația în Google Maps</span><span aria-hidden="true">↗</span></a>
-      <a class="location-map" href="https://maps.app.goo.gl/T6DeCWtZt5B2ZKRx5" target="_blank" rel="noopener noreferrer" aria-label="Deschide Becky’s Garden în Google Maps">
-        <img src="/assets/BECKYS-MAP.png" alt="Hartă către Becky’s Garden, Constanța">
+      <a class="location-address-card" href="https://maps.app.goo.gl/T6DeCWtZt5B2ZKRx5" target="_blank" rel="noopener noreferrer" aria-label="Deschide adresa Becky’s Garden în Google Maps">
+        <span class="location-address-pin" aria-hidden="true"><img src="/assets/Iconuri/google-maps-logo.png" alt=""></span>
+        <span class="location-address-copy"><small>Ne găsești aici</small><strong>Str. Baba Novac nr. 26A</strong><span>Constanța · Deschide în Google Maps</span></span>
+        <span class="location-address-arrow" aria-hidden="true">↗</span>
       </a>
     </div>
+    <hr class="location-mobile-separator" aria-hidden="true">
     <div class="location-proof" aria-label="Recenzii și testimoniale">
       <div>
         <div class="location-rating" aria-label="Rating Google 5,0 din 5, din 33 de recenzii">
@@ -699,6 +733,8 @@
     </div>
   </footer>
   <script src="/shared-shell.js?v=20260803-1"></script>
-  <script src="/site.js?v=20260803-3"></script>
+  <script src="/site.js?v=20260828-1"></script>
+  <script src="/admin/calendar.js?v=20260827-1"></script>
+  <script src="/public-calendar.js?v=20260827-1"></script>
 </body>
 </html>

@@ -1348,5 +1348,24 @@
     };
     render();
   }
+  window.BeckyCalendarPoster = {
+    createCanvas,
+    getWeek(entries = [], referenceDate = new Date()) {
+      const weekStart = mondayOf(referenceDate);
+      const days = weekDates(weekStart).map((date, index) => ({
+        date,
+        index,
+        entries: buildDayEntries(date, index, entries),
+      }));
+      return {
+        weekStart,
+        days,
+        label: formatRange(localDate(weekStart)),
+      };
+    },
+    dayNames,
+    entryTimeLabel,
+    typeLabel,
+  };
   window.renderCalendarAdmin = renderCalendarAdmin;
 })();
