@@ -1018,31 +1018,36 @@ async function handleCommunityInterest(request, env) {
     return json({ error: 'Verifică numele, emailul, telefonul și acordul pentru comunicări.' }, 400);
   }
 
-  const existingResponse = await supabaseRequest(
-    env,
-    `/rest/v1/community_interest?select=id,created_at&or=(email.eq.${encodeURIComponent(email)},phone_normalized.eq.${encodeURIComponent(phoneNormalized)})&limit=1`
-  );
-  const existing = (await existingResponse.json())[0];
+  let document = { entries: [] };
+  try {
+    document = await getDocument(env, 'community-interest');
+  } catch (error) {
+    if (error?.status !== 404) throw error;
+  }
+  const entries = Array.isArray(document?.entries) ? document.entries : [];
+  const existingIndex = entries.findIndex(item => item.email === email || item.phone_normalized === phoneNormalized);
+  const existing = existingIndex >= 0 ? entries[existingIndex] : null;
   const id = existing?.id || crypto.randomUUID();
   const updatedAt = new Date().toISOString();
-  const entry = { id, name, email, phone, phone_normalized: phoneNormalized, motivation: motivation || null, consent: true, source: 'community_page', updated_at: updatedAt };
-
-  await supabaseRequest(env, existing ? `/rest/v1/community_interest?id=eq.${encodeURIComponent(id)}` : '/rest/v1/community_interest', {
-    method: existing ? 'PATCH' : 'POST',
-    headers: { Prefer: 'return=minimal' },
-    body: JSON.stringify(entry)
-  });
+  const entry = { id, name, email, phone, phone_normalized: phoneNormalized, motivation: motivation || null, consent: true, source: 'community_page', created_at: existing?.created_at || updatedAt, updated_at: updatedAt };
+  if (existingIndex >= 0) entries[existingIndex] = entry;
+  else entries.push(entry);
+  await saveDocument(env, 'community-interest', { entries }, null);
   return json({ id, submittedAt: updatedAt }, existing ? 200 : 201);
 }
 
 async function handleCommunityInterestAdmin(request, env) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405, { Allow: 'GET' });
   await requireAdmin(request, env);
-  const response = await supabaseRequest(
-    env,
-    '/rest/v1/community_interest?select=id,name,email,phone,motivation,created_at,updated_at&order=updated_at.desc&limit=5000'
-  );
-  const entries = await response.json();
+  let document = { entries: [] };
+  try {
+    document = await getDocument(env, 'community-interest');
+  } catch (error) {
+    if (error?.status !== 404) throw error;
+  }
+  const entries = (Array.isArray(document?.entries) ? document.entries : [])
+    .map(({ id, name, email, phone, motivation, created_at, updated_at }) => ({ id, name, email, phone, motivation, created_at, updated_at }))
+    .sort((a, b) => String(b.updated_at || b.created_at || '').localeCompare(String(a.updated_at || a.created_at || '')));
   return json({ entries, total: entries.length, generatedAt: new Date().toISOString() });
 }
 
