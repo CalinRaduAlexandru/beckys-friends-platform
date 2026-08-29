@@ -988,6 +988,49 @@ async function handleSurvey(request, env) {
   return json({ id, submittedAt }, 201);
 }
 
+async function handleCommunityInterest(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, { Allow: 'POST' });
+  assertSameOrigin(request);
+  const body = await readJson(request, 30_000);
+  if (String(body?.website || '').trim()) return json({ ok: true }, 201);
+
+  const name = String(body?.name || '').trim().replace(/\s+/g, ' ');
+  const email = String(body?.email || '').trim().toLowerCase();
+  const phone = String(body?.phone || '').trim();
+  const phoneNormalized = phone.replace(/\D/g, '');
+  const motivation = String(body?.motivation || '').trim();
+  if (body?.consent !== true || name.length < 2 || name.length > 100 || email.length > 200 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || phone.length > 30 || phoneNormalized.length < 9 || phoneNormalized.length > 15 || motivation.length > 1000) {
+    return json({ error: 'Verifică numele, emailul, telefonul și acordul pentru comunicări.' }, 400);
+  }
+
+  const existingResponse = await supabaseRequest(
+    env,
+    `/rest/v1/community_interest?select=id,created_at&or=(email.eq.${encodeURIComponent(email)},phone_normalized.eq.${encodeURIComponent(phoneNormalized)})&limit=1`
+  );
+  const existing = (await existingResponse.json())[0];
+  const id = existing?.id || crypto.randomUUID();
+  const updatedAt = new Date().toISOString();
+  const entry = { id, name, email, phone, phone_normalized: phoneNormalized, motivation: motivation || null, consent: true, source: 'community_page', updated_at: updatedAt };
+
+  await supabaseRequest(env, existing ? `/rest/v1/community_interest?id=eq.${encodeURIComponent(id)}` : '/rest/v1/community_interest', {
+    method: existing ? 'PATCH' : 'POST',
+    headers: { Prefer: 'return=minimal' },
+    body: JSON.stringify(entry)
+  });
+  return json({ id, submittedAt: updatedAt }, existing ? 200 : 201);
+}
+
+async function handleCommunityInterestAdmin(request, env) {
+  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405, { Allow: 'GET' });
+  await requireAdmin(request, env);
+  const response = await supabaseRequest(
+    env,
+    '/rest/v1/community_interest?select=id,name,email,phone,motivation,created_at,updated_at&order=updated_at.desc&limit=5000'
+  );
+  const entries = await response.json();
+  return json({ entries, total: entries.length, generatedAt: new Date().toISOString() });
+}
+
 async function handleSurveyFunnel(request, env) {
   if (request.method === 'POST') {
     assertSameOrigin(request);
@@ -1145,6 +1188,8 @@ async function handleApi(request, env, pathname) {
   if (pathname === '/api/admin/monthly-report' || pathname.startsWith('/api/admin/monthly-report/')) return handleAdminMonthlyReport(request, env);
   if (pathname === '/api/admin/activity-observations' || pathname.startsWith('/api/admin/activity-observations/')) return handleActivityObservations(request, env);
   if (pathname === '/api/admin/calendar' || pathname.startsWith('/api/admin/calendar/')) return handleAdminCalendar(request, env);
+  if (pathname === '/api/admin/community-interest') return handleCommunityInterestAdmin(request, env);
+  if (pathname === '/api/community-interest') return handleCommunityInterest(request, env);
   if (pathname === '/api/event-survey/results') return handleSurveyResults(request, env);
   if (pathname === '/api/event-survey/funnel') return handleSurveyFunnel(request, env);
   if (pathname === '/api/event-survey') return handleSurvey(request, env);

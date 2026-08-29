@@ -325,3 +325,28 @@ renderOverviewHub = async function renderOverviewWithMonthlyReport() {
     card.addEventListener('click', event => { if (!event.target.closest('a')) window.location.href = '/admin?view=monthly-report'; });
   } catch {}
 };
+
+const beckyOverviewRenderWithCommunityInterest = renderOverviewHub;
+renderOverviewHub = async function renderOverviewWithCommunityInterest() {
+  await beckyOverviewRenderWithCommunityInterest();
+  const grid = document.querySelector('.overview-final-grid');
+  if (!grid) return;
+  const card = document.createElement('article');
+  card.className = 'overview-final-card overview-community-card';
+  card.innerHTML = `<header><span class="overview-final-icon">♡</span><div><small>COMUNITATE</small><h3>Interes comunitate</h3></div></header><p class="overview-community-loading">Se încarcă înscrierile…</p>`;
+  grid.appendChild(card);
+  try {
+    const response = await apiFetch('/api/admin/community-interest');
+    if (!response.ok) throw new Error('Community interest unavailable');
+    const payload = await response.json();
+    const entries = Array.isArray(payload.entries) ? payload.entries : [];
+    const latest = entries.slice(0, 6);
+    const dateLabel = value => {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? '' : new Intl.DateTimeFormat('ro-RO', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+    };
+    card.innerHTML = `<header><span class="overview-final-icon">♡</span><div><small>COMUNITATE</small><h3>Interes comunitate</h3></div><strong class="overview-community-total">${entries.length}</strong></header>${latest.length ? `<div class="overview-community-list">${latest.map(entry => `<article><div><strong>${overviewCalendarSafe(entry.name)}</strong><small>${overviewCalendarSafe(dateLabel(entry.updated_at || entry.created_at))}</small></div><div class="overview-community-contact"><a href="mailto:${encodeURIComponent(entry.email)}">${overviewCalendarSafe(entry.email)}</a><a href="tel:${String(entry.phone || '').replace(/[^+\d]/g, '')}">${overviewCalendarSafe(entry.phone)}</a></div>${entry.motivation ? `<p>${overviewCalendarSafe(entry.motivation)}</p>` : '<p class="is-empty">Fără descriere sau motivație.</p>'}</article>`).join('')}</div>` : '<p class="overview-no-data">Nu există încă înscrieri din formularul comunității.</p>'}<footer>${entries.length ? `Ultimele ${latest.length} din ${entries.length} înscrieri` : 'Răspunsurile noi vor apărea aici'}</footer>`;
+  } catch {
+    card.innerHTML = `<header><span class="overview-final-icon">♡</span><div><small>COMUNITATE</small><h3>Interes comunitate</h3></div></header><p class="overview-no-data">Datele nu au putut fi încărcate.</p>`;
+  }
+};
