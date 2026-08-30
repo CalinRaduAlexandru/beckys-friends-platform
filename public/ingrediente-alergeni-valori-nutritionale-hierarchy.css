@@ -1,0 +1,31 @@
+.product-content {
+  display: grid;
+  gap: 18px;
+}
+
+.product-content::before {
+  margin-bottom: 0;
+}
+
+.product-content .source-block {
+  display: grid;
+  gap: 5px;
+}
+
+.product-content .source-block strong {
+  width: max-content;
+  max-width: 100%;
+  color: var(--teal);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.product-content .source-block span {
+  white-space: pre-line;
+}
+
+.product-content .source-allergens strong,
+.product-content .source-traces strong {
+  color: var(--coral);
+}

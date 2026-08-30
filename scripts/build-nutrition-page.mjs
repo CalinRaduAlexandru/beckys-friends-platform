@@ -29,6 +29,29 @@ const escapeHtml = value => String(value).replace(/[&<>"']/g, character => ({
 })[character]);
 const categoryId = category => category.toLocaleLowerCase('ro-RO');
 
+function sourceBlocks(source) {
+  const markers = [
+    { kind: 'nutrition', pattern: /Informatii nutritionale 100g:?/ },
+    { kind: 'allergens', pattern: /Alergeni Con(?:ț|t)ine:/ },
+    { kind: 'traces', pattern: /Poate contine urme de:/ }
+  ];
+  const matches = markers
+    .map(marker => {
+      const match = marker.pattern.exec(source);
+      return match ? { ...marker, index: match.index, label: match[0] } : null;
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.index - b.index);
+  const blocks = [{ kind: 'ingredients', label: 'Ingrediente', body: source.slice(0, matches[0]?.index ?? source.length), labelFromSource: false }];
+  matches.forEach((match, index) => {
+    const end = matches[index + 1]?.index ?? source.length;
+    blocks.push({ kind: match.kind, label: match.label, body: source.slice(match.index + match.label.length, end), labelFromSource: true });
+  });
+  const reconstructed = blocks.map(block => `${block.labelFromSource ? block.label : ''}${block.body}`).join('');
+  if (reconstructed !== source) throw new Error('Ierarhizarea a modificat textul sursă.');
+  return blocks;
+}
+
 function validate() {
   if (data.products?.length !== 14) throw new Error(`Sunt necesare exact 14 produse; găsite: ${data.products?.length || 0}.`);
   expectedProducts.forEach(([name, weight], index) => {
@@ -44,12 +67,15 @@ function validate() {
 }
 
 function renderProduct(product, index) {
+  const blocks = sourceBlocks(product.source);
   return `        <details class="nutrition-product" data-product${index === 0 ? ' open' : ''}>
           <summary>
             <span class="product-heading"><strong>${escapeHtml(product.name)}</strong><span>${escapeHtml(product.weight)}</span></span>
             <span class="product-toggle" aria-hidden="true"></span>
           </summary>
-          <div class="product-content"><p>${escapeHtml(product.source)}</p></div>
+          <div class="product-content">
+${blocks.map(block => `            <p class="source-block source-${block.kind}"><strong>${escapeHtml(block.label)}</strong><span>${escapeHtml(block.body)}</span></p>`).join('\n')}
+          </div>
         </details>`;
 }
 
@@ -76,6 +102,7 @@ ${products.map(product => renderProduct(product, data.products.indexOf(product))
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800;900&display=swap">
   <link rel="stylesheet" href="/ingrediente-alergeni-valori-nutritionale.css?v=20260830-1">
+  <link rel="stylesheet" href="/ingrediente-alergeni-valori-nutritionale-hierarchy.css?v=20260830-1">
 </head>
 <body>
   <header class="nutrition-topbar">
@@ -110,7 +137,9 @@ validate();
 const output = renderPage();
 if ((output.match(/data-product/g) || []).length !== 14) throw new Error('HTML-ul nu conține exact 14 produse.');
 for (const product of data.products) {
-  if (!output.includes(escapeHtml(product.source))) throw new Error(`Textul sursă lipsește din HTML pentru ${product.name}.`);
+  for (const block of sourceBlocks(product.source)) {
+    if (!output.includes(escapeHtml(block.body))) throw new Error(`Textul sursă lipsește din HTML pentru ${product.name}.`);
+  }
 }
 
 if (process.argv.includes('--check')) {
