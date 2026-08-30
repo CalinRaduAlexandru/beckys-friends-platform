@@ -16,6 +16,7 @@ const ROUTES = new Map([
   ['/petreceri', '/petreceri.html'],
   ['/evenimente', '/evenimente.html'],
   ['/comunitate', '/comunitate.html'],
+  ['/ingrediente-alergeni-valori-nutritionale', '/ingrediente-alergeni-valori-nutritionale.html'],
   ['/chestionare', '/chestionare.html'],
   ['/chestionar-evenimente', '/chestionar-evenimente.html'],
   ['/chestionar-loc-de-joaca', '/chestionar-loc-de-joaca.html']

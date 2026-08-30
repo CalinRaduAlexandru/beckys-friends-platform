@@ -684,7 +684,7 @@ function localSecret(name) {
 }
 
 function serve(res, pathname) {
-  const routes = {'/':'/index.html','/admin':'/admin/index.html','/admin/biblioteca-copii':'/admin/children-library.html','/admin/biblioteca-activitati-copii':'/admin/children-library.html','/music-for-kids':'/music-for-kids/index.html','/music-for-kids/':'/music-for-kids/index.html','/music-for-kids/parent':'/music-for-kids/parent.html','/p':'/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf','/petreceri':'/petreceri.html','/evenimente':'/evenimente.html','/comunitate':'/comunitate.html','/chestionare':'/chestionare.html','/chestionar-evenimente':'/chestionar-evenimente.html','/chestionar-loc-de-joaca':'/chestionar-loc-de-joaca.html'};
+  const routes = {'/':'/index.html','/admin':'/admin/index.html','/admin/biblioteca-copii':'/admin/children-library.html','/admin/biblioteca-activitati-copii':'/admin/children-library.html','/music-for-kids':'/music-for-kids/index.html','/music-for-kids/':'/music-for-kids/index.html','/music-for-kids/parent':'/music-for-kids/parent.html','/p':'/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf','/petreceri':'/petreceri.html','/evenimente':'/evenimente.html','/comunitate':'/comunitate.html','/ingrediente-alergeni-valori-nutritionale':'/ingrediente-alergeni-valori-nutritionale.html','/chestionare':'/chestionare.html','/chestionar-evenimente':'/chestionar-evenimente.html','/chestionar-loc-de-joaca':'/chestionar-loc-de-joaca.html'};
   let decodedPathname;
   try { decodedPathname = decodeURIComponent(pathname); }
   catch { return send(res, 400, { error: 'Invalid path' }); }
