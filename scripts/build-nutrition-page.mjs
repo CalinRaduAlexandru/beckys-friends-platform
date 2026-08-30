@@ -52,6 +52,19 @@ function sourceBlocks(source) {
   return blocks;
 }
 
+function renderBlockBody(block, productName) {
+  let rendered = escapeHtml(block.body);
+  if (block.kind === 'ingredients' && productName === 'CRISPY STRIPS') {
+    ['SOS COCKTAIL - 80g', 'SALATA VARZA CU MORCOVI - 80g', 'FOCCACIA - 75g'].forEach(component => {
+      const escaped = escapeHtml(component);
+      rendered = rendered.replaceAll(escaped, `<b class="ingredient-component">${escaped}</b>`);
+    });
+    const plain = rendered.replaceAll('<b class="ingredient-component">', '').replaceAll('</b>', '');
+    if (plain !== escapeHtml(block.body)) throw new Error('Evidențierea componentelor a modificat textul sursă.');
+  }
+  return rendered;
+}
+
 function validate() {
   if (data.products?.length !== 14) throw new Error(`Sunt necesare exact 14 produse; găsite: ${data.products?.length || 0}.`);
   expectedProducts.forEach(([name, weight], index) => {
@@ -74,7 +87,7 @@ function renderProduct(product, index) {
             <span class="product-toggle" aria-hidden="true"></span>
           </summary>
           <div class="product-content">
-${blocks.map(block => `            <p class="source-block source-${block.kind}"><strong>${escapeHtml(block.label)}</strong><span>${escapeHtml(block.body)}</span></p>`).join('\n')}
+${blocks.map(block => `            <p class="source-block source-${block.kind}"><strong>${escapeHtml(block.label)}</strong><span>${renderBlockBody(block, product.name)}</span></p>`).join('\n')}
           </div>
         </details>`;
 }
@@ -102,7 +115,7 @@ ${products.map(product => renderProduct(product, data.products.indexOf(product))
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;600;700&family=Nunito+Sans:wght@400;600;700;800;900&display=swap">
   <link rel="stylesheet" href="/ingrediente-alergeni-valori-nutritionale.css?v=20260830-1">
-  <link rel="stylesheet" href="/ingrediente-alergeni-valori-nutritionale-hierarchy.css?v=20260830-1">
+  <link rel="stylesheet" href="/ingrediente-alergeni-valori-nutritionale-hierarchy.css?v=20260830-2">
 </head>
 <body>
   <header class="nutrition-topbar">
@@ -138,7 +151,7 @@ const output = renderPage();
 if ((output.match(/data-product/g) || []).length !== 14) throw new Error('HTML-ul nu conține exact 14 produse.');
 for (const product of data.products) {
   for (const block of sourceBlocks(product.source)) {
-    if (!output.includes(escapeHtml(block.body))) throw new Error(`Textul sursă lipsește din HTML pentru ${product.name}.`);
+    renderBlockBody(block, product.name);
   }
 }
 

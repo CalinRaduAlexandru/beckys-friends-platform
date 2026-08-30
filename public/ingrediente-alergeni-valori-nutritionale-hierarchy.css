@@ -25,6 +25,17 @@
   white-space: pre-line;
 }
 
+.product-content .ingredient-component {
+  display: inline-block;
+  margin: 3px 0;
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: var(--coral-soft);
+  color: var(--ink);
+  font-weight: 900;
+  line-height: 1.45;
+}
+
 .product-content .source-allergens strong,
 .product-content .source-traces strong {
   color: var(--coral);
