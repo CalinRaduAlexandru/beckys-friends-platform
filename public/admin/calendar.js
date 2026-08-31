@@ -53,7 +53,9 @@
     index >= 5 ? ["11:00", "21:00"] : ["15:00", "21:00"];
   const formatRange = (start) => {
     const date = parseDate(start);
-    return `${pad(date.getDate())}–${pad(addDays(date, 6).getDate())} ${new Intl.DateTimeFormat("ro-RO", { month: "long" }).format(addDays(date, 6))}`;
+    const end = addDays(date, 6);
+    const formatDate = value => new Intl.DateTimeFormat("ro-RO", { day: "numeric", month: "short" }).format(value);
+    return `${formatDate(date)} - ${formatDate(end)}`;
   };
   const timeToMinutes = (value) => {
     const [hours, minutes] = value.split(":").map(Number);
