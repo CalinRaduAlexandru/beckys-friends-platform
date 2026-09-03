@@ -42,6 +42,8 @@
     .challenge.is-settling .challenge-text { animation: scatter-text .96s cubic-bezier(.2,.8,.3,1) forwards; }
     .challenge-content.nudge { animation: nudge .28s ease-out; }
     .challenge.is-growth .challenge-content { animation: super-growth .7s cubic-bezier(.16,1.4,.3,1); }
+    .blocked-overlay { position: absolute; z-index: 2; inset: 0; background: rgba(55, 61, 70, .18); opacity: 0; pointer-events: none; }
+    .challenge.is-blocked .blocked-overlay { animation: blocked-fade .58s ease-out forwards; }
     .challenge-content { display: grid; justify-items: center; text-align: center; }
     .challenge-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; filter: drop-shadow(0 8px 0 rgba(35,52,72,.1)); }
     .challenge h2 { max-width: 570px; margin: 0; font-family: DynaPuff, system-ui, sans-serif; font-size: clamp(38px, 11vw, 70px); font-weight: 600; line-height: .98; letter-spacing: -.055em; }
@@ -52,6 +54,7 @@
     @keyframes scatter-text { 0% { transform: translate(0); } 38% { transform: translate(-22vw,17vh) rotate(-6deg); opacity: 0; } 62% { transform: translate(24vw,-14vh) rotate(5deg); opacity: 0; } 100% { transform: translate(0) rotate(0); opacity: 1; } }
     @keyframes nudge { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px) rotate(-1deg); } 75% { transform: translateX(7px) rotate(1deg); } }
     @keyframes super-growth { 0% { transform: scale(1); } 35% { transform: scale(1.16) rotate(-2deg); } 62% { transform: scale(.96) rotate(1deg); } 100% { transform: scale(1); } }
+    @keyframes blocked-fade { 0% { opacity: 0; } 22% { opacity: .28; } 100% { opacity: 0; } }
     .waiting-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; animation: waiting 1.6s ease-in-out infinite; }
     @keyframes waiting { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.04); } }
     #status { display: none; }
@@ -77,6 +80,7 @@
   </main>
 
   <main class="screen challenge" id="challenge" aria-live="polite">
+    <div class="blocked-overlay" aria-hidden="true"></div>
     <div class="challenge-content">
       <div class="waiting-emoji" id="challenge-emoji">🫨</div>
       <h2 id="challenge-title">Acum zgâlțâie!</h2>
@@ -138,10 +142,13 @@
     function lockedFeedback() {
       challengeScreen.classList.remove('is-growth');
       requestAnimationFrame(() => challengeScreen.classList.add('is-growth'));
+      challengeScreen.classList.remove('is-blocked');
+      requestAnimationFrame(() => challengeScreen.classList.add('is-blocked'));
       lockMessage.textContent = 'Blocat pe această provocare';
       lockMessage.classList.remove('is-unlocked');
       lockMessage.classList.add('is-visible');
       setTimeout(() => challengeScreen.classList.remove('is-growth'), 720);
+      setTimeout(() => challengeScreen.classList.remove('is-blocked'), 620);
     }
 
     function showChallenge() {
