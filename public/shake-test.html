@@ -41,7 +41,9 @@
     let value = 0;
     let lastShake = 0;
     let previous = null;
+    let previousOrientation = null;
     let motionEvents = 0;
+    let orientationEvents = 0;
 
     function increment() {
       value = value >= 10 ? 0 : value + 1;
@@ -55,15 +57,34 @@
       motionEvents += 1;
       diagnostic.textContent = `Evenimente motion primite: ${motionEvents}`;
       if (motionEvents === 1) status.textContent = 'Date reale primite de la senzor. Zgâlțâie telefonul!';
-      const acceleration = event.accelerationIncludingGravity || event.acceleration;
+      const linear = event.acceleration;
+      const acceleration = linear && [linear.x, linear.y, linear.z].some(Number.isFinite)
+        ? linear
+        : event.accelerationIncludingGravity;
       if (!acceleration) return;
       const current = [acceleration.x || 0, acceleration.y || 0, acceleration.z || 0];
-      if (!previous) { previous = current; return; }
-      const change = Math.hypot(...current.map((axis, index) => axis - previous[index]));
+      const change = linear && [linear.x, linear.y, linear.z].some(Number.isFinite)
+        ? Math.hypot(...current)
+        : previous ? Math.hypot(...current.map((axis, index) => axis - previous[index])) : 0;
       previous = current;
       const now = Date.now();
-      if (change > 7 && now - lastShake > 650) {
+      const threshold = linear && [linear.x, linear.y, linear.z].some(Number.isFinite) ? 5 : 3;
+      if (change > threshold && now - lastShake > 650) {
         lastShake = now;
+        increment();
+      }
+    }
+
+    function orientation(event) {
+      orientationEvents += 1;
+      const current = [event.alpha || 0, event.beta || 0, event.gamma || 0];
+      const change = previousOrientation
+        ? Math.hypot(...current.map((axis, index) => Math.abs(axis - previousOrientation[index])))
+        : 0;
+      previousOrientation = current;
+      diagnostic.textContent = `Motion: ${motionEvents} · orientare: ${orientationEvents}`;
+      if (change > 12 && Date.now() - lastShake > 650) {
+        lastShake = Date.now();
         increment();
       }
     }
@@ -76,9 +97,14 @@
           const permission = await DeviceMotionEvent.requestPermission();
           if (permission !== 'granted') throw new Error('denied');
         }
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          const permission = await DeviceOrientationEvent.requestPermission();
+          if (permission !== 'granted') throw new Error('denied');
+        }
         window.addEventListener('devicemotion', motion);
+        window.addEventListener('deviceorientation', orientation);
         setTimeout(() => {
-          if (!motionEvents) status.textContent = 'Nu primesc date de la senzor. Verifică permisiunea Motion & Orientation și încearcă în Safari/Chrome.';
+          if (!motionEvents && !orientationEvents) status.textContent = 'Nu primesc date de la senzori. Verifică permisiunea Motion & Orientation și încearcă în Safari/Chrome.';
         }, 2500);
         status.textContent = typeof DeviceMotionEvent.requestPermission === 'function'
           ? 'Permisiune acordată. Aștept date reale de la senzor…'
