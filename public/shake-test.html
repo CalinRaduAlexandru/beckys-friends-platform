@@ -41,7 +41,8 @@
     .challenge.is-settling h2 { animation: scatter-title .96s cubic-bezier(.2,.8,.3,1) forwards; }
     .challenge.is-settling .challenge-text { animation: scatter-text .96s cubic-bezier(.2,.8,.3,1) forwards; }
     .challenge-content.nudge { animation: nudge .28s ease-out; }
-    .challenge.is-growth .challenge-content { animation: super-growth .7s cubic-bezier(.16,1.4,.3,1); }
+    .challenge.is-growth .lock { animation: lock-growth .7s cubic-bezier(.16,1.4,.3,1); }
+    .challenge.is-growth .lock-message { animation: message-growth .7s cubic-bezier(.16,1.4,.3,1); }
     .blocked-overlay { position: absolute; z-index: 2; inset: 0; background: rgba(55, 61, 70, .18); opacity: 0; pointer-events: none; }
     .challenge.is-blocked .blocked-overlay { animation: blocked-fade .58s ease-out forwards; }
     .challenge-content { display: grid; justify-items: center; text-align: center; }
@@ -53,7 +54,8 @@
     @keyframes scatter-title { 0% { transform: translate(0); letter-spacing: -.055em; } 38% { transform: translate(25vw,13vh) rotate(5deg); opacity: 0; letter-spacing: .18em; } 62% { transform: translate(-22vw,-12vh) rotate(-4deg); opacity: 0; } 100% { transform: translate(0) rotate(0); opacity: 1; letter-spacing: -.055em; } }
     @keyframes scatter-text { 0% { transform: translate(0); } 38% { transform: translate(-22vw,17vh) rotate(-6deg); opacity: 0; } 62% { transform: translate(24vw,-14vh) rotate(5deg); opacity: 0; } 100% { transform: translate(0) rotate(0); opacity: 1; } }
     @keyframes nudge { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px) rotate(-1deg); } 75% { transform: translateX(7px) rotate(1deg); } }
-    @keyframes super-growth { 0% { transform: scale(1); } 35% { transform: scale(1.16) rotate(-2deg); } 62% { transform: scale(.96) rotate(1deg); } 100% { transform: scale(1); } }
+    @keyframes lock-growth { 0% { transform: translateX(-50%) scale(1); } 35% { transform: translateX(-50%) scale(1.28); } 62% { transform: translateX(-50%) scale(.94); } 100% { transform: translateX(-50%) scale(1); } }
+    @keyframes message-growth { 0% { transform: translateX(-50%) scale(1); } 35% { transform: translateX(-50%) scale(1.08); } 62% { transform: translateX(-50%) scale(.98); } 100% { transform: translateX(-50%) scale(1); } }
     @keyframes blocked-fade { 0% { opacity: 0; } 22% { opacity: .28; } 100% { opacity: 0; } }
     .waiting-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; animation: waiting 1.6s ease-in-out infinite; }
     @keyframes waiting { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.04); } }
