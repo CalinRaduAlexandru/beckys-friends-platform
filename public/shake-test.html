@@ -41,6 +41,7 @@
     let previousOrientation = null;
     let motionEvents = 0;
     let orientationEvents = 0;
+    let lastTap = 0;
 
     function increment() {
       let next = value;
@@ -115,6 +116,17 @@
     }
 
     start.addEventListener('click', startSensor);
+    document.addEventListener('touchend', event => {
+      const now = Date.now();
+      if (now - lastTap > 0 && now - lastTap < 350) {
+        cooldownUntil = 0;
+        status.textContent = 'Cooldown resetat. Zgâlțâie telefonul pentru o cifră nouă.';
+        lastTap = 0;
+        event.preventDefault();
+      } else {
+        lastTap = now;
+      }
+    }, { passive: false });
   </script>
 </body>
 </html>
