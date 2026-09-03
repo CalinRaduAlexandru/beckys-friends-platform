@@ -234,6 +234,9 @@
 
     async function startGame() {
       start.disabled = true;
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+      }
       unlockAudio();
       try {
         if (!('DeviceMotionEvent' in window)) throw new Error('unsupported');
