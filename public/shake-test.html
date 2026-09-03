@@ -86,6 +86,7 @@
     <div class="lock-message" id="lock-message">Blocat pe această provocare</div>
     <p id="status" role="status"></p>
   </main>
+  <audio id="duck-sound" preload="auto" src="/assets/mp3s/freesound_community-075176_duck-quack-40345.mp3"></audio>
 
   <script>
     const intro = document.getElementById('intro');
@@ -97,6 +98,7 @@
     const title = document.getElementById('challenge-title');
     const text = document.getElementById('challenge-text');
     const emoji = document.getElementById('challenge-emoji');
+    const duckSound = document.getElementById('duck-sound');
     const challenges = [
       { emoji: '🐒', title: 'Fă ca o maimuță', text: 'Fă mișcările și sunetele unei maimuțe timp de 10 secunde.' },
       { emoji: '🌈', title: 'Găsește o culoare', text: 'Atinge cu talpa culoarea roz.' },
@@ -109,6 +111,24 @@
     let lastTap = 0;
     let settling = false;
     let isUnlocked = false;
+    let lastDuckSound = 0;
+
+    function playDuckSound() {
+      const now = Date.now();
+      if (now - lastDuckSound < 500) return;
+      lastDuckSound = now;
+      duckSound.currentTime = 0;
+      duckSound.play().catch(() => {});
+    }
+
+    function unlockAudio() {
+      duckSound.muted = true;
+      duckSound.play().then(() => {
+        duckSound.pause();
+        duckSound.currentTime = 0;
+        duckSound.muted = false;
+      }).catch(() => { duckSound.muted = false; });
+    }
 
     function nudge() {
       challengeScreen.querySelector('.challenge-content').classList.remove('nudge');
@@ -161,7 +181,8 @@
       const change = hasLinear ? Math.hypot(...current) : previous ? Math.hypot(...current.map((axis, index) => axis - previous[index])) : 0;
       previous = current;
       const threshold = hasLinear ? 12 : 8;
-      if (change > threshold) {
+      if (change > threshold && !settling) {
+        playDuckSound();
         if (activeChallenge < 0 && !settling) showChallenge();
         else if (isUnlocked && !settling) showChallenge();
         else lockedFeedback();
@@ -173,7 +194,8 @@
       const current = [event.alpha || 0, event.beta || 0, event.gamma || 0];
       const change = previousOrientation ? Math.hypot(...current.map((axis, index) => Math.abs(axis - previousOrientation[index]))) : 0;
       previousOrientation = current;
-      if (change > 30) {
+      if (change > 30 && !settling) {
+        playDuckSound();
         if (activeChallenge < 0 && !settling) showChallenge();
         else if (isUnlocked && !settling) showChallenge();
         else lockedFeedback();
@@ -182,6 +204,7 @@
 
     async function startGame() {
       start.disabled = true;
+      unlockAudio();
       try {
         if (!('DeviceMotionEvent' in window)) throw new Error('unsupported');
         if (typeof DeviceMotionEvent.requestPermission === 'function') {
