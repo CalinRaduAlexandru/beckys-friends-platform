@@ -49,6 +49,7 @@
     .challenge-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; filter: drop-shadow(0 8px 0 rgba(35,52,72,.1)); }
     .challenge h2 { max-width: 570px; margin: 0; font-family: DynaPuff, system-ui, sans-serif; font-size: clamp(38px, 11vw, 70px); font-weight: 600; line-height: .98; letter-spacing: -.055em; }
     .challenge-text { max-width: 430px; margin: 18px auto 0; color: #66532f; font-size: clamp(17px, 4.5vw, 22px); font-weight: 700; line-height: 1.35; }
+    .challenge.has-challenge .challenge-text { display: none; }
     @keyframes settle { 0% { opacity: 1; transform: scale(1); filter: blur(0); } 38% { opacity: 0; transform: scale(.68) rotate(-8deg); filter: blur(18px); } 62% { opacity: 0; transform: scale(1.24) rotate(7deg); filter: blur(14px); } 100% { opacity: 1; transform: scale(1) rotate(0); filter: blur(0); } }
     @keyframes scatter-emoji { 0% { transform: translate(0) rotate(0) scale(1); } 38% { transform: translate(-32vw,-18vh) rotate(-55deg) scale(.25); opacity: 0; } 62% { transform: translate(27vw,14vh) rotate(45deg) scale(.25); opacity: 0; } 100% { transform: translate(0) rotate(0) scale(1); opacity: 1; } }
     @keyframes scatter-title { 0% { transform: translate(0); letter-spacing: -.055em; } 38% { transform: translate(25vw,13vh) rotate(5deg); opacity: 0; letter-spacing: .18em; } 62% { transform: translate(-22vw,-12vh) rotate(-4deg); opacity: 0; } 100% { transform: translate(0) rotate(0); opacity: 1; letter-spacing: -.055em; } }
@@ -106,8 +107,8 @@
     const emoji = document.getElementById('challenge-emoji');
     const duckSound = document.getElementById('duck-sound');
     const challenges = [
-      { emoji: '🐒', title: 'Fă ca o maimuță', text: 'Fă mișcările și sunetele unei maimuțe timp de 10 secunde.' },
-      { emoji: '🌈', title: 'Găsește o culoare', text: 'Atinge cu talpa culoarea roz.' },
+      { emoji: '🐒', title: 'Fă ca o maimuță timp de 10 secunde', text: '' },
+      { emoji: '🌈', title: 'Atinge culoarea roz cu talpa', text: '' },
     ];
     let activeChallenge = -1;
     let previous = null;
@@ -178,6 +179,7 @@
       emoji.className = 'challenge-emoji';
       title.textContent = item.title;
       text.textContent = item.text;
+      challengeScreen.classList.add('has-challenge');
       lock.textContent = '🔒';
       lock.classList.remove('unlocked');
       lockMessage.classList.remove('is-visible', 'is-unlocked');
