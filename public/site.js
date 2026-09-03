@@ -87,6 +87,35 @@ if(happyDuck&&happyDuckCanvas){
       if(y<height-1)addBackground(index+width);
     }
 
+    // The animation contains a small enclosed black gap where the head meets
+    // the body. It does not touch the frame edge, so the background flood-fill
+    // above cannot remove it. Remove only dark enclosed components in the
+    // neck area; keep the duck's eyes, bill and outlines unchanged.
+    const neckBlack = new Uint8Array(width * height);
+    const neckQueue = new Int32Array(width * height);
+    const neckPixels = new Int32Array(width * height);
+    for(let start=0;start<width*height;start++){
+      if(neckBlack[start]||background[start]||!isDarkBackground(start))continue;
+      let head=0,tail=0,count=0,sumX=0,sumY=0;
+      neckBlack[start]=1;
+      neckQueue[tail++]=start;
+      while(head<tail){
+        const index=neckQueue[head++],x=index%width,y=(index-x)/width;
+        neckPixels[count++]=index; sumX+=x; sumY+=y;
+        const neighbors=[x?index-1:-1,x<width-1?index+1:-1,y?index-width:-1,y<height-1?index+width:-1];
+        neighbors.forEach(next=>{
+          if(next>=0&&!neckBlack[next]&&!background[next]&&isDarkBackground(next)){
+            neckBlack[next]=1; neckQueue[tail++]=next;
+          }
+        });
+      }
+      const centerX=sumX/count/width;
+      const centerY=sumY/count/height;
+      if(count>=6&&centerX>.36&&centerX<.66&&centerY>.43&&centerY<.62){
+        for(let pixel=0;pixel<count;pixel++)pixels[neckPixels[pixel]*4+3]=0;
+      }
+    }
+
     const watermarkLeft=Math.floor(width*.6);
     const watermarkBottom=Math.ceil(height*.15);
     for(let y=0;y<height;y++){

@@ -102,7 +102,7 @@ async function supabaseRequest(env, path, init = {}) {
 }
 
 const ADMIN_TASK_COLUMNS = 'id,area,title,detail,owner,priority,sort_order,created_at,updated_at';
-const CONTENT_LAB_IDEA_TYPES = ['growth_story', 'behind_the_scenes', 'authority_expertise', 'reusable_insight'];
+const CONTENT_LAB_IDEA_TYPES = ['growth_story', 'behind_the_scenes', 'authority_expertise', 'reusable_insight', 'parent_pearl'];
 const CONTENT_LAB_IDEA_STATUSES = ['active', 'archived'];
 const CONTENT_LAB_IDEA_COLUMNS = 'id,idea_type,title,core_thought,status,source_type,source_id,created_at,updated_at';
 const EVENT_FINDING_KINDS = ['observation', 'feedback', 'component_idea', 'hypothesis', 'pilot_result'];
@@ -884,15 +884,20 @@ async function handleStoryCandidates(request, env) {
   await requireAdmin(request, env);
   const body = await readJson(request, 40_000);
   const noteText = typeof body?.note_text === 'string' ? body.note_text.trim() : '';
+  const clarifications = typeof body?.clarifications === 'string' ? body.clarifications.trim() : '';
   if (!noteText || noteText.length > 12_000) return json({ error: 'Nota este invalidă' }, 400);
+  if (clarifications.length > 8_000) return json({ error: 'Răspunsurile la întrebări sunt prea lungi' }, 400);
   if (!env.OPENAI_API_KEY) throw Object.assign(new Error('OPENAI_API_KEY lipsește din configurația Worker-ului'), { status: 503 });
   const frame = { type: 'object', additionalProperties: false, properties: { text: { type: 'string' }, visual_direction: { type: 'string' } }, required: ['text', 'visual_direction'] };
   const narrative = { type: 'object', additionalProperties: false, properties: { before: { type: 'string' }, moment: { type: 'string' }, turn: { type: 'string' }, after: { type: 'string' }, meaning: { type: 'string' } }, required: ['before', 'moment', 'turn', 'after', 'meaning'] };
   const candidate = { type: ['object', 'null'], additionalProperties: false, properties: { content_type: { type: 'string', enum: ['growth_story', 'behind_the_scenes', 'authority_expertise', 'reusable_insight'] }, angle: { type: 'string' }, why_this_story: { type: 'string' }, source_excerpts: { type: 'array', minItems: 1, maxItems: 7, items: { type: 'string' } }, narrative, story_frames: { type: 'array', minItems: 4, maxItems: 7, items: frame }, caption_seed: { type: 'string' }, privacy_flags: { type: 'array', items: { type: 'string' } } }, required: ['content_type', 'angle', 'why_this_story', 'source_excerpts', 'narrative', 'story_frames', 'caption_seed', 'privacy_flags'] };
-  const schema = { type: 'object', additionalProperties: false, properties: { story_worthy: { type: 'boolean' }, reason: { type: 'string' }, candidate }, required: ['story_worthy', 'reason', 'candidate'] };
+  const question = { type: 'object', additionalProperties: false, properties: { question: { type: 'string' }, why_needed: { type: 'string' } }, required: ['question', 'why_needed'] };
+  const schema = { type: 'object', additionalProperties: false, properties: { story_worthy: { type: 'boolean' }, needs_clarification: { type: 'boolean' }, reason: { type: 'string' }, questions: { type: 'array', minItems: 0, maxItems: 5, items: question }, candidate }, required: ['story_worthy', 'needs_clarification', 'reason', 'questions', 'candidate'] };
   const instructions = `Ești gate-ul editorial pentru Daily Note → Story Candidate al Becky’s Garden. Mai întâi decizi dacă există o poveste; abia apoi scrii un singur candidat. Zero povești este un rezultat bun și preferabil fillerului.
 
-Un story este eligibil numai dacă nota susține o scenă concretă, un participant, o tensiune/surpriză/întrebare, o schimbare observabilă și un sens neevident de la început. Caută arcul BEFORE → MOMENT → TURN → AFTER → MEANING. Aplică testul „și ce dacă?”: dacă povestea doar reformulează nota sau răspunsul natural este „OK... și?”, story_worthy=false și candidate=null. O observație izolată, „copilului i-a plăcut”, o zi frumoasă, o listă operațională, un plan sau o ipoteză nu sunt singure suficiente.
+Un story este eligibil numai dacă nota susține o scenă concretă, un participant, o tensiune/surpriză/întrebare, o schimbare observabilă și un sens neevident de la început. Caută arcul BEFORE → MOMENT → TURN → AFTER → MEANING. Dacă există o scenă promițătoare, dar lipsește o piesă factuală care poate fi completată de autor, setează needs_clarification=true, story_worthy=false și pune 1–5 întrebări foarte concrete în questions. Întrebările trebuie să ceară detalii observabile: ce s-a întâmplat înainte, ce a declanșat schimbarea, ce s-a văzut după, o replică exactă sau contextul necesar. Nu întreba lucruri pe care nota le conține deja. Dacă nota nu conține nicio scenă promițătoare sau ar fi doar filler, setează needs_clarification=false și questions=[]. Dacă răspunsurile autorului de mai jos completează golurile, reevaluează nota împreună cu ele și generează candidatul; nu pune aceleași întrebări din nou.
+
+Aplică testul „și ce dacă?”: dacă povestea doar reformulează nota sau răspunsul natural este „OK... și?”, story_worthy=false și candidate=null. O observație izolată, „copilului i-a plăcut”, o zi frumoasă, o listă operațională, un plan sau o ipoteză nu sunt singure suficiente.
 
 FIDELITATE: nu inventa citate, emoții, intenții, cronologie, reacții, rezultate ori concluzii ale părinților. Nu transforma interpretările în fapte. source_excerpts conține numai fragmente copiate exact, caracter cu caracter, din notă, care susțin povestea. Dacă nu poți susține arcul prin citate exacte, respinge candidatul. Persoana I este Radu, facilitatorul Becky. Pentru draftul public anonimizează implicit copiii; identitatea poate rămâne numai în source_excerpts pentru audit intern.
 
@@ -903,14 +908,15 @@ INTERZIS: „momente magice”, „fiecare copil este unic”, „la Becky crede
 Generează UN singur candidat și 4–7 cadre de Story pentru Instagram/Facebook, numai câte adaugă valoare. Numărul este flexibil: fiecare cadru are o singură idee, iar povestea trebuie să aibă început, punct culminant/tensiune, deznodământ și concluzie; nu crea cadre de umplutură. Fiecare cadru are foarte puțin text, fără paragraf. Hook-ul pornește din scenă, nu din teză și nu este clickbait. Concluzia rămâne proporțională cu dovada. Alege content_type numai după ce story-worthiness este confirmat; nu fabrica autoritate dintr-un singur caz. visual_direction descrie numai acțiunea explicită din notă, cu personaje anonime; nu adăuga expresii faciale, emoții, gesturi, obiecte sau decor nespecificate.
 
 Înainte de răspuns verifică: scenă, tensiune/schimbare, specificitate, fidelitate, valoare peste reformulare, extrapolare limitată, hook real, inteligibilitate fără context intern și dacă este realmente mai bun decât a nu posta nimic. Dacă ultima condiție nu este îndeplinită: story_worthy=false, candidate=null.`;
-  const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini', instructions, input: noteText, text: { format: { type: 'json_schema', name: 'becky_story_candidate_gate', strict: true, schema } } }) });
+  const input = clarifications ? `NOTA ORIGINALĂ:\n${noteText}\n\nRĂSPUNSURI LA ÎNTREBĂRILE EDITORIALE:\n${clarifications}` : `NOTA ORIGINALĂ:\n${noteText}`;
+  const response = await fetch('https://api.openai.com/v1/responses', { method: 'POST', headers: { Authorization: `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ model: env.OPENAI_TEXT_MODEL || 'gpt-4.1-mini', instructions, input, text: { format: { type: 'json_schema', name: 'becky_story_candidate_gate', strict: true, schema } } }) });
   const result = await response.json().catch(() => ({}));
   const outputText = result.output?.flatMap(item => item.content || []).find(item => item.type === 'output_text')?.text;
   if (!response.ok || !outputText) return json({ error: 'Poveștile nu au putut fi extrase.' }, 502);
   const assessment = JSON.parse(outputText);
   const excerptsAreExact = assessment.candidate?.source_excerpts?.every(excerpt => excerpt && noteText.includes(excerpt));
   if (!assessment.story_worthy || !assessment.candidate || !excerptsAreExact) {
-    return json({ story_worthy: false, reason: excerptsAreExact === false ? 'Candidatul nu a putut fi susținut prin fragmente exacte din notă.' : assessment.reason, candidate: null, model: result.model });
+    return json({ story_worthy: false, needs_clarification: Boolean(assessment.needs_clarification), reason: excerptsAreExact === false ? 'Candidatul nu a putut fi susținut prin fragmente exacte din notă.' : assessment.reason, questions: Array.isArray(assessment.questions) ? assessment.questions.slice(0, 5) : [], candidate: null, model: result.model });
   }
   const auditSchema = { type: 'object', additionalProperties: false, properties: { approved: { type: 'boolean' }, reason: { type: 'string' }, candidate }, required: ['approved', 'reason', 'candidate'] };
   const auditResponse = await fetch('https://api.openai.com/v1/responses', {
@@ -941,8 +947,8 @@ Păstrează vocea firească la persoana I a lui Radu: „Un copil mi-a spus...�
   const bannedPhrases = ['momente magice', 'fiecare copil este unic', 'la becky credem că', 'ne reamintește cât de important', 'în lumea celor mici', 'zâmbete și voie bună', 'o experiență de neuitat', 'mai mult decât', 'nu este doar', 'uneori cele mai mici momente', 'lecții prețioase', 'conexiuni autentice'];
   const candidateCopy = JSON.stringify(audited.candidate || {}).toLocaleLowerCase('ro-RO');
   const containsCliche = bannedPhrases.some(phrase => candidateCopy.includes(phrase));
-  if (!audited.approved || !audited.candidate || !auditedExcerptsAreExact || containsCliche) return json({ story_worthy: false, reason: containsCliche ? 'Candidatul a fost respins de filtrul anti-clișeu.' : audited.reason, candidate: null, model: auditResult.model || result.model });
-  return json({ story_worthy: true, reason: audited.reason || assessment.reason, candidate: audited.candidate, model: auditResult.model || result.model });
+  if (!audited.approved || !audited.candidate || !auditedExcerptsAreExact || containsCliche) return json({ story_worthy: false, needs_clarification: false, reason: containsCliche ? 'Candidatul a fost respins de filtrul anti-clișeu.' : audited.reason, questions: [], candidate: null, model: auditResult.model || result.model });
+  return json({ story_worthy: true, needs_clarification: false, reason: audited.reason || assessment.reason, questions: [], candidate: audited.candidate, model: auditResult.model || result.model });
 }
 
 async function handleCarouselEdit(request, env) {

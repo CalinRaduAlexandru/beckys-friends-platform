@@ -1,0 +1,92 @@
+[
+  {
+    "id": "fa6a6888-e3bf-42bf-b7d0-308451034bd8",
+    "session_id": "9112aa19-446e-4c37-a7f9-a3221614eb9f",
+    "event_type": "open",
+    "step": 0,
+    "section": 0,
+    "milestone": 0,
+    "duel_index": 0,
+    "created_at": "2026-09-01T17:56:55.251Z"
+  },
+  {
+    "id": "1a359dbb-056e-44e4-baae-9321e5460ec9",
+    "session_id": "9112aa19-446e-4c37-a7f9-a3221614eb9f",
+    "event_type": "step",
+    "step": 0,
+    "section": 0,
+    "milestone": 0,
+    "duel_index": 0,
+    "created_at": "2026-09-01T17:56:55.258Z"
+  },
+  {
+    "id": "e1a7965e-0de2-462f-8476-698fade2198d",
+    "session_id": "9112aa19-446e-4c37-a7f9-a3221614eb9f",
+    "event_type": "step",
+    "step": 1,
+    "section": 0,
+    "milestone": 0,
+    "duel_index": 0,
+    "created_at": "2026-09-01T17:57:02.011Z"
+  },
+  {
+    "id": "e6fd2421-b4a7-41f2-892f-ccbe243c88b8",
+    "session_id": "9112aa19-446e-4c37-a7f9-a3221614eb9f",
+    "event_type": "step",
+    "step": 2,
+    "section": 0,
+    "milestone": 0,
+    "duel_index": 0,
+    "created_at": "2026-09-01T17:57:06.957Z"
+  },
+  {
+    "id": "daf3365f-7cd4-475f-9895-dd55981627ae",
+    "session_id": "9112aa19-446e-4c37-a7f9-a3221614eb9f",
+    "event_type": "step",
+    "step": 3,
+    "section": 0,
+    "milestone": 0,
+    "duel_index": 0,
+    "created_at": "2026-09-01T17:57:09.523Z"
+  },
+  {
+    "id": "704e201b-efb1-458a-b41f-7995b2761f40",
+    "session_id": "9112aa19-446e-4c37-a7f9-a3221614eb9f",
+    "event_type": "step",
+    "step": 4,
+    "section": 0,
+    "milestone": 0,
+    "duel_index": 0,
+    "created_at": "2026-09-01T17:57:11.940Z"
+  },
+  {
+    "id": "44c8abd6-8c62-4507-8bf7-4119592e9ac7",
+    "session_id": "9112aa19-446e-4c37-a7f9-a3221614eb9f",
+    "event_type": "step",
+    "step": 4,
+    "section": 0,
+    "milestone": 1,
+    "duel_index": 0,
+    "created_at": "2026-09-01T17:57:14.293Z"
+  },
+  {
+    "id": "f5efb033-483d-4c82-b894-d5e06e2e80ec",
+    "session_id": "9112aa19-446e-4c37-a7f9-a3221614eb9f",
+    "event_type": "step",
+    "step": 5,
+    "section": 1,
+    "milestone": 0,
+    "duel_index": 0,
+    "created_at": "2026-09-01T17:57:20.330Z"
+  },
+  {
+    "id": "31b27b44-6a4f-4100-b25f-5f3f172f10bf",
+    "session_id": "9112aa19-446e-4c37-a7f9-a3221614eb9f",
+    "event_type": "step",
+    "step": 6,
+    "section": 1,
+    "milestone": 0,
+    "duel_index": 0,
+    "created_at": "2026-09-01T17:57:24.946Z"
+  }
+]

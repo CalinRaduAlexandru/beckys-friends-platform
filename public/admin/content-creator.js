@@ -7,6 +7,8 @@
     storyLoading: false,
     storyAssessmentComplete: false,
     storyAssessmentReason: '',
+    storyQuestions: [],
+    storyAnswers: {},
     storySaveMessage: '',
     contentItemId: '',
     selectedContentItemKey: '',
@@ -130,7 +132,8 @@
   const carouselVariants = {
     'story-cards': { label: 'Story cards', detail: 'Carduri clare, cu o idee puternică pe fiecare slide.', slides: ['Hook', 'Ideea 1', 'Ideea 2', 'Ideea 3', 'CTA'] },
     'photo-editorial': { label: 'Photo editorial', detail: 'Compoziții calde, aerisite, cu text scurt peste imagine.', slides: ['Copertă', 'Context', 'Beneficiu', 'Dovadă', 'CTA'] },
-    'playful-guide': { label: 'Playful guide', detail: 'Pași vizuali, ilustrații și accente jucăușe Becky.', slides: ['Întrebarea', 'Pasul 1', 'Pasul 2', 'Pasul 3', 'CTA'] }
+    'playful-guide': { label: 'Playful guide', detail: 'Pași vizuali, ilustrații și accente jucăușe Becky.', slides: ['Întrebarea', 'Pasul 1', 'Pasul 2', 'Pasul 3', 'CTA'] },
+    'parent-pearl': { label: 'Perla de 30 secunde', detail: 'O observație fină + o replică imediat de încercat.', slides: ['Momentul', 'Replica', 'De ce ajută', 'Încearcă azi', 'Păstrează'] }
   };
 
   const MIN_CAROUSEL_SLIDES = 3;
@@ -140,7 +143,8 @@
     ['growth_story', 'Growth story'],
     ['behind_the_scenes', 'Behind the scenes'],
     ['authority_expertise', 'Authority / expertise'],
-    ['reusable_insight', 'Insight reutilizabil']
+    ['reusable_insight', 'Insight reutilizabil'],
+    ['parent_pearl', 'Perlă pentru părinți']
   ];
   const contentLabStatuses = [['active', 'Activă'], ['archived', 'Arhivată']];
 
@@ -398,6 +402,11 @@ Ce vă place să descoperiți împreună?`;
       when: 'Explici pași, activități sau beneficii și vrei mai multă energie vizuală pentru copii și părinți.',
       looks: 'Pași numerotați, simboluri, ilustrații și accente jucăușe care ghidează privirea.',
       character: 'Becky poate avea un rol mai vizibil, dar rămâne controlată ca să nu aglomereze.'
+    },
+    'parent-pearl': {
+      when: 'Ai o idee fină, ușor de ținut minte, pe care părintele o poate încerca imediat.',
+      looks: 'Fundal crem, badge de perlă, contur coral și un ritm de colecționat: moment → replică → sens → încercare.',
+      character: 'Ilustrațiile sunt mici și simbolice; textul și replica rămân vedetele.'
     }
   };
 
@@ -1180,18 +1189,20 @@ Ce vă place să descoperiți împreună?`;
     const date = state.storyDate || 'nota aleasă';
     if (state.storyLoading) return `<main class="cc-os-page"><header class="cc-page-intro"><div><small>Povestea de azi</small><h2>Caut poveștile care merită spuse.</h2><p>Separ ce are miză pentru părinți de simpla cronologie a zilei.</p></div></header><div class="cc-empty-state"><strong>Procesez nota din ${safe(date)}…</strong></div></main>`;
     const candidates = state.storyCandidates || [];
+    const questions = Array.isArray(state.storyQuestions) ? state.storyQuestions : [];
+    const questionsView = questions.length ? `<section class="cc-story-questions"><small>MAI LIPSESC CÂTEVA PIESE</small><h3>Ajută-mă să înțeleg scena.</h3><p>${safe(state.storyAssessmentReason || 'Nota conține un moment promițător, dar am nevoie de câteva detalii înainte să construiesc povestea.')}</p><form data-cc-story-questions>${questions.map((item,index)=>`<label><span>${safe(item.question)}</span><small>${safe(item.why_needed)}</small><textarea required rows="3" data-story-answer="${index}" placeholder="Scrie ce ai observat concret…">${safe(state.storyAnswers?.[index] || '')}</textarea></label>`).join('')}<button class="cc-primary" type="submit">Continuă cu răspunsurile →</button></form></section>` : '';
     const empty = state.storyAssessmentComplete
       ? `<div class="cc-empty-state cc-story-gate-empty"><small>✓ Nota a fost verificată pentru Content Lab.</small><strong>Nu am găsit o poveste suficient de puternică aici.</strong><p>${safe(state.storyAssessmentReason || 'Nota rămâne în memoria internă pentru pattern-uri viitoare.')}</p></div>`
       : '<div class="cc-empty-state"><strong>Nota nu a fost încă verificată.</strong></div>';
-    return `<main class="cc-os-page"><button type="button" class="cc-detail-back" data-cc-story-back>← Content Director</button><header class="cc-page-intro"><div><small>POVESTEA DE AZI · ${safe(date)}</small><h2>Ce merită să ajungă la oameni?</h2><p>Mai întâi verificăm dacă există un arc real. Uneori, răspunsul editorial corect este să nu publicăm nimic.</p></div></header>${state.storySaveMessage ? `<p class="cc-story-save-message">${safe(state.storySaveMessage)}</p>` : ''}${candidates.length ? `<div class="cc-story-candidate-list">${candidates.map((item,index)=>`<article class="cc-story-candidate"><small>STORY CANDIDATE · ${safe(contentLabIdeaTypeLabel(item.content_type))}</small><h3>${safe(item.title)}</h3><p>${safe(item.summary)}</p><span>${item.story_frames.length} cadre</span><div class="cc-story-actions"><button type="button" class="cc-primary" data-cc-story-choice="${index}">Vezi draftul</button><button type="button" class="cc-back" data-cc-story-save="${index}">Păstrează în Content Lab</button><button type="button" class="cc-back" data-cc-story-dismiss="${index}">Nu merită</button></div><details><summary>De ce a trecut filtrul editorial</summary><p>${safe(item.why_this_story)}</p><small>DOVEZI DIN NOTĂ</small><ul>${item.source_excerpts.map(excerpt => `<li>${safe(excerpt)}</li>`).join('')}</ul></details></article>`).join('')}</div>` : empty}</main>`;
+    return `<main class="cc-os-page"><button type="button" class="cc-detail-back" data-cc-story-back>← Content Director</button><header class="cc-page-intro"><div><small>POVESTEA DE AZI · ${safe(date)}</small><h2>Ce merită să ajungă la oameni?</h2><p>Mai întâi verificăm dacă există un arc real. Dacă lipsesc detalii, ți le cer înainte să scriu povestea.</p></div></header>${state.storySaveMessage ? `<p class="cc-story-save-message">${safe(state.storySaveMessage)}</p>` : ''}${questionsView}${candidates.length ? `<div class="cc-story-candidate-list">${candidates.map((item,index)=>`<article class="cc-story-candidate"><small>STORY CANDIDATE · ${safe(contentLabIdeaTypeLabel(item.content_type))}</small><h3>${safe(item.title)}</h3><p>${safe(item.summary)}</p><span>${item.story_frames.length} cadre</span><div class="cc-story-actions"><button type="button" class="cc-primary" data-cc-story-choice="${index}">Vezi draftul</button><button type="button" class="cc-back" data-cc-story-save="${index}">Păstrează în Content Lab</button><button type="button" class="cc-back" data-cc-story-dismiss="${index}">Nu merită</button></div><details><summary>De ce a trecut filtrul editorial</summary><p>${safe(item.why_this_story)}</p><small>DOVEZI DIN NOTĂ</small><ul>${item.source_excerpts.map(excerpt => `<li>${safe(excerpt)}</li>`).join('')}</ul></details></article>`).join('')}</div>` : (questions.length ? '' : empty)}</main>`;
   }
-  async function loadStoryCandidates(date) {
+  async function loadStoryCandidates(date, clarifications = '') {
     state.storyLoading = true; render(true);
     try {
       const reportResponse = await api('/api/admin/monthly-report');
       const reportPayload = await reportResponse.json();
       const note = String(reportPayload.report?.notes?.[date] || '').trim();
-      const storyResponse = await api('/api/content/story-candidates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note_text: note }) });
+      const storyResponse = await api('/api/content/story-candidates', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ note_text: note, clarifications }) });
       const assessment = await storyResponse.json().catch(() => ({}));
       if (!storyResponse.ok) throw new Error(assessment.error || 'Verificarea editorială nu a putut fi finalizată.');
       const item = assessment.story_worthy ? assessment.candidate : null;
@@ -1208,9 +1219,10 @@ Ce vă place să descoperiți împreună?`;
       state.storyCandidates = candidates;
       state.storyAssessmentComplete = true;
       state.storyAssessmentReason = String(assessment.reason || '');
+      state.storyQuestions = Array.isArray(assessment.questions) && assessment.needs_clarification ? assessment.questions.slice(0, 5) : [];
       state.storySaveMessage = '';
       state.storyLoading = false; save(false); render(true);
-    } catch (error) { state.storyCandidates = []; state.storyAssessmentComplete = false; state.storyAssessmentReason = ''; state.storySaveMessage = error.message || 'Verificarea editorială nu a putut fi finalizată.'; state.storyLoading = false; render(true); }
+    } catch (error) { state.storyCandidates = []; state.storyQuestions = []; state.storyAssessmentComplete = false; state.storyAssessmentReason = ''; state.storySaveMessage = error.message || 'Verificarea editorială nu a putut fi finalizată.'; state.storyLoading = false; render(true); }
   }
 
   function ideasView() {
@@ -1218,7 +1230,8 @@ Ce vă place să descoperiți împreună?`;
       ['prepared', 'Carduri pregătite pentru generare', 'Deschizi structuri aprobate, cu text, concluzie și caption deja stabilite.'],
       ['problem', 'O problemă pe care părintele o recunoaște', 'Pornim de la un moment real și îl transformăm într-o idee utilă, fără să vindem din prima.'],
       ['perspective', 'O perspectivă nouă asupra jocului', 'Găsim un unghi surprinzător, dar simplu și relevant pentru viața de familie.'],
-      ['experience', 'Ce se întâmplă concret la Becky', 'Arătăm clar ce face copilul și de ce experiența contează pentru părinte.']
+      ['experience', 'Ce se întâmplă concret la Becky', 'Arătăm clar ce face copilul și de ce experiența contează pentru părinte.'],
+      ['pearl', 'Perla de 30 de secunde', 'O situație mică, o replică simplă și un lucru pe care părintele îl poate încerca imediat.']
     ];
     const suggestions = {
       prepared: preparedCarouselPosts.map(post => ({ hook: `${post.number}. ${post.hook}`, value: post.value, context: post.context })),
@@ -1237,6 +1250,11 @@ Ce vă place să descoperiți împreună?`;
         { hook: 'De ce lăsăm loc și jocului neghidat?', value: 'Arată că Becky oferă libertate cu intenție, nu doar un spațiu în care copiii sunt lăsați singuri.', context: 'La Becky, momentele de joacă liberă nu sunt timp gol. Spațiul și materialele sunt alese ca să invite explorarea, iar adultul observă și intervine doar când sprijinul aduce valoare. Copilul păstrează inițiativa, dar are în jur repere, siguranță și oportunități reale de descoperire.' },
         { hook: 'O activitate bună nu are un singur rezultat corect.', value: 'Explică părinților de ce materialele deschise susțin idei diferite și încrederea copilului.', context: 'Activitățile cu un singur rezultat îi cer copilului să reproducă un model. Materialele deschise îi permit să aleagă, să combine și să schimbe direcția pe parcurs. La Becky ne interesează nu doar ce produce copilul, ci felul în care gândește, încearcă și își explică propriile alegeri.' },
         { hook: 'Ce face un spațiu de joacă să devină experiență?', value: 'Diferențiază Becky prin echilibrul dintre ambient, relație și oportunități de explorare.', context: 'O experiență valoroasă nu este dată doar de numărul de jucării. Contează cum este organizat spațiul, ce fel de interacțiuni încurajează și câtă autonomie simte copilul. La Becky urmărim un echilibru între explorare, conectare și momente ghidate care apar firesc, nu forțat.' }
+      ],
+      pearl: [
+        { hook: 'Când spune „nu pot”, începe cu o întrebare.', value: 'O replică scurtă care îl ajută să arate unde s-a blocat, fără ca adultul să preia imediat rezolvarea.', context: 'Copilul spune „nu pot” înainte să înceapă o activitate. Părintele confirmă că este disponibil, întreabă care parte pare dificilă și îl ajută să aleagă primul pas. Scopul nu este să refuze ajutorul, ci să îl facă suficient de mic pentru ca acel copil să poată porni.' },
+        { hook: 'Când se supără, nu grăbi soluția.', value: 'O replică de reglare și orientare pentru momentul în care copilul are nevoie să fie auzit înainte să primească un sfat.', context: 'Copilul se supără în timpul jocului sau al unei activități. În loc să explice imediat ce ar trebui să facă, adultul numește ce vede și întreabă dacă vrea ajutor sau doar puțin timp. Apoi urmează alegerea copilului și oferă un singur pas, dacă este nevoie.' },
+        { hook: 'Când nu vrea să intre în joc, lasă-i o ușă mică.', value: 'O invitație concretă și fără presiune, care îi permite copilului să se apropie în ritmul lui.', context: 'Copilul stă aproape de un joc, dar nu intră. Adultul nu îl împinge și nu îl întreabă repetat de ce. Îi oferă un rol mic, observabil, pe care îl poate accepta sau refuza, apoi lasă spațiu pentru alegerea lui.' }
       ]
     };
     const selectedBranch = ideaBranches.find(([key]) => key === state.ideaBranch);
@@ -1270,6 +1288,24 @@ Ce vă place să descoperiți împreună?`;
           preserveFinal: true,
           artworkInstruction: 'Un singur simbol watercolor simplu care încheie vizual ideea postării.'
         }
+      ];
+      return slides.map(slide => ({ ...slide, headingParts: semanticHeadingParts(slide.heading) }));
+    }
+    if (branch === 'pearl') {
+      const pearls = [
+        ['Când spune „nu pot”, începe cu o întrebare.', 'Ce parte ți se pare greu de început?', 'Întrebarea mută atenția de la verdict la primul loc unde poate primi sprijin.', 'Încearcă să oferi un singur pas, nu soluția întreagă.', 'Păstrează replica care îi lasă copilului loc să pornească.'],
+        ['Când se supără, nu grăbi soluția.', 'Vrei să te ascult sau vrei să căutăm împreună?', 'Îi oferi două forme de sprijin fără să presupui de ce are nevoie.', 'Dacă cere ajutor, propune o singură schimbare mică.', 'Păstrează întrebarea pentru data viitoare când emoția ajunge prima.'],
+        ['Când nu intră în joc, lasă-i o ușă mică.', 'Vrei să fii tu cel care alege primul obiect?', 'Un rol mic îi permite să se apropie fără să fie împins în mijlocul activității.', 'Oferă invitația o singură dată, apoi lasă spațiu.', 'Păstrează loc pentru un început ales de copil.']
+      ];
+      const pearl = pearls[index];
+      if (!pearl) return null;
+      const [hook, quote, reason, action, close] = pearl;
+      const slides = [
+        { heading: hook, body: 'Un moment recognoscibil. O perlă simplă pentru următoarele 30 de secunde.', artworkInstruction: 'O singură perlă luminoasă într-o scoică deschisă, watercolor Becky, fără text.' },
+        { heading: quote, body: 'Spune exact atât. Apoi așteaptă răspunsul copilului.', artworkInstruction: 'O singură bulă de conversație corală, watercolor Becky, fără text.' },
+        { heading: 'De ce ajută această replică?', body: reason, artworkInstruction: 'O singură potecă scurtă care pornește dintr-un punct blocat, watercolor Becky.' },
+        { heading: 'Încearcă asta azi.', body: action, artworkInstruction: 'Un singur pas mic pe o potecă, watercolor Becky, fără text.' },
+        { heading: close, body: 'Salvează perla pentru momentul în care vei avea nevoie de ea.', preserveFinal: true, artworkInstruction: 'O singură cutiuță mică pentru o perlă, watercolor Becky, fără text.' }
       ];
       return slides.map(slide => ({ ...slide, headingParts: semanticHeadingParts(slide.heading) }));
     }
@@ -1519,6 +1555,9 @@ Ce vă place să descoperiți împreună?`;
     const variant = carouselVariants[state.carouselVariant] || carouselVariants['story-cards'];
     if (illustrationMode === 'story') {
       return `Create one emotionally clear watercolor story moment for a square Becky’s Garden carousel. This slide belongs to one continuous true story told in the first person by Radu, the adult facilitator at Becky. Use the illustrated profile asset /assets/content_assets/RADU.png as the identity reference for Radu and preserve his recognizable face, hairstyle, proportions and clothing palette across the entire carousel, while changing his pose and expression to match this exact moment. Slide text: “${slide.heading}” — “${slide.body}”. Visual direction: ${slide.change || 'show only the single interaction or emotional beat described by this slide'}. Children must remain anonymous, softly illustrated and non-identifiable; never render their names. One intimate scene only, with at most Radu and two children, no collage and no unrelated symbols. Premium warm watercolor, gentle Becky palette, expressive body language, generous clean white margins and a perfectly uniform white background for automatic placement. No written text, letters, logos, clouds, frame, pagination, watermark, photorealism or extra decorative objects.`;
+    }
+    if (state.carouselVariant === 'parent-pearl') {
+      return `Create one small, instantly readable watercolor symbol for a “Parent Pearl” carousel card. The visual identity is a calm collectible pearl of practical wisdom: cream paper, coral outline, teal accent, warm yellow highlight, delicate shell or speech-bubble motif when relevant. Visual direction: “${slide.change || slide.heading}”. Depict exactly one simple object or symbol, centered, with generous clean white margins. No people, faces, children, adults, text, letters, numbers, logos, collage, scene, background pattern, watermark, shadow or extra decorations. The image must feel like a tiny useful insight a parent can save and remember, not like a generic educational infographic.`;
     }
     if (slide.role === 'cover') {
       return `Create a highly expressive, premium watercolor character illustration for the COVER of a square Becky’s Garden carousel. Feature Becky, a charming cheerful yellow duckling mascot with big expressive eyes, a small orange beak and a delicate flower crown. Theme and rhetorical hook: “${slide.heading}”. She is overflowing with ideas, imagination, curiosity and happy excitement. Render the COMPLETE character artwork, including the entire lower torso/body that belongs to the pose. CRITICAL: no part of Becky may touch or be cropped by any edge of the generated image; leave at least 12 percent clean white margin around the complete artwork on every side. Do not create a flat horizontal cut through the body, feathers, wings or flower crown. The app will position the complete artwork and crop it only at the bottom edge of the final carousel card. ONE ISOLATED CHARACTER ONLY. Do not add any floating decorative marks around her: no stars, sparkles, hearts, exclamation marks, question marks, light bulbs, strokes, confetti, flowers detached from the crown or background accents. Keep all white space perfectly empty outside the character. Pure uniform white background. No text, letters, logo, clouds, pagination, frame, square panel, room, scene, collage, photorealism, other characters or watermark. Match the Becky palette: coral #F96B76, teal #238B9A, soft yellow, pale purple and pale blue. ${slide.change ? `Requested adjustment: ${slide.change}.` : ''} Variant: ${variant.label}.`;
@@ -2706,6 +2745,14 @@ async function beginNewContent(entry = 'own', branch = '') {
 
   function bind(demo) {
     demo.querySelector('[data-cc-story-back]')?.addEventListener('click', () => { state.contentView = 'home'; state.storyDate = ''; state.storyCandidates = []; state.storyAssessmentComplete = false; state.storyAssessmentReason = ''; state.storySaveMessage = ''; save(false); render(); });
+    demo.querySelector('[data-cc-story-questions]')?.addEventListener('submit', async event => {
+      event.preventDefault();
+      const answers = {};
+      event.currentTarget.querySelectorAll('[data-story-answer]').forEach(field => { answers[field.dataset.storyAnswer] = field.value.trim(); });
+      state.storyAnswers = answers;
+      const clarifications = (state.storyQuestions || []).map((item, index) => `Întrebare: ${item.question}\nRăspuns: ${answers[index] || ''}`).join('\n\n');
+      await loadStoryCandidates(state.storyDate, clarifications);
+    });
     demo.querySelectorAll('[data-cc-story-choice]').forEach(button => button.addEventListener('click', async () => {
       const candidate = state.storyCandidates?.[Number(button.dataset.ccStoryChoice)];
       if (!candidate) return;
@@ -2747,6 +2794,7 @@ async function beginNewContent(entry = 'own', branch = '') {
     demo.querySelectorAll('[data-cc-story-dismiss]').forEach(button => button.addEventListener('click', () => {
       const index = Number(button.dataset.ccStoryDismiss);
       state.storyCandidates = (state.storyCandidates || []).filter((_, candidateIndex) => candidateIndex !== index);
+      state.storyQuestions = [];
       state.storyAssessmentComplete = true;
       state.storyAssessmentReason = 'Ai decis că acest moment nu merită transformat în conținut public.';
       state.storySaveMessage = '';
@@ -2879,6 +2927,7 @@ async function beginNewContent(entry = 'own', branch = '') {
       await beginNewContent('ideas', branch);
       state.context = context;
       state.creationEntry = 'ideas';
+      if (branch === 'pearl') state.carouselVariant = 'parent-pearl';
       state.selectedIdeaPlan = fallbackPlan;
       save();
       await buildCarouselDraft();
@@ -3326,7 +3375,7 @@ async function beginNewContent(entry = 'own', branch = '') {
       : view === 'content' ? contentLibraryView()
       : view === 'brand' ? brandView()
       : `<div class="cc-create-view">${statusStrip()}${activeStep}${state.step === 4 && state.format === 'carousel' ? postCaptionPanel() : ''}</div>`;
-    demo.innerHTML = `<div class="cc-shell cc-os-shell">
+    demo.innerHTML = `<div class="cc-shell cc-os-shell cc-variant-${safe(state.carouselVariant || 'story-cards')}">
       ${contentDirectorNav()}
       ${activeView}
     </div>`;
@@ -3361,6 +3410,8 @@ async function beginNewContent(entry = 'own', branch = '') {
       state.storyCandidates = [];
       state.storyAssessmentComplete = false;
       state.storyAssessmentReason = '';
+      state.storyQuestions = [];
+      state.storyAnswers = {};
       state.storySaveMessage = '';
       state.contentView = 'story';
       loadStoryCandidates(storyDate);

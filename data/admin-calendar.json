@@ -24,5 +24,18 @@
     "hide_private_times": false,
     "created_at": "2026-08-24T11:14:16.398Z",
     "updated_at": "2026-08-24T11:25:34.099Z"
+  },
+  {
+    "id": "c1a7666c-0a32-404f-ad2c-01eb5441f7f1",
+    "title": "Închis",
+    "type": "closed",
+    "date": "2026-08-31",
+    "start_time": "15:00",
+    "end_time": "21:00",
+    "note": "",
+    "hide_open_intervals": false,
+    "hide_private_times": false,
+    "created_at": "2026-08-31T14:17:14.485Z",
+    "updated_at": "2026-08-31T14:17:14.485Z"
   }
 ]
