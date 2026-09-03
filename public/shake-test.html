@@ -116,6 +116,7 @@
     let settling = false;
     let isUnlocked = false;
     let lastDuckSound = 0;
+    let lastLockedFeedback = 0;
 
     function playDuckSound() {
       const now = Date.now();
@@ -140,6 +141,9 @@
     }
 
     function lockedFeedback() {
+      const now = Date.now();
+      if (now - lastLockedFeedback < 700) return;
+      lastLockedFeedback = now;
       challengeScreen.classList.remove('is-growth');
       requestAnimationFrame(() => challengeScreen.classList.add('is-growth'));
       challengeScreen.classList.remove('is-blocked');
