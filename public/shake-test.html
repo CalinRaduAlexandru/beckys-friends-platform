@@ -260,8 +260,7 @@
           lock.textContent = '🔓';
           lock.classList.add('unlocked');
           isUnlocked = true;
-          lockMessage.textContent = 'Deblocat — zgâlțâie pentru următoarea';
-          lockMessage.classList.add('is-visible', 'is-unlocked');
+          lockMessage.classList.remove('is-visible', 'is-unlocked');
         }
         lastTap = 0;
         event.preventDefault();
