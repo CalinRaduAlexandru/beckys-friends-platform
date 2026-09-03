@@ -32,15 +32,19 @@
     .challenge.is-visible { display: grid; }
     .challenge.is-settling .challenge-content { animation: settle .78s cubic-bezier(.2,.8,.3,1); }
     .challenge.is-settling .challenge-emoji { animation: rumble .78s ease-out; }
+    .challenge-content.nudge { animation: nudge .28s ease-out; }
     .challenge-content { display: grid; justify-items: center; text-align: center; }
     .challenge-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; filter: drop-shadow(0 8px 0 rgba(35,52,72,.1)); }
     .challenge h2 { max-width: 570px; margin: 0; font-size: clamp(38px, 11vw, 70px); line-height: .98; letter-spacing: -.055em; }
     .challenge-text { max-width: 430px; margin: 18px auto 0; color: #66532f; font-size: clamp(17px, 4.5vw, 22px); font-weight: 700; line-height: 1.35; }
     @keyframes settle { 0% { opacity: .35; transform: translateY(-26px) scale(1.08); filter: blur(9px); } 55% { opacity: .75; transform: translateY(7px) scale(.98); filter: blur(3px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
     @keyframes rumble { 0%,100% { transform: rotate(0); } 18% { transform: rotate(-8deg) scale(1.08); } 38% { transform: rotate(7deg) scale(.98); } 58% { transform: rotate(-3deg); } }
+    @keyframes nudge { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px) rotate(-1deg); } 75% { transform: translateX(7px) rotate(1deg); } }
     .waiting-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; animation: waiting 1.6s ease-in-out infinite; }
     @keyframes waiting { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.04); } }
     #status { display: none; }
+    .lock { position: absolute; z-index: 3; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%; display: grid; width: 38px; height: 38px; place-items: center; border: 2px solid #233448; border-radius: 50%; background: rgba(255,253,247,.8); font-size: 17px; transform: translateX(-50%); }
+    .lock.unlocked { background: #dff3f1; }
   </style>
 </head>
 <body>
@@ -62,6 +66,7 @@
       <h2 id="challenge-title">Acum zgâlțâie!</h2>
       <p class="challenge-text" id="challenge-text">Prima zgâlțâire puternică alege o provocare pentru tine.</p>
     </div>
+    <div class="lock" id="lock" aria-label="Provocarea este blocată">🔒</div>
     <p id="status" role="status"></p>
   </main>
 
@@ -70,6 +75,7 @@
     const challengeScreen = document.getElementById('challenge');
     const start = document.getElementById('start');
     const status = document.getElementById('status');
+    const lock = document.getElementById('lock');
     const title = document.getElementById('challenge-title');
     const text = document.getElementById('challenge-text');
     const emoji = document.getElementById('challenge-emoji');
@@ -86,6 +92,11 @@
     let orientationEvents = 0;
     let lastTap = 0;
     let settling = false;
+
+    function nudge() {
+      challengeScreen.querySelector('.challenge-content').classList.remove('nudge');
+      requestAnimationFrame(() => challengeScreen.querySelector('.challenge-content').classList.add('nudge'));
+    }
 
     function showChallenge() {
       if (settling) return;
@@ -105,6 +116,8 @@
       title.textContent = item.title;
       text.textContent = item.text;
       cooldownUntil = Date.now() + 10000;
+      lock.textContent = '🔒';
+      lock.classList.remove('unlocked');
       challengeScreen.classList.remove('is-settling');
       settling = false;
     }
@@ -119,7 +132,10 @@
       const change = hasLinear ? Math.hypot(...current) : previous ? Math.hypot(...current.map((axis, index) => axis - previous[index])) : 0;
       previous = current;
       const threshold = hasLinear ? 12 : 8;
-      if (change > threshold && Date.now() >= cooldownUntil) showChallenge();
+      if (change > threshold) {
+        if (Date.now() >= cooldownUntil) showChallenge();
+        else nudge();
+      }
     }
 
     function orientation(event) {
@@ -127,7 +143,10 @@
       const current = [event.alpha || 0, event.beta || 0, event.gamma || 0];
       const change = previousOrientation ? Math.hypot(...current.map((axis, index) => Math.abs(axis - previousOrientation[index]))) : 0;
       previousOrientation = current;
-      if (change > 30 && Date.now() >= cooldownUntil) showChallenge();
+      if (change > 30) {
+        if (Date.now() >= cooldownUntil) showChallenge();
+        else nudge();
+      }
     }
 
     async function startGame() {
@@ -159,7 +178,8 @@
       const now = Date.now();
       if (now - lastTap > 0 && now - lastTap < 350) {
         cooldownUntil = 0;
-        status.textContent = 'Cooldown resetat. Zgâlțâie pentru o provocare nouă.';
+        lock.textContent = '🔓';
+        lock.classList.add('unlocked');
         lastTap = 0;
         event.preventDefault();
       } else lastTap = now;
