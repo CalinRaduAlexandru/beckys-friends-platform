@@ -42,7 +42,7 @@
     .challenge.is-settling .challenge-text { animation: scatter-text .96s cubic-bezier(.2,.8,.3,1) forwards; }
     .challenge-content.nudge { animation: nudge .28s ease-out; }
     .challenge.is-growth .lock { animation: lock-growth .7s cubic-bezier(.16,1.4,.3,1); }
-    .challenge.is-growth .lock-message { animation: message-growth .7s cubic-bezier(.16,1.4,.3,1); }
+    .challenge.is-growth .lock-message { background: #ed7181; border-color: #c55367; animation: message-growth .7s cubic-bezier(.16,1.4,.3,1); }
     .blocked-overlay { position: absolute; z-index: 2; inset: 0; background: rgba(55, 61, 70, .18); opacity: 0; pointer-events: none; }
     .challenge.is-blocked .blocked-overlay { animation: blocked-fade .58s ease-out forwards; }
     .challenge-content { display: grid; justify-items: center; text-align: center; }
@@ -55,8 +55,8 @@
     @keyframes scatter-title { 0% { transform: translate(0) rotate(0) scale(1); letter-spacing: -.055em; } 31% { transform: translate(27vw,12vh) rotate(8deg) scale(.3); opacity: 0; letter-spacing: .2em; } 51% { transform: translate(-25vw,-16vh) rotate(-7deg) scale(.25); opacity: 0; } 65% { transform: translate(-8vw,4vh) rotate(-3deg) scale(1.8); opacity: .2; letter-spacing: .04em; } 80% { transform: translate(3vw,-2vh) rotate(1deg) scale(.86); opacity: .86; } 92% { transform: translate(-1vw,1vh) rotate(0) scale(1.04); opacity: 1; } 100% { transform: translate(0) rotate(0) scale(1); opacity: 1; letter-spacing: -.055em; } }
     @keyframes scatter-text { 0% { transform: translate(0) rotate(0) scale(1); } 34% { transform: translate(-24vw,18vh) rotate(-9deg) scale(.25); opacity: 0; } 50% { transform: translate(29vw,-12vh) rotate(6deg) scale(.3); opacity: 0; } 66% { transform: translate(8vw,5vh) rotate(3deg) scale(1.65); opacity: .18; } 82% { transform: translate(-3vw,-2vh) rotate(-1deg) scale(.88); opacity: .88; } 94% { transform: translate(1vw,1vh) rotate(0) scale(1.03); opacity: 1; } 100% { transform: translate(0) rotate(0) scale(1); opacity: 1; } }
     @keyframes nudge { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px) rotate(-1deg); } 75% { transform: translateX(7px) rotate(1deg); } }
-    @keyframes lock-growth { 0% { transform: translateX(-50%) scale(1); } 35% { transform: translateX(-50%) scale(1.28); } 62% { transform: translateX(-50%) scale(.94); } 100% { transform: translateX(-50%) scale(1); } }
-    @keyframes message-growth { 0% { transform: translateX(-50%) scale(1); } 35% { transform: translateX(-50%) scale(1.08); } 62% { transform: translateX(-50%) scale(.98); } 100% { transform: translateX(-50%) scale(1); } }
+    @keyframes lock-growth { 0% { transform: translateX(-50%) scale(1); } 28% { transform: translateX(-50%) scale(1.58) rotate(-8deg); } 52% { transform: translateX(-50%) scale(.9) rotate(5deg); } 74% { transform: translateX(-50%) scale(1.16) rotate(-2deg); } 100% { transform: translateX(-50%) scale(1) rotate(0); } }
+    @keyframes message-growth { 0% { transform: translateX(-50%) scale(1); } 28% { transform: translateX(-50%) scale(1.22) rotate(-2deg); } 52% { transform: translateX(-50%) scale(.94) rotate(1deg); } 74% { transform: translateX(-50%) scale(1.08); } 100% { transform: translateX(-50%) scale(1); } }
     @keyframes blocked-fade { 0% { opacity: 0; } 22% { opacity: .28; } 100% { opacity: 0; } }
     .waiting-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; animation: waiting 1.6s ease-in-out infinite; }
     @keyframes waiting { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.04); } }
@@ -147,7 +147,7 @@
 
     function lockedFeedback() {
       const now = Date.now();
-      if (now - lastLockedFeedback < 700) return;
+      if (now - lastLockedFeedback < 5000) return;
       lastLockedFeedback = now;
       challengeScreen.classList.remove('is-growth');
       requestAnimationFrame(() => challengeScreen.classList.add('is-growth'));
