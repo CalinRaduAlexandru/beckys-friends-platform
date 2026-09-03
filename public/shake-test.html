@@ -30,21 +30,25 @@
     .hint { margin: 24px 0 0; color: #806b3d; font-size: 12px; font-weight: 700; }
     .challenge { display: none; place-items: center; padding: 28px 24px; background: radial-gradient(circle at 50% 32%, #fff7c9, transparent 45%), #f9d85b; }
     .challenge.is-visible { display: grid; }
-    .challenge.is-settling .challenge-content { animation: settle .78s cubic-bezier(.2,.8,.3,1); }
-    .challenge.is-settling .challenge-emoji { animation: rumble .78s ease-out; }
+    .challenge.is-settling .challenge-content { animation: settle .96s cubic-bezier(.2,.8,.3,1); }
+    .challenge.is-settling .challenge-emoji { animation: scatter-emoji .96s cubic-bezier(.2,.8,.3,1); }
+    .challenge.is-settling h2 { animation: scatter-title .96s cubic-bezier(.2,.8,.3,1); }
+    .challenge.is-settling .challenge-text { animation: scatter-text .96s cubic-bezier(.2,.8,.3,1); }
     .challenge-content.nudge { animation: nudge .28s ease-out; }
     .challenge-content { display: grid; justify-items: center; text-align: center; }
     .challenge-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; filter: drop-shadow(0 8px 0 rgba(35,52,72,.1)); }
     .challenge h2 { max-width: 570px; margin: 0; font-size: clamp(38px, 11vw, 70px); line-height: .98; letter-spacing: -.055em; }
     .challenge-text { max-width: 430px; margin: 18px auto 0; color: #66532f; font-size: clamp(17px, 4.5vw, 22px); font-weight: 700; line-height: 1.35; }
-    @keyframes settle { 0% { opacity: .35; transform: translateY(-26px) scale(1.08); filter: blur(9px); } 55% { opacity: .75; transform: translateY(7px) scale(.98); filter: blur(3px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
-    @keyframes rumble { 0%,100% { transform: rotate(0); } 18% { transform: rotate(-8deg) scale(1.08); } 38% { transform: rotate(7deg) scale(.98); } 58% { transform: rotate(-3deg); } }
+    @keyframes settle { 0% { opacity: 1; transform: scale(1); filter: blur(0); } 38% { opacity: 0; transform: scale(.68) rotate(-8deg); filter: blur(18px); } 62% { opacity: 0; transform: scale(1.24) rotate(7deg); filter: blur(14px); } 100% { opacity: 1; transform: scale(1) rotate(0); filter: blur(0); } }
+    @keyframes scatter-emoji { 0% { transform: translate(0) rotate(0) scale(1); } 38% { transform: translate(-32vw,-18vh) rotate(-55deg) scale(.25); opacity: 0; } 62% { transform: translate(27vw,14vh) rotate(45deg) scale(.25); opacity: 0; } 100% { transform: translate(0) rotate(0) scale(1); opacity: 1; } }
+    @keyframes scatter-title { 0% { transform: translate(0); letter-spacing: -.055em; } 38% { transform: translate(25vw,13vh) rotate(5deg); opacity: 0; letter-spacing: .18em; } 62% { transform: translate(-22vw,-12vh) rotate(-4deg); opacity: 0; } 100% { transform: translate(0) rotate(0); opacity: 1; letter-spacing: -.055em; } }
+    @keyframes scatter-text { 0% { transform: translate(0); } 38% { transform: translate(-22vw,17vh) rotate(-6deg); opacity: 0; } 62% { transform: translate(24vw,-14vh) rotate(5deg); opacity: 0; } 100% { transform: translate(0) rotate(0); opacity: 1; } }
     @keyframes nudge { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px) rotate(-1deg); } 75% { transform: translateX(7px) rotate(1deg); } }
     .waiting-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; animation: waiting 1.6s ease-in-out infinite; }
     @keyframes waiting { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.04); } }
     #status { display: none; }
-    .lock { position: absolute; z-index: 3; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%; display: grid; width: 38px; height: 38px; place-items: center; border: 2px solid #233448; border-radius: 50%; background: rgba(255,253,247,.8); font-size: 17px; transform: translateX(-50%); }
-    .lock.unlocked { background: #dff3f1; }
+    .lock { position: absolute; z-index: 3; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%; display: grid; width: 48px; height: 48px; place-items: center; border: 3px solid #233448; border-radius: 50%; background: #233448; color: #fff; font-size: 22px; transform: translateX(-50%); box-shadow: 0 0 0 5px rgba(35,52,72,.16), 0 8px 18px rgba(35,52,72,.25); transition: transform .25s ease, background .25s ease, box-shadow .25s ease; }
+    .lock.unlocked { background: #18a889; border-color: #0b6f5a; box-shadow: 0 0 0 7px rgba(24,168,137,.3), 0 0 28px rgba(24,168,137,.65); transform: translateX(-50%) scale(1.18); }
   </style>
 </head>
 <body>
@@ -85,7 +89,6 @@
       { emoji: '🗿', title: 'Statuie dansatoare', text: 'Dansează 10 secunde, apoi îngheață într-o poziție amuzantă.' }
     ];
     let activeChallenge = -1;
-    let cooldownUntil = 0;
     let previous = null;
     let previousOrientation = null;
     let motionEvents = 0;
@@ -103,7 +106,7 @@
       settling = true;
       challengeScreen.classList.add('is-settling');
       status.textContent = 'Se așează provocarea…';
-      setTimeout(() => revealChallenge(), 780);
+      setTimeout(() => revealChallenge(), 420);
     }
 
     function revealChallenge() {
@@ -115,11 +118,12 @@
       emoji.className = 'challenge-emoji';
       title.textContent = item.title;
       text.textContent = item.text;
-      cooldownUntil = Date.now() + 10000;
       lock.textContent = '🔒';
       lock.classList.remove('unlocked');
-      challengeScreen.classList.remove('is-settling');
-      settling = false;
+      setTimeout(() => {
+        challengeScreen.classList.remove('is-settling');
+        settling = false;
+      }, 540);
     }
 
     function motion(event) {
@@ -133,7 +137,7 @@
       previous = current;
       const threshold = hasLinear ? 12 : 8;
       if (change > threshold) {
-        if (Date.now() >= cooldownUntil) showChallenge();
+        if (activeChallenge < 0 && !settling) showChallenge();
         else nudge();
       }
     }
@@ -144,7 +148,7 @@
       const change = previousOrientation ? Math.hypot(...current.map((axis, index) => Math.abs(axis - previousOrientation[index]))) : 0;
       previousOrientation = current;
       if (change > 30) {
-        if (Date.now() >= cooldownUntil) showChallenge();
+        if (activeChallenge < 0 && !settling) showChallenge();
         else nudge();
       }
     }
@@ -177,9 +181,11 @@
     document.addEventListener('touchend', event => {
       const now = Date.now();
       if (now - lastTap > 0 && now - lastTap < 350) {
-        cooldownUntil = 0;
-        lock.textContent = '🔓';
-        lock.classList.add('unlocked');
+        if (activeChallenge >= 0 && !settling) {
+          lock.textContent = '🔓';
+          lock.classList.add('unlocked');
+          showChallenge();
+        }
         lastTap = 0;
         event.preventDefault();
       } else lastTap = now;
