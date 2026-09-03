@@ -36,10 +36,10 @@
     .hint { margin: 24px 0 0; color: #806b3d; font-size: 12px; font-weight: 700; }
     .challenge { display: none; place-items: center; padding: 28px 24px; background: radial-gradient(circle at 50% 32%, #fffdf1, transparent 45%), #fff8df; }
     .challenge.is-visible { display: grid; }
-    .challenge.is-settling .challenge-content { animation: settle .96s cubic-bezier(.2,.8,.3,1); }
-    .challenge.is-settling .challenge-emoji { animation: scatter-emoji .96s cubic-bezier(.2,.8,.3,1); }
-    .challenge.is-settling h2 { animation: scatter-title .96s cubic-bezier(.2,.8,.3,1); }
-    .challenge.is-settling .challenge-text { animation: scatter-text .96s cubic-bezier(.2,.8,.3,1); }
+    .challenge.is-settling .challenge-content { animation: settle .96s cubic-bezier(.2,.8,.3,1) forwards; }
+    .challenge.is-settling .challenge-emoji { animation: scatter-emoji .96s cubic-bezier(.2,.8,.3,1) forwards; }
+    .challenge.is-settling h2 { animation: scatter-title .96s cubic-bezier(.2,.8,.3,1) forwards; }
+    .challenge.is-settling .challenge-text { animation: scatter-text .96s cubic-bezier(.2,.8,.3,1) forwards; }
     .challenge-content.nudge { animation: nudge .28s ease-out; }
     .challenge.is-growth .challenge-content { animation: super-growth .7s cubic-bezier(.16,1.4,.3,1); }
     .challenge-content { display: grid; justify-items: center; text-align: center; }
@@ -147,6 +147,8 @@
     function showChallenge() {
       if (settling) return;
       settling = true;
+      challengeScreen.classList.remove('is-settling');
+      void challengeScreen.offsetWidth;
       challengeScreen.classList.add('is-settling');
       status.textContent = 'Se așează provocarea…';
       setTimeout(() => revealChallenge(), 420);
@@ -166,7 +168,6 @@
       lockMessage.classList.remove('is-visible', 'is-unlocked');
       isUnlocked = false;
       setTimeout(() => {
-        challengeScreen.classList.remove('is-settling');
         settling = false;
       }, 540);
     }
