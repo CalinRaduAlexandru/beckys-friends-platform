@@ -2,146 +2,168 @@
 <html lang="ro">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f6eddd">
-  <title>Becky — test shake</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#f9d85b">
+  <title>Becky — provocare</title>
   <style>
-    :root { color: #233448; background: #f6eddd; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    :root { color: #233448; background: #f9d85b; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
-    body { min-height: 100dvh; margin: 0; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 15% 10%, #dff3f1, transparent 34%), #f6eddd; }
-    main { width: min(430px, 100%); padding: 34px 24px 28px; border: 1px solid rgba(35,52,72,.1); border-radius: 30px; background: rgba(255,253,250,.9); box-shadow: 0 20px 55px rgba(35,52,72,.12); text-align: center; }
-    .eyebrow { color: #238b9a; font-size: 11px; font-weight: 900; letter-spacing: .16em; }
-    h1 { margin: 8px 0 8px; font-size: clamp(30px, 9vw, 44px); line-height: 1; }
-    p { margin: 0 auto; color: #52677d; font-size: 15px; line-height: 1.5; }
-    .score { display: grid; width: 210px; height: 210px; margin: 30px auto 24px; place-items: center; border: 10px solid #33a9ba; border-radius: 50%; background: #dff3f1; color: #238b9a; font-size: 92px; font-weight: 900; line-height: 1; transition: transform .16s ease, background .16s ease; }
-    .score.bump { transform: scale(1.08) rotate(-2deg); background: #fff1bd; }
-    button { min-height: 52px; padding: 0 22px; border: 0; border-radius: 999px; background: #33a9ba; color: white; font: inherit; font-weight: 850; cursor: pointer; box-shadow: 0 8px 18px rgba(51,169,186,.22); }
-    button:disabled { opacity: .6; cursor: wait; }
-    #status { min-height: 46px; margin-top: 18px; font-size: 13px; }
-    .challenge-list { display: grid; gap: 12px; margin-top: 26px; text-align: left; }
-    .challenge-card { padding: 16px; border: 1px solid rgba(35,52,72,.1); border-radius: 20px; background: #fff; transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
-    .challenge-card.active { border-color: #33a9ba; box-shadow: 0 8px 22px rgba(51,169,186,.18); transform: translateY(-2px); }
-    .challenge-card strong { display: block; font-size: 16px; }
-    .challenge-card p { margin: 5px 0 0; font-size: 13px; }
-    .challenge-tag { display: inline-block; margin-bottom: 8px; color: #238b9a; font-size: 10px; font-weight: 900; letter-spacing: .12em; }
-    .hint { margin-top: 18px; color: #8693a1; font-size: 12px; }
+    html, body { width: 100%; height: 100%; height: 100dvh; overflow: hidden; }
+    body { margin: 0; background: #f9d85b; }
+    button { font: inherit; }
+    .screen { position: relative; width: 100vw; height: 100vh; height: 100dvh; min-height: 100svh; overflow: hidden; }
+    .screen::before, .screen::after { position: absolute; content: ''; width: 42vw; height: 42vw; max-width: 270px; max-height: 270px; border-radius: 50%; opacity: .45; }
+    .screen::before { top: -12vw; right: -10vw; background: #fff4b8; }
+    .screen::after { bottom: -16vw; left: -12vw; background: #f6a7b4; }
+    .intro { display: grid; place-items: center; padding: 28px 24px; text-align: center; background: radial-gradient(circle at 50% 30%, #fff5bd, transparent 42%), #f9d85b; }
+    .intro-content, .challenge-content { position: relative; z-index: 1; width: min(520px, 100%); }
+    .logo { display: inline-grid; width: 62px; height: 62px; place-items: center; border: 5px solid #233448; border-radius: 22px; background: #fffdf7; font-size: 31px; transform: rotate(-7deg); box-shadow: 0 8px 0 #233448; }
+    .eyebrow { margin-top: 27px; color: #b46732; font-size: 11px; font-weight: 950; letter-spacing: .18em; }
+    h1 { max-width: 480px; margin: 10px auto 0; font-size: clamp(42px, 12vw, 76px); line-height: .94; letter-spacing: -.06em; }
+    .intro-copy { max-width: 370px; margin: 20px auto 0; color: #66532f; font-size: 17px; font-weight: 650; line-height: 1.45; }
+    .shake-illustration { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 28px auto 30px; color: #233448; font-size: 58px; }
+    .phone { display: grid; width: 64px; height: 104px; place-items: center; border: 6px solid #233448; border-radius: 18px; background: #dff3f1; font-size: 31px; box-shadow: 0 7px 0 #233448; animation: wobble 1.2s ease-in-out infinite; }
+    .arrows { font-size: 36px; font-weight: 950; letter-spacing: -.35em; }
+    @keyframes wobble { 0%,100% { transform: rotate(-8deg); } 50% { transform: rotate(8deg); } }
+    .primary { min-height: 60px; padding: 0 28px; border: 0; border-radius: 999px; background: #233448; color: #fffdf7; font-size: 17px; font-weight: 900; box-shadow: 0 9px 0 #b46732; cursor: pointer; }
+    .primary:active { transform: translateY(5px); box-shadow: 0 4px 0 #b46732; }
+    .hint { margin: 24px 0 0; color: #806b3d; font-size: 12px; font-weight: 700; }
+    .challenge { display: none; place-items: center; padding: 28px 24px; background: radial-gradient(circle at 50% 32%, #fff7c9, transparent 45%), #f9d85b; }
+    .challenge.is-visible { display: grid; }
+    .challenge-content { display: grid; justify-items: center; text-align: center; }
+    .challenge-badge { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px; background: rgba(255,253,247,.72); color: #b46732; font-size: 11px; font-weight: 950; letter-spacing: .12em; }
+    .challenge-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; filter: drop-shadow(0 8px 0 rgba(35,52,72,.1)); }
+    .challenge h2 { max-width: 570px; margin: 0; font-size: clamp(38px, 11vw, 70px); line-height: .98; letter-spacing: -.055em; }
+    .challenge-text { max-width: 430px; margin: 18px auto 0; color: #66532f; font-size: clamp(17px, 4.5vw, 22px); font-weight: 700; line-height: 1.35; }
+    .next-hint { margin: 29px 0 0; color: #806b3d; font-size: 13px; font-weight: 800; }
+    .score { position: absolute; z-index: 2; top: max(20px, env(safe-area-inset-top)); right: 20px; display: grid; width: 48px; height: 48px; place-items: center; border: 3px solid #233448; border-radius: 50%; background: #fffdf7; color: #233448; font-size: 20px; font-weight: 950; }
+    .score.bump { animation: pop .22s ease-out; }
+    @keyframes pop { 50% { transform: scale(1.25) rotate(8deg); } }
+    #status { position: absolute; z-index: 2; right: 24px; bottom: max(18px, env(safe-area-inset-bottom)); left: 24px; min-height: 20px; color: #806b3d; font-size: 11px; font-weight: 750; text-align: center; }
   </style>
 </head>
 <body>
-  <main>
-    <div class="eyebrow">BECKY · TEST MOBIL</div>
-    <h1>Zgâlțâie telefonul</h1>
-    <p>Fiecare mișcare detectată schimbă cifra.</p>
-    <div class="score" id="score" aria-live="polite">0</div>
-    <button id="start" type="button">Pornește senzorul</button>
-    <p id="status" role="status">Apasă butonul, apoi zgâlțâie telefonul.</p>
-    <section class="challenge-list" aria-label="Provocări demo">
-      <article class="challenge-card" data-challenge="0"><span class="challenge-tag">PROVOCARE 1 · 3–9 ANI</span><strong>🐒 Imită un animal</strong><p>Alege un animal și fă mișcarea sau sunetul lui timp de 10 secunde.</p></article>
-      <article class="challenge-card" data-challenge="1"><span class="challenge-tag">PROVOCARE 2 · 3–9 ANI</span><strong>🌈 Găsește o culoare</strong><p>Atinge sau arată ceva din cameră care are culoarea aleasă de tine.</p></article>
-      <article class="challenge-card" data-challenge="2"><span class="challenge-tag">PROVOCARE 3 · 3–9 ANI</span><strong>🗿 Statuie dansatoare</strong><p>Dansează 10 secunde, apoi îngheață într-o poziție amuzantă.</p></article>
-    </section>
-    <p class="hint">Testul este temporar și nu salvează nimic.</p>
+  <main class="screen intro" id="intro">
+    <div class="intro-content">
+      <span class="logo" aria-hidden="true">✦</span>
+      <div class="eyebrow">BECKY · JOACĂ-TE</div>
+      <h1>Zgâlțâie și primește o provocare!</h1>
+      <p class="intro-copy">Un joc scurt pentru corpuri curioase. Scutură telefonul și vezi ce misiune apare.</p>
+      <div class="shake-illustration" aria-hidden="true"><span class="arrows">‹‹</span><span class="phone">✦</span><span class="arrows">››</span></div>
+      <button class="primary" id="start" type="button">Pornește jocul</button>
+      <p class="hint">Ai nevoie doar de telefon și puțin chef de joacă.</p>
+    </div>
   </main>
+
+  <main class="screen challenge" id="challenge" aria-live="polite">
+    <div class="score" id="score">0</div>
+    <div class="challenge-content">
+      <div class="challenge-badge">✨ PROVOCARE NOUĂ · 3–9 ANI</div>
+      <div class="challenge-emoji" id="challenge-emoji">🐒</div>
+      <h2 id="challenge-title">Imită un animal</h2>
+      <p class="challenge-text" id="challenge-text">Alege un animal și fă mișcarea sau sunetul lui timp de 10 secunde.</p>
+      <p class="next-hint">Zgâlțâie telefonul pentru următoarea provocare</p>
+    </div>
+    <p id="status" role="status"></p>
+  </main>
+
   <script>
+    const intro = document.getElementById('intro');
+    const challengeScreen = document.getElementById('challenge');
     const score = document.getElementById('score');
     const start = document.getElementById('start');
     const status = document.getElementById('status');
-    const challengeCards = [...document.querySelectorAll('[data-challenge]')];
-    const challenges = ['Imită un animal', 'Găsește o culoare', 'Statuie dansatoare'];
+    const title = document.getElementById('challenge-title');
+    const text = document.getElementById('challenge-text');
+    const emoji = document.getElementById('challenge-emoji');
+    const challenges = [
+      { emoji: '🐒', title: 'Imită un animal', text: 'Alege un animal și fă mișcarea sau sunetul lui timp de 10 secunde.' },
+      { emoji: '🌈', title: 'Găsește o culoare', text: 'Atinge sau arată ceva din cameră care are culoarea aleasă de tine.' },
+      { emoji: '🗿', title: 'Statuie dansatoare', text: 'Dansează 10 secunde, apoi îngheață într-o poziție amuzantă.' }
+    ];
     let value = 0;
+    let activeChallenge = -1;
     let cooldownUntil = 0;
     let previous = null;
     let previousOrientation = null;
     let motionEvents = 0;
     let orientationEvents = 0;
     let lastTap = 0;
-    let activeChallenge = -1;
 
-    function increment() {
-      let next = value;
-      while (next === value) next = Math.floor(Math.random() * 11);
-      value = next;
+    function showChallenge() {
+      let next = activeChallenge;
+      while (next === activeChallenge) next = Math.floor(Math.random() * challenges.length);
+      activeChallenge = next;
+      const item = challenges[next];
+      let nextValue = value;
+      while (nextValue === value) nextValue = Math.floor(Math.random() * 11);
+      value = nextValue;
+      emoji.textContent = item.emoji;
+      title.textContent = item.title;
+      text.textContent = item.text;
       score.textContent = value;
-      activeChallenge = Math.floor(Math.random() * challengeCards.length);
-      challengeCards.forEach((card, index) => card.classList.toggle('active', index === activeChallenge));
-      cooldownUntil = Date.now() + 10000;
-      status.textContent = `${challenges[activeChallenge]} · Poți zgâlțâi din nou peste 10 secunde.`;
       score.classList.remove('bump');
       requestAnimationFrame(() => score.classList.add('bump'));
-      setTimeout(() => score.classList.remove('bump'), 180);
+      setTimeout(() => score.classList.remove('bump'), 260);
+      cooldownUntil = Date.now() + 10000;
+      status.textContent = 'Zgâlțâie din nou peste 10 secunde sau fă dublu-tap pentru reset.';
     }
 
     function motion(event) {
       motionEvents += 1;
-      if (motionEvents === 1) status.textContent = 'Date reale primite de la senzor. Zgâlțâie telefonul!';
       const linear = event.acceleration;
-      const acceleration = linear && [linear.x, linear.y, linear.z].some(Number.isFinite)
-        ? linear
-        : event.accelerationIncludingGravity;
+      const acceleration = linear && [linear.x, linear.y, linear.z].some(Number.isFinite) ? linear : event.accelerationIncludingGravity;
       if (!acceleration) return;
       const current = [acceleration.x || 0, acceleration.y || 0, acceleration.z || 0];
-      const change = linear && [linear.x, linear.y, linear.z].some(Number.isFinite)
-        ? Math.hypot(...current)
-        : previous ? Math.hypot(...current.map((axis, index) => axis - previous[index])) : 0;
+      const hasLinear = linear && [linear.x, linear.y, linear.z].some(Number.isFinite);
+      const change = hasLinear ? Math.hypot(...current) : previous ? Math.hypot(...current.map((axis, index) => axis - previous[index])) : 0;
       previous = current;
-      const now = Date.now();
-      const threshold = linear && [linear.x, linear.y, linear.z].some(Number.isFinite) ? 5 : 3;
-      if (change > threshold && now >= cooldownUntil) {
-        increment();
-      }
+      const threshold = hasLinear ? 5 : 3;
+      if (change > threshold && Date.now() >= cooldownUntil) showChallenge();
     }
 
     function orientation(event) {
       orientationEvents += 1;
       const current = [event.alpha || 0, event.beta || 0, event.gamma || 0];
-      const change = previousOrientation
-        ? Math.hypot(...current.map((axis, index) => Math.abs(axis - previousOrientation[index])))
-        : 0;
+      const change = previousOrientation ? Math.hypot(...current.map((axis, index) => Math.abs(axis - previousOrientation[index]))) : 0;
       previousOrientation = current;
-      if (change > 12 && Date.now() >= cooldownUntil) {
-        increment();
-      }
+      if (change > 12 && Date.now() >= cooldownUntil) showChallenge();
     }
 
-    async function startSensor() {
+    async function startGame() {
       start.disabled = true;
       try {
         if (!('DeviceMotionEvent' in window)) throw new Error('unsupported');
         if (typeof DeviceMotionEvent.requestPermission === 'function') {
-          const permission = await DeviceMotionEvent.requestPermission();
-          if (permission !== 'granted') throw new Error('denied');
+          if (await DeviceMotionEvent.requestPermission() !== 'granted') throw new Error('denied');
         }
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          const permission = await DeviceOrientationEvent.requestPermission();
-          if (permission !== 'granted') throw new Error('denied');
+          if (await DeviceOrientationEvent.requestPermission() !== 'granted') throw new Error('denied');
         }
         window.addEventListener('devicemotion', motion);
         window.addEventListener('deviceorientation', orientation);
+        intro.style.display = 'none';
+        challengeScreen.classList.add('is-visible');
+        showChallenge();
+        status.textContent = 'Zgâlțâie telefonul pentru următoarea provocare.';
         setTimeout(() => {
-          if (!motionEvents && !orientationEvents) status.textContent = 'Nu primesc date de la senzori. Verifică permisiunea Motion & Orientation și încearcă în Safari/Chrome.';
-        }, 2500);
-        status.textContent = typeof DeviceMotionEvent.requestPermission === 'function'
-          ? 'Permisiune acordată. Aștept date reale de la senzor…'
-          : 'Browserul nu afișează un dialog pentru acest senzor. Aștept date reale…';
-        start.textContent = 'Aștept senzorul…';
+          if (!motionEvents && !orientationEvents) status.textContent = 'Nu primesc mișcare. Încearcă Chrome pe telefon și verifică permisiunea senzorului.';
+        }, 3000);
       } catch (error) {
         start.disabled = false;
-        start.textContent = 'Încearcă din nou';
         status.textContent = error.message === 'denied' ? 'Permisiunea pentru mișcare a fost refuzată.' : 'Browserul nu oferă acces la senzorul de mișcare.';
       }
     }
 
-    start.addEventListener('click', startSensor);
+    start.addEventListener('click', startGame);
     document.addEventListener('touchend', event => {
       const now = Date.now();
       if (now - lastTap > 0 && now - lastTap < 350) {
         cooldownUntil = 0;
-        status.textContent = 'Cooldown resetat. Zgâlțâie telefonul pentru o cifră nouă.';
+        status.textContent = 'Cooldown resetat. Zgâlțâie pentru o provocare nouă.';
         lastTap = 0;
         event.preventDefault();
-      } else {
-        lastTap = now;
-      }
+      } else lastTap = now;
     }, { passive: false });
   </script>
 </body>
