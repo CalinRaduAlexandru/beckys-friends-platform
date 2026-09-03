@@ -3,22 +3,28 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-  <meta name="theme-color" content="#f9d85b">
+  <meta name="theme-color" content="#fff8df">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;600;700&display=swap" rel="stylesheet">
   <title>Becky — provocare</title>
   <style>
-    :root { color: #233448; background: #f9d85b; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    :root { color: #233448; background: #fff8df; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
     * { box-sizing: border-box; }
     html, body { width: 100%; height: 100%; height: 100dvh; overflow: hidden; }
-    body { margin: 0; background: #f9d85b; }
+    body { margin: 0; background: #fff8df; }
     button { font: inherit; }
     .screen { position: relative; width: 100vw; height: 100vh; height: 100dvh; min-height: 100svh; overflow: hidden; }
     .screen::before, .screen::after { position: absolute; content: ''; width: 42vw; height: 42vw; max-width: 270px; max-height: 270px; border-radius: 50%; opacity: .45; }
     .screen::before { top: -12vw; right: -10vw; background: #fff4b8; }
-    .intro { display: grid; place-items: center; padding: 28px 24px; text-align: center; background: radial-gradient(circle at 50% 30%, #fff5bd, transparent 42%), #f9d85b; }
+    .intro { display: grid; place-items: center; padding: 28px 24px; text-align: center; background: radial-gradient(circle at 50% 30%, #fffdf1, transparent 42%), #fff8df; }
     .intro-content, .challenge-content { position: relative; z-index: 1; width: min(520px, 100%); }
     .logo { display: inline-grid; width: 62px; height: 62px; place-items: center; border: 5px solid #233448; border-radius: 22px; background: #fffdf7; font-size: 31px; transform: rotate(-7deg); box-shadow: 0 8px 0 #233448; }
     .eyebrow { margin-top: 27px; color: #b46732; font-size: 11px; font-weight: 950; letter-spacing: .18em; }
-    h1 { max-width: 480px; margin: 10px auto 0; font-size: clamp(42px, 12vw, 76px); line-height: .94; letter-spacing: -.06em; }
+    h1 { max-width: 480px; margin: 10px auto 0; font-family: DynaPuff, system-ui, sans-serif; font-size: clamp(42px, 12vw, 76px); font-weight: 600; line-height: .98; letter-spacing: -.045em; }
+    h1 span { display: block; }
+    h1 span:first-child { color: #ed7181; }
+    h1 span:last-child { color: #2fa9b7; }
     .intro-copy { max-width: 370px; margin: 20px auto 0; color: #66532f; font-size: 17px; font-weight: 650; line-height: 1.45; }
     .shake-illustration { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 28px auto 30px; color: #233448; font-size: 58px; }
     .phone { display: grid; width: 64px; height: 104px; place-items: center; border: 6px solid #233448; border-radius: 18px; background: #dff3f1; font-size: 31px; box-shadow: 0 7px 0 #233448; animation: wobble 1.2s ease-in-out infinite; }
@@ -27,7 +33,7 @@
     .primary { min-height: 60px; padding: 0 28px; border: 0; border-radius: 999px; background: #233448; color: #fffdf7; font-size: 17px; font-weight: 900; box-shadow: 0 9px 0 #b46732; cursor: pointer; }
     .primary:active { transform: translateY(5px); box-shadow: 0 4px 0 #b46732; }
     .hint { margin: 24px 0 0; color: #806b3d; font-size: 12px; font-weight: 700; }
-    .challenge { display: none; place-items: center; padding: 28px 24px; background: radial-gradient(circle at 50% 32%, #fff7c9, transparent 45%), #f9d85b; }
+    .challenge { display: none; place-items: center; padding: 28px 24px; background: radial-gradient(circle at 50% 32%, #fffdf1, transparent 45%), #fff8df; }
     .challenge.is-visible { display: grid; }
     .challenge.is-settling .challenge-content { animation: settle .96s cubic-bezier(.2,.8,.3,1); }
     .challenge.is-settling .challenge-emoji { animation: scatter-emoji .96s cubic-bezier(.2,.8,.3,1); }
@@ -55,7 +61,7 @@
     <div class="intro-content">
       <span class="logo" aria-hidden="true">✦</span>
       <div class="eyebrow">BECKY · JOACĂ-TE</div>
-      <h1>Zgâlțâie și primește o provocare!</h1>
+      <h1><span>Zgâlțâie</span><span>și primește o provocare!</span></h1>
       <p class="intro-copy">Un joc scurt pentru corpuri curioase. Scutură telefonul și vezi ce misiune apare.</p>
       <div class="shake-illustration" aria-hidden="true"><span class="arrows">‹‹</span><span class="phone">✦</span><span class="arrows">››</span></div>
       <button class="primary" id="start" type="button">Pornește jocul</button>
