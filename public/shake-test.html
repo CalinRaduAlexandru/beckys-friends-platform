@@ -41,6 +41,7 @@
     .challenge.is-settling h2 { animation: scatter-title .96s cubic-bezier(.2,.8,.3,1); }
     .challenge.is-settling .challenge-text { animation: scatter-text .96s cubic-bezier(.2,.8,.3,1); }
     .challenge-content.nudge { animation: nudge .28s ease-out; }
+    .challenge.is-growth .challenge-content { animation: super-growth .7s cubic-bezier(.16,1.4,.3,1); }
     .challenge-content { display: grid; justify-items: center; text-align: center; }
     .challenge-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; filter: drop-shadow(0 8px 0 rgba(35,52,72,.1)); }
     .challenge h2 { max-width: 570px; margin: 0; font-family: DynaPuff, system-ui, sans-serif; font-size: clamp(38px, 11vw, 70px); font-weight: 600; line-height: .98; letter-spacing: -.055em; }
@@ -50,11 +51,16 @@
     @keyframes scatter-title { 0% { transform: translate(0); letter-spacing: -.055em; } 38% { transform: translate(25vw,13vh) rotate(5deg); opacity: 0; letter-spacing: .18em; } 62% { transform: translate(-22vw,-12vh) rotate(-4deg); opacity: 0; } 100% { transform: translate(0) rotate(0); opacity: 1; letter-spacing: -.055em; } }
     @keyframes scatter-text { 0% { transform: translate(0); } 38% { transform: translate(-22vw,17vh) rotate(-6deg); opacity: 0; } 62% { transform: translate(24vw,-14vh) rotate(5deg); opacity: 0; } 100% { transform: translate(0) rotate(0); opacity: 1; } }
     @keyframes nudge { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-7px) rotate(-1deg); } 75% { transform: translateX(7px) rotate(1deg); } }
+    @keyframes super-growth { 0% { transform: scale(1); } 35% { transform: scale(1.16) rotate(-2deg); } 62% { transform: scale(.96) rotate(1deg); } 100% { transform: scale(1); } }
     .waiting-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; animation: waiting 1.6s ease-in-out infinite; }
     @keyframes waiting { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.04); } }
     #status { display: none; }
     .lock { position: absolute; z-index: 3; bottom: max(20px, env(safe-area-inset-bottom)); left: 50%; display: grid; width: 48px; height: 48px; place-items: center; border: 3px solid #233448; border-radius: 50%; background: #233448; color: #fff; font-size: 22px; transform: translateX(-50%); box-shadow: 0 0 0 5px rgba(35,52,72,.16), 0 8px 18px rgba(35,52,72,.25); transition: transform .25s ease, background .25s ease, box-shadow .25s ease; }
     .lock.unlocked { background: #18a889; border-color: #0b6f5a; box-shadow: 0 0 0 7px rgba(24,168,137,.3), 0 0 28px rgba(24,168,137,.65); transform: translateX(-50%) scale(1.18); }
+    .lock-message { position: absolute; z-index: 3; bottom: max(77px, calc(env(safe-area-inset-bottom) + 77px)); left: 50%; display: none; padding: 8px 14px; border: 2px solid #233448; border-radius: 999px; background: #233448; color: #fff; font-size: 11px; font-weight: 900; white-space: nowrap; transform: translateX(-50%); }
+    .lock-message.is-visible { display: block; animation: message-pop .35s ease-out; }
+    .lock-message.is-unlocked { background: #18a889; border-color: #0b6f5a; }
+    @keyframes message-pop { 0% { opacity: 0; transform: translateX(-50%) scale(.5); } 100% { opacity: 1; transform: translateX(-50%) scale(1); } }
   </style>
 </head>
 <body>
@@ -77,6 +83,7 @@
       <p class="challenge-text" id="challenge-text">Prima zgâlțâire puternică alege o provocare pentru tine.</p>
     </div>
     <div class="lock" id="lock" aria-label="Provocarea este blocată">🔒</div>
+    <div class="lock-message" id="lock-message">Blocat pe această provocare</div>
     <p id="status" role="status"></p>
   </main>
 
@@ -86,6 +93,7 @@
     const start = document.getElementById('start');
     const status = document.getElementById('status');
     const lock = document.getElementById('lock');
+    const lockMessage = document.getElementById('lock-message');
     const title = document.getElementById('challenge-title');
     const text = document.getElementById('challenge-text');
     const emoji = document.getElementById('challenge-emoji');
@@ -100,10 +108,20 @@
     let orientationEvents = 0;
     let lastTap = 0;
     let settling = false;
+    let isUnlocked = false;
 
     function nudge() {
       challengeScreen.querySelector('.challenge-content').classList.remove('nudge');
       requestAnimationFrame(() => challengeScreen.querySelector('.challenge-content').classList.add('nudge'));
+    }
+
+    function lockedFeedback() {
+      challengeScreen.classList.remove('is-growth');
+      requestAnimationFrame(() => challengeScreen.classList.add('is-growth'));
+      lockMessage.textContent = 'Blocat pe această provocare';
+      lockMessage.classList.remove('is-unlocked');
+      lockMessage.classList.add('is-visible');
+      setTimeout(() => challengeScreen.classList.remove('is-growth'), 720);
     }
 
     function showChallenge() {
@@ -125,6 +143,8 @@
       text.textContent = item.text;
       lock.textContent = '🔒';
       lock.classList.remove('unlocked');
+      lockMessage.classList.remove('is-visible', 'is-unlocked');
+      isUnlocked = false;
       setTimeout(() => {
         challengeScreen.classList.remove('is-settling');
         settling = false;
@@ -143,7 +163,8 @@
       const threshold = hasLinear ? 12 : 8;
       if (change > threshold) {
         if (activeChallenge < 0 && !settling) showChallenge();
-        else nudge();
+        else if (isUnlocked && !settling) showChallenge();
+        else lockedFeedback();
       }
     }
 
@@ -154,7 +175,8 @@
       previousOrientation = current;
       if (change > 30) {
         if (activeChallenge < 0 && !settling) showChallenge();
-        else nudge();
+        else if (isUnlocked && !settling) showChallenge();
+        else lockedFeedback();
       }
     }
 
@@ -189,7 +211,9 @@
         if (activeChallenge >= 0 && !settling) {
           lock.textContent = '🔓';
           lock.classList.add('unlocked');
-          showChallenge();
+          isUnlocked = true;
+          lockMessage.textContent = 'Deblocat — zgâlțâie pentru următoarea';
+          lockMessage.classList.add('is-visible', 'is-unlocked');
         }
         lastTap = 0;
         event.preventDefault();
