@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f6eddd">
+  <title>Becky — test shake</title>
+  <style>
+    :root { color: #233448; background: #f6eddd; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { min-height: 100dvh; margin: 0; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at 15% 10%, #dff3f1, transparent 34%), #f6eddd; }
+    main { width: min(430px, 100%); padding: 34px 24px 28px; border: 1px solid rgba(35,52,72,.1); border-radius: 30px; background: rgba(255,253,250,.9); box-shadow: 0 20px 55px rgba(35,52,72,.12); text-align: center; }
+    .eyebrow { color: #238b9a; font-size: 11px; font-weight: 900; letter-spacing: .16em; }
+    h1 { margin: 8px 0 8px; font-size: clamp(30px, 9vw, 44px); line-height: 1; }
+    p { margin: 0 auto; color: #52677d; font-size: 15px; line-height: 1.5; }
+    .score { display: grid; width: 210px; height: 210px; margin: 30px auto 24px; place-items: center; border: 10px solid #33a9ba; border-radius: 50%; background: #dff3f1; color: #238b9a; font-size: 92px; font-weight: 900; line-height: 1; transition: transform .16s ease, background .16s ease; }
+    .score.bump { transform: scale(1.08) rotate(-2deg); background: #fff1bd; }
+    button { min-height: 52px; padding: 0 22px; border: 0; border-radius: 999px; background: #33a9ba; color: white; font: inherit; font-weight: 850; cursor: pointer; box-shadow: 0 8px 18px rgba(51,169,186,.22); }
+    button:disabled { opacity: .6; cursor: wait; }
+    #status { min-height: 46px; margin-top: 18px; font-size: 13px; }
+    .hint { margin-top: 18px; color: #8693a1; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">BECKY · TEST MOBIL</div>
+    <h1>Zgâlțâie telefonul</h1>
+    <p>Fiecare mișcare detectată schimbă cifra.</p>
+    <div class="score" id="score" aria-live="polite">0</div>
+    <button id="start" type="button">Pornește senzorul</button>
+    <p id="status" role="status">Apasă butonul, apoi zgâlțâie telefonul.</p>
+    <p class="hint">Testul este temporar și nu salvează nimic.</p>
+  </main>
+  <script>
+    const score = document.getElementById('score');
+    const start = document.getElementById('start');
+    const status = document.getElementById('status');
+    let value = 0;
+    let lastShake = 0;
+
+    function increment() {
+      value = value >= 10 ? 0 : value + 1;
+      score.textContent = value;
+      score.classList.remove('bump');
+      requestAnimationFrame(() => score.classList.add('bump'));
+      setTimeout(() => score.classList.remove('bump'), 180);
+    }
+
+    function motion(event) {
+      const acceleration = event.accelerationIncludingGravity || event.acceleration;
+      if (!acceleration) return;
+      const strength = Math.hypot(acceleration.x || 0, acceleration.y || 0, acceleration.z || 0);
+      const now = Date.now();
+      if (strength > 22 && now - lastShake > 650) {
+        lastShake = now;
+        increment();
+      }
+    }
+
+    async function startSensor() {
+      start.disabled = true;
+      try {
+        if (!('DeviceMotionEvent' in window)) throw new Error('unsupported');
+        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+          const permission = await DeviceMotionEvent.requestPermission();
+          if (permission !== 'granted') throw new Error('denied');
+        }
+        window.addEventListener('devicemotion', motion);
+        status.textContent = 'Senzorul este pornit. Zgâlțâie telefonul!';
+        start.textContent = 'Senzor activ';
+      } catch (error) {
+        start.disabled = false;
+        start.textContent = 'Încearcă din nou';
+        status.textContent = error.message === 'denied' ? 'Permisiunea pentru mișcare a fost refuzată.' : 'Browserul nu oferă acces la senzorul de mișcare.';
+      }
+    }
+
+    start.addEventListener('click', startSensor);
+    score.addEventListener('click', increment);
+  </script>
+</body>
+</html>
