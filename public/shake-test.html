@@ -37,6 +37,8 @@
     const status = document.getElementById('status');
     let value = 0;
     let lastShake = 0;
+    let previous = null;
+    let motionEvents = 0;
 
     function increment() {
       value = value >= 10 ? 0 : value + 1;
@@ -49,9 +51,13 @@
     function motion(event) {
       const acceleration = event.accelerationIncludingGravity || event.acceleration;
       if (!acceleration) return;
-      const strength = Math.hypot(acceleration.x || 0, acceleration.y || 0, acceleration.z || 0);
+      motionEvents += 1;
+      const current = [acceleration.x || 0, acceleration.y || 0, acceleration.z || 0];
+      if (!previous) { previous = current; return; }
+      const change = Math.hypot(...current.map((axis, index) => axis - previous[index]));
+      previous = current;
       const now = Date.now();
-      if (strength > 22 && now - lastShake > 650) {
+      if (change > 7 && now - lastShake > 650) {
         lastShake = now;
         increment();
       }
@@ -66,6 +72,9 @@
           if (permission !== 'granted') throw new Error('denied');
         }
         window.addEventListener('devicemotion', motion);
+        setTimeout(() => {
+          if (!motionEvents) status.textContent = 'Nu primesc date de la senzor. Verifică permisiunea Motion & Orientation și încearcă în Safari/Chrome.';
+        }, 2500);
         status.textContent = 'Senzorul este pornit. Zgâlțâie telefonul!';
         start.textContent = 'Senzor activ';
       } catch (error) {
