@@ -33,19 +33,14 @@
     .challenge.is-settling .challenge-content { animation: settle .78s cubic-bezier(.2,.8,.3,1); }
     .challenge.is-settling .challenge-emoji { animation: rumble .78s ease-out; }
     .challenge-content { display: grid; justify-items: center; text-align: center; }
-    .challenge-badge { display: inline-flex; align-items: center; gap: 8px; padding: 9px 15px; border-radius: 999px; background: rgba(255,253,247,.72); color: #b46732; font-size: 11px; font-weight: 950; letter-spacing: .12em; }
     .challenge-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; filter: drop-shadow(0 8px 0 rgba(35,52,72,.1)); }
     .challenge h2 { max-width: 570px; margin: 0; font-size: clamp(38px, 11vw, 70px); line-height: .98; letter-spacing: -.055em; }
     .challenge-text { max-width: 430px; margin: 18px auto 0; color: #66532f; font-size: clamp(17px, 4.5vw, 22px); font-weight: 700; line-height: 1.35; }
-    .next-hint { margin: 29px 0 0; color: #806b3d; font-size: 13px; font-weight: 800; }
-    .score { position: absolute; z-index: 2; top: max(20px, env(safe-area-inset-top)); right: 20px; display: grid; width: 48px; height: 48px; place-items: center; border: 3px solid #233448; border-radius: 50%; background: #fffdf7; color: #233448; font-size: 20px; font-weight: 950; }
-    .score.bump { animation: pop .22s ease-out; }
-    @keyframes pop { 50% { transform: scale(1.25) rotate(8deg); } }
     @keyframes settle { 0% { opacity: .35; transform: translateY(-26px) scale(1.08); filter: blur(9px); } 55% { opacity: .75; transform: translateY(7px) scale(.98); filter: blur(3px); } 100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
     @keyframes rumble { 0%,100% { transform: rotate(0); } 18% { transform: rotate(-8deg) scale(1.08); } 38% { transform: rotate(7deg) scale(.98); } 58% { transform: rotate(-3deg); } }
     .waiting-emoji { margin: 23px 0 10px; font-size: clamp(76px, 22vw, 136px); line-height: 1; animation: waiting 1.6s ease-in-out infinite; }
     @keyframes waiting { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.04); } }
-    #status { position: absolute; z-index: 2; right: 24px; bottom: max(18px, env(safe-area-inset-bottom)); left: 24px; min-height: 20px; color: #806b3d; font-size: 11px; font-weight: 750; text-align: center; }
+    #status { display: none; }
   </style>
 </head>
 <body>
@@ -62,13 +57,10 @@
   </main>
 
   <main class="screen challenge" id="challenge" aria-live="polite">
-    <div class="score" id="score">0</div>
     <div class="challenge-content">
-      <div class="challenge-badge">✨ PROVOCARE NOUĂ · 3–9 ANI</div>
       <div class="waiting-emoji" id="challenge-emoji">🫨</div>
       <h2 id="challenge-title">Acum zgâlțâie!</h2>
       <p class="challenge-text" id="challenge-text">Prima zgâlțâire puternică alege o provocare pentru tine.</p>
-      <p class="next-hint" id="next-hint">Ține telefonul bine și fă un shake zdravăn</p>
     </div>
     <p id="status" role="status"></p>
   </main>
@@ -76,7 +68,6 @@
   <script>
     const intro = document.getElementById('intro');
     const challengeScreen = document.getElementById('challenge');
-    const score = document.getElementById('score');
     const start = document.getElementById('start');
     const status = document.getElementById('status');
     const title = document.getElementById('challenge-title');
@@ -87,7 +78,6 @@
       { emoji: '🌈', title: 'Găsește o culoare', text: 'Atinge sau arată ceva din cameră care are culoarea aleasă de tine.' },
       { emoji: '🗿', title: 'Statuie dansatoare', text: 'Dansează 10 secunde, apoi îngheață într-o poziție amuzantă.' }
     ];
-    let value = 0;
     let activeChallenge = -1;
     let cooldownUntil = 0;
     let previous = null;
@@ -110,20 +100,11 @@
       while (next === activeChallenge) next = Math.floor(Math.random() * challenges.length);
       activeChallenge = next;
       const item = challenges[next];
-      let nextValue = value;
-      while (nextValue === value) nextValue = Math.floor(Math.random() * 11);
-      value = nextValue;
       emoji.textContent = item.emoji;
       emoji.className = 'challenge-emoji';
       title.textContent = item.title;
       text.textContent = item.text;
-      document.getElementById('next-hint').textContent = 'Zgâlțâie telefonul pentru următoarea provocare';
-      score.textContent = value;
-      score.classList.remove('bump');
-      requestAnimationFrame(() => score.classList.add('bump'));
-      setTimeout(() => score.classList.remove('bump'), 260);
       cooldownUntil = Date.now() + 10000;
-      status.textContent = 'Zgâlțâie din nou peste 10 secunde sau fă dublu-tap pentru reset.';
       challengeScreen.classList.remove('is-settling');
       settling = false;
     }
