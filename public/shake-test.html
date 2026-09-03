@@ -116,6 +116,8 @@
     let settling = false;
     let isUnlocked = false;
     let lastDuckSound = 0;
+    let strongSamples = 0;
+    let lastStrongSample = 0;
     let lastLockedFeedback = 0;
 
     function playDuckSound() {
@@ -183,6 +185,23 @@
       }, 540);
     }
 
+    function registerShake(signal, threshold) {
+      const now = Date.now();
+      if (settling) { strongSamples = 0; return; }
+      if (signal <= threshold) {
+        if (now - lastStrongSample > 350) strongSamples = 0;
+        return;
+      }
+      strongSamples = now - lastStrongSample < 280 ? strongSamples + 1 : 1;
+      lastStrongSample = now;
+      if (strongSamples < 2) return;
+      strongSamples = 0;
+      playDuckSound();
+      if (activeChallenge < 0) showChallenge();
+      else if (isUnlocked) showChallenge();
+      else lockedFeedback();
+    }
+
     function motion(event) {
       motionEvents += 1;
       const linear = event.acceleration;
@@ -192,13 +211,8 @@
       const hasLinear = linear && [linear.x, linear.y, linear.z].some(Number.isFinite);
       const change = hasLinear ? Math.hypot(...current) : previous ? Math.hypot(...current.map((axis, index) => axis - previous[index])) : 0;
       previous = current;
-      const threshold = hasLinear ? 12 : 8;
-      if (change > threshold && !settling) {
-        playDuckSound();
-        if (activeChallenge < 0 && !settling) showChallenge();
-        else if (isUnlocked && !settling) showChallenge();
-        else lockedFeedback();
-      }
+      const threshold = hasLinear ? 17 : 12;
+      registerShake(change, threshold);
     }
 
     function orientation(event) {
@@ -206,12 +220,7 @@
       const current = [event.alpha || 0, event.beta || 0, event.gamma || 0];
       const change = previousOrientation ? Math.hypot(...current.map((axis, index) => Math.abs(axis - previousOrientation[index]))) : 0;
       previousOrientation = current;
-      if (change > 30 && !settling) {
-        playDuckSound();
-        if (activeChallenge < 0 && !settling) showChallenge();
-        else if (isUnlocked && !settling) showChallenge();
-        else lockedFeedback();
-      }
+      registerShake(change, 55);
     }
 
     async function startGame() {
