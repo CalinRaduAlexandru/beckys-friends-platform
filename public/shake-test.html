@@ -67,7 +67,7 @@
     .challenge.is-lock-visible .lock { opacity: 1; pointer-events: auto; }
     .lock.unlocked { background: #18a889; border-color: #0b6f5a; box-shadow: 0 0 0 7px rgba(24,168,137,.3), 0 0 28px rgba(24,168,137,.65); transform: translateX(-50%) scale(1.18); }
     .lock-message { position: absolute; z-index: 3; bottom: max(77px, calc(env(safe-area-inset-bottom) + 77px)); left: 50%; display: none; padding: 8px 14px; border: 2px solid #c55367; border-radius: 999px; background: #ed7181; color: #fff; font-size: 11px; font-weight: 900; white-space: nowrap; transform: translateX(-50%); }
-    .lock-message.is-visible { display: block; animation: message-pop .35s ease-out; }
+    .lock-message.is-visible { display: block; }
     .lock-message.is-unlocked { background: #18a889; border-color: #0b6f5a; }
     @keyframes message-pop { 0% { opacity: 0; transform: translateX(-50%) scale(.5); } 100% { opacity: 1; transform: translateX(-50%) scale(1); } }
   </style>
