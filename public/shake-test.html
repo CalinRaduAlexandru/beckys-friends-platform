@@ -18,7 +18,6 @@
     button { min-height: 52px; padding: 0 22px; border: 0; border-radius: 999px; background: #33a9ba; color: white; font: inherit; font-weight: 850; cursor: pointer; box-shadow: 0 8px 18px rgba(51,169,186,.22); }
     button:disabled { opacity: .6; cursor: wait; }
     #status { min-height: 46px; margin-top: 18px; font-size: 13px; }
-    #diagnostic { display: block; min-height: 18px; color: #8693a1; font-size: 11px; }
     .hint { margin-top: 18px; color: #8693a1; font-size: 12px; }
   </style>
 </head>
@@ -30,24 +29,26 @@
     <div class="score" id="score" aria-live="polite">0</div>
     <button id="start" type="button">Pornește senzorul</button>
     <p id="status" role="status">Apasă butonul, apoi zgâlțâie telefonul.</p>
-    <small id="diagnostic">Evenimente motion primite: 0</small>
     <p class="hint">Testul este temporar și nu salvează nimic.</p>
   </main>
   <script>
     const score = document.getElementById('score');
     const start = document.getElementById('start');
     const status = document.getElementById('status');
-    const diagnostic = document.getElementById('diagnostic');
     let value = 0;
-    let lastShake = 0;
+    let cooldownUntil = 0;
     let previous = null;
     let previousOrientation = null;
     let motionEvents = 0;
     let orientationEvents = 0;
 
     function increment() {
-      value = value >= 10 ? 0 : value + 1;
+      let next = value;
+      while (next === value) next = Math.floor(Math.random() * 11);
+      value = next;
       score.textContent = value;
+      cooldownUntil = Date.now() + 10000;
+      status.textContent = 'Cifra s-a schimbat. Poți zgâlțâi din nou peste 10 secunde.';
       score.classList.remove('bump');
       requestAnimationFrame(() => score.classList.add('bump'));
       setTimeout(() => score.classList.remove('bump'), 180);
@@ -55,7 +56,6 @@
 
     function motion(event) {
       motionEvents += 1;
-      diagnostic.textContent = `Evenimente motion primite: ${motionEvents}`;
       if (motionEvents === 1) status.textContent = 'Date reale primite de la senzor. Zgâlțâie telefonul!';
       const linear = event.acceleration;
       const acceleration = linear && [linear.x, linear.y, linear.z].some(Number.isFinite)
@@ -69,8 +69,7 @@
       previous = current;
       const now = Date.now();
       const threshold = linear && [linear.x, linear.y, linear.z].some(Number.isFinite) ? 5 : 3;
-      if (change > threshold && now - lastShake > 650) {
-        lastShake = now;
+      if (change > threshold && now >= cooldownUntil) {
         increment();
       }
     }
@@ -82,9 +81,7 @@
         ? Math.hypot(...current.map((axis, index) => Math.abs(axis - previousOrientation[index])))
         : 0;
       previousOrientation = current;
-      diagnostic.textContent = `Motion: ${motionEvents} · orientare: ${orientationEvents}`;
-      if (change > 12 && Date.now() - lastShake > 650) {
-        lastShake = Date.now();
+      if (change > 12 && Date.now() >= cooldownUntil) {
         increment();
       }
     }
