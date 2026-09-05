@@ -9,6 +9,10 @@ const PORT = Number(process.env.PORT || 3000);
 const DATA_FILE = path.join(ROOT, 'data', 'manual.json');
 const CSS_FILE = path.join(ROOT, 'data', 'custom.css');
 const WORKSPACES_FILE = process.env.BECKY_WORKSPACES_FILE || path.join(ROOT, 'data', 'workspaces.json');
+const USING_DEFAULT_WORKSPACES_FILE = !process.env.BECKY_WORKSPACES_FILE;
+const CUP_GAMES_FILE = path.join(ROOT, 'data', 'cup-games.json');
+const FACILITATOR_TOOLS_FILE = path.join(ROOT, 'data', 'facilitator-tools.json');
+const FACILITATOR_ACCESS_CODE = process.env.BECKY_FACILITATOR_CODE || 'becky2026';
 const EVENT_SURVEY_FILE = path.join(ROOT, 'data', 'event-survey-responses.json');
 const EVENT_FUNNEL_FILE = path.join(ROOT, 'data', 'event-survey-funnel-events.json');
 const PLAYGROUND_SURVEY_FILE = path.join(ROOT, 'data', 'playground-survey-responses.json');
@@ -276,7 +280,21 @@ function readDocument() {
 }
 
 function readWorkspaces() {
-  try { return JSON.parse(fs.readFileSync(WORKSPACES_FILE, 'utf8')); }
+  try {
+    const workspaces = JSON.parse(fs.readFileSync(WORKSPACES_FILE, 'utf8'));
+    if (USING_DEFAULT_WORKSPACES_FILE && fs.existsSync(CUP_GAMES_FILE)) {
+      const games = JSON.parse(fs.readFileSync(CUP_GAMES_FILE, 'utf8'));
+      const children = (workspaces.workspaces || []).find(item => item.id === 'children');
+      if (children && Array.isArray(games)) {
+        const existing = new Set((children.activities || []).map(item => item.id));
+        children.activities = [...(children.activities || []), ...games.filter(item => !existing.has(item.id))];
+      }
+      if (children && fs.existsSync(FACILITATOR_TOOLS_FILE)) {
+        Object.assign(children, JSON.parse(fs.readFileSync(FACILITATOR_TOOLS_FILE, 'utf8')));
+      }
+    }
+    return workspaces;
+  }
   catch { return { updatedAt: null, workspaces: [] }; }
 }
 
@@ -684,7 +702,7 @@ function localSecret(name) {
 }
 
 function serve(res, pathname) {
-  const routes = {'/':'/index.html','/admin':'/admin/index.html','/admin/biblioteca-copii':'/admin/children-library.html','/admin/biblioteca-activitati-copii':'/admin/children-library.html','/music-for-kids':'/music-for-kids/index.html','/music-for-kids/':'/music-for-kids/index.html','/music-for-kids/parent':'/music-for-kids/parent.html','/p':'/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf','/petreceri':'/petreceri.html','/evenimente':'/evenimente.html','/comunitate':'/comunitate.html','/ingrediente-alergeni-valori-nutritionale':'/ingrediente-alergeni-valori-nutritionale.html','/chestionare':'/chestionare.html','/chestionar-evenimente':'/chestionar-evenimente.html','/chestionar-loc-de-joaca':'/chestionar-loc-de-joaca.html'};
+  const routes = {'/':'/index.html','/admin':'/admin/index.html','/admin/biblioteca-copii':'/admin/children-library.html','/admin/biblioteca-activitati-copii':'/admin/children-library.html','/music-for-kids':'/music-for-kids/index.html','/music-for-kids/':'/music-for-kids/index.html','/music-for-kids/parent':'/music-for-kids/parent.html','/p':'/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf','/petreceri':'/petreceri.html','/evenimente':'/evenimente.html','/comunitate':'/comunitate.html','/ingrediente-alergeni-valori-nutritionale':'/ingrediente-alergeni-valori-nutritionale.html','/chestionare':'/chestionare.html','/chestionar-evenimente':'/chestionar-evenimente.html','/chestionar-loc-de-joaca':'/chestionar-loc-de-joaca.html','/joaca':'/shake-test.html','/joaca/':'/shake-test.html','/shake-test':'/shake-test.html','/shake-test/':'/shake-test.html'};
   let decodedPathname;
   try { decodedPathname = decodeURIComponent(pathname); }
   catch { return send(res, 400, { error: 'Invalid path' }); }
@@ -760,6 +778,13 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/manual') return send(res, 200, readDocument());
   if (req.method === 'GET' && url.pathname === '/api/styles') return send(res, 200, { css: fs.existsSync(CSS_FILE) ? fs.readFileSync(CSS_FILE, 'utf8') : '' });
   if (req.method === 'GET' && url.pathname === '/api/workspaces') return send(res, 200, readWorkspaces());
+  if (url.pathname === '/api/facilitator/library' && req.method === 'POST') {
+    readRequestJson(req, res, 20_000, body => {
+      if (String(body?.code || '') !== FACILITATOR_ACCESS_CODE) return send(res, 401, { error: 'Cod invalid' });
+      return send(res, 200, readWorkspaces());
+    });
+    return;
+  }
   if (req.method === 'GET' && url.pathname === '/api/calendar') {
     try {
       const entries = readCalendarEntries().map(({ date, type, start_time, end_time, hide_open_intervals, hide_private_times }) => ({

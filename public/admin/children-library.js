@@ -48,6 +48,9 @@
   let selectedActivity = null;
   let selectedSpecialItem = null;
   let activityObservations = [];
+  let activityPlaylists = [];
+  let workspacePayload = null;
+  let draggedActivityId = '';
   let editingObservation = null;
   let filters = { category: '', age: '', ageRange: null, participants: '', duration: '', implementation: '', learningStatus: '' };
 
@@ -182,11 +185,12 @@
     });
   }
 
-  async function apiFetch(path) {
+  async function apiFetch(path, options = {}) {
     let session = null;
     try { session = JSON.parse(sessionStorage.getItem('becky-admin-session') || 'null'); } catch {}
-    const headers = session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {};
-    return fetch(path, { headers });
+    const headers = new Headers(options.headers || {});
+    if (session?.access_token) headers.set('Authorization', `Bearer ${session.access_token}`);
+    return fetch(path, { ...options, headers });
   }
 
   function applyValidationCoverage(payload) {
@@ -236,7 +240,71 @@
   };
 
   function hubView() {
-    return `<div class="library-hub"><div class="library-intro"><small>BIBLIOTECA BECKY</small><h1>Patru biblioteci, patru moduri de a lucra</h1><p>Alege spațiul potrivit. Filtrele apar abia după ce intri.</p></div><div class="library-hub-grid">${Object.entries(libraryDefinitions).map(([id, definition]) => `<button class="library-hub-card tone-${definition.tone}" data-library-mode="${id}"><span>${definition.icon}</span><div><small>${libraryCount(id)} ${libraryCount(id) === 1 ? 'resursă' : 'resurse'}</small><strong>${definition.title}</strong><p>${definition.description}</p></div><i>Intră în bibliotecă →</i></button>`).join('')}</div></div>`;
+    return `<div class="library-hub"><div class="library-intro"><small>BIBLIOTECA BECKY</small><h1>Patru biblioteci, patru moduri de a lucra</h1><p>Alege spațiul potrivit. Filtrele apar abia după ce intri.</p></div><div class="library-hub-grid">${Object.entries(libraryDefinitions).map(([id, definition]) => `<button class="library-hub-card tone-${definition.tone}" data-library-mode="${id}"><span>${definition.icon}</span><div><small>${libraryCount(id)} ${libraryCount(id) === 1 ? 'resursă' : 'resurse'}</small><strong>${definition.title}</strong><p>${definition.description}</p></div><i>Intră în bibliotecă →</i></button>`).join('')}</div>${activityPlaylistsMarkup()}</div>`;
+  }
+
+  function activityPlaylistsMarkup() {
+    return `<section class="activity-playlists"><header><div><small>SCURTĂTURI PENTRU ECHIPĂ</small><h2>Listele mele de activități</h2><p>Organizează activitățile fără să le duplici în Bibliotecă.</p></div><button type="button" data-new-activity-playlist>＋ Listă</button></header><div class="activity-playlist-grid">${activityPlaylists.map(list => `<button type="button" class="activity-playlist-card" data-open-activity-playlist="${safe(list.id)}" data-drop-playlist="${safe(list.id)}"><strong>${safe(list.title)}</strong><small>${(list.activityIds || []).length} ${(list.activityIds || []).length === 1 ? 'activitate' : 'activități'}</small><i>Deschide →</i></button>`).join('') || '<div class="library-empty"><strong>Încă nu ai liste</strong><p>Trage o activitate aici sau creează o listă.</p></div>'}</div></section>`;
+  }
+
+  function playlistView() {
+    const list = activityPlaylists.find(item => item.id === selectedSpecialItem?.id) || selectedSpecialItem;
+    const items = (list?.activityIds || []).map(id => allActivities().find(activity => activity.id === id)).filter(Boolean);
+    return `<div class="activity-playlist-view"><button type="button" class="library-back-to-results" data-playlists-back>← Înapoi la liste</button><header><small>LISTĂ DE ACTIVITĂȚI</small><h1>${safe(list?.title || 'Listă')}</h1><p>${items.length} ${items.length === 1 ? 'activitate' : 'activități'} · Trage pentru a schimba ordinea.</p></header><div class="activity-playlist-items">${items.map((activity, index) => `<article class="activity-playlist-item" draggable="true" data-playlist-item="${safe(activity.id)}" data-playlist-index="${index}"><span class="playlist-drag">☷</span><div><strong>${safe(activity.title)}</strong><small>${safe(activity.category || 'Activitate')}</small></div><button type="button" data-playlist-open="${safe(activity.id)}">Citește →</button><button type="button" data-playlist-remove="${safe(activity.id)}" aria-label="Elimină">×</button></article>`).join('') || '<div class="library-empty"><strong>Lista este goală</strong><p>Adaugă activități din Biblioteca Becky.</p></div>'}</div><button type="button" class="playlist-delete" data-delete-activity-playlist="${safe(list?.id || '')}">Șterge lista</button></div>`;
+  }
+
+  async function saveActivityPlaylists() {
+    if (!workspacePayload) return false;
+    const children = workspacePayload.workspaces?.find(item => item.id === 'children');
+    if (!children) return false;
+    children.activityPlaylists = activityPlaylists;
+    const response = await api('/api/workspaces', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(workspacePayload) });
+    if (!response.ok) { window.alert('Lista nu a putut fi salvată.'); return false; }
+    workspacePayload = await response.json();
+    const savedChildren = workspacePayload.workspaces?.find(item => item.id === 'children');
+    activityPlaylists = savedChildren?.activityPlaylists || activityPlaylists;
+    return true;
+  }
+
+  function createActivityPlaylist() {
+    const title = window.prompt('Cum se numește lista?');
+    if (!title?.trim()) return;
+    const list = { id: `activity-playlist-${Date.now()}`, title: title.trim(), activityIds: [] };
+    activityPlaylists.push(list);
+    saveActivityPlaylists().then(() => { selectedSpecialItem = list; step = 'playlists'; render('forward'); });
+  }
+
+  function chooseActivityPlaylist(activityId) {
+    if (!activityPlaylists.length) { createActivityPlaylist(); return; }
+    const options = activityPlaylists.map((list, index) => `${index + 1}. ${list.title}`).join('\n');
+    const choice = window.prompt(`Adaugă activitatea în ce listă?\n${options}\n\nScrie numărul listei sau „nou”.`);
+    if (!choice) return;
+    if (choice.trim().toLowerCase() === 'nou') { createActivityPlaylist(); return; }
+    const list = activityPlaylists[Number(choice) - 1];
+    if (list) addToActivityPlaylist(list.id, activityId);
+  }
+
+  function addToActivityPlaylist(listId, activityId) {
+    const list = activityPlaylists.find(item => item.id === listId);
+    if (!list || !activityId || list.activityIds.includes(activityId)) return;
+    list.activityIds.push(activityId);
+    saveActivityPlaylists();
+  }
+
+  function updateActivityPlaylist(activityId, action) {
+    if (action !== 'remove' || !selectedSpecialItem) return;
+    selectedSpecialItem.activityIds = selectedSpecialItem.activityIds.filter(id => id !== activityId);
+    activityPlaylists = activityPlaylists.map(item => item.id === selectedSpecialItem.id ? selectedSpecialItem : item);
+    saveActivityPlaylists().then(() => render('back'));
+  }
+
+  function reorderActivityPlaylist(fromId, toId) {
+    if (!selectedSpecialItem || !fromId || !toId || fromId === toId) return;
+    const ids = [...selectedSpecialItem.activityIds]; const from = ids.indexOf(fromId); const to = ids.indexOf(toId);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1); ids.splice(to, 0, fromId); selectedSpecialItem.activityIds = ids;
+    activityPlaylists = activityPlaylists.map(item => item.id === selectedSpecialItem.id ? selectedSpecialItem : item);
+    saveActivityPlaylists().then(() => render());
   }
 
   function emptyLibraryView() {
@@ -276,7 +344,7 @@
 
   function breadcrumb() {
     if (step === 'hub') return '<div class="library-progress library-progress-home"><strong>Biblioteca Becky</strong></div>';
-    const activitySteps = libraryMode === 'internal' ? ['category','participants','age','duration','results','activity'] : ['category','participants','age','duration','implementation','results','activity'];
+    const activitySteps = libraryMode === 'internal' ? ['category','participants','age','duration','results','activity'] : ['category','participants','age','implementation','results','activity'];
     const specialSteps = libraryMode === 'physical' ? ['physical-age','physical-participants','physical-level','physical-results','physical-detail'] : magicUsesDuration() ? ['magic-age','magic-level','magic-duration','magic-results','magic-detail'] : ['magic-age','magic-level','magic-results','magic-detail'];
     const steps = libraryMode === 'public' || libraryMode === 'internal' ? activitySteps : specialSteps;
     const labels = { category:'Categorie', age:'Vârstă', participants:'Număr copii', duration:'Durată', implementation:'Recuzită', results:'Rezultate', activity:'Activitate', 'physical-age':'Vârstă', 'physical-participants':'Număr copii', 'physical-level':'Nivelul meu', 'physical-results':'Rezultate', 'physical-detail':'Interacțiune', 'magic-age':'Vârstă', 'magic-level':'Nivelul meu', 'magic-duration':'Durată', 'magic-results':'Rezultate', 'magic-detail':'Truc' };
@@ -300,8 +368,8 @@
       duration: ['Cât timp ai la dispoziție?', durations, [], ['teal','green','orange','blue','purple']],
       implementation: ['Amploarea pregătirii activității', implementations, filterIcons.implementation, ['blue','green','orange','purple']]
     }[step];
-    const position = { participants:1, age:2, duration:3, implementation:4 }[step];
-    const total = libraryMode === 'internal' ? 3 : 4;
+    const position = libraryMode === 'internal' ? { participants:1, age:2, duration:3 }[step] : { participants:1, age:2, implementation:3 }[step];
+    const total = 3;
     return `<div class="library-step-copy"><small>PASUL ${position} DIN ${total}</small><h1>${config[0]}</h1><p>Alege o singură opțiune pentru a continua.</p></div><div class="library-options library-options-${step}">${config[1].map((value,index) => option(value,config[2][index],step,config[3][index])).join('')}</div>`;
   }
 
@@ -346,19 +414,70 @@
     return `<div class="library-step-copy"><small>${libraryMode === 'internal' ? 'ACTIVITĂȚI INTERNE BECKY' : 'ACTIVITĂȚI PUBLICE'}</small><h1>Activități recomandate pentru ${safe(development)}</h1><p>${countLabel(activities.length)} după filtrele alese.</p></div><div class="library-results-grid">${activities.map(activity => { const [icon, tone] = categoryPresentation[activity.category] || ['✦', 'teal']; const artwork = activity.displayImage || activity.image; const age = filters.age || (filters.ageRange ? ageRangeLabel(filters.ageRange.min, filters.ageRange.max) : activityAgeLabel(activity)); const participants = filters.participants || groupKind(activity.participants); const implementation = libraryMode === 'internal' ? 'Set dedicat Becky' : (filters.implementation || activity.difficulty); return `<button class="tone-${tone}" data-activity="${activity.id}">${validationBadge(activity)}<div class="library-card-art">${artwork ? `<img src="${safe(artwork)}" alt="">` : '<span class="library-result-placeholder">✦</span>'}</div><div class="library-result-copy"><small><b>${icon}</b>${safe(activity.category || 'Activitate')}</small><strong>${safe(activity.title)}</strong><p>${safe(activity.subtitle || '')}</p></div><div class="library-card-choices">${cardChoice('age', age)}${cardChoice('participants', participants)}${cardChoice('implementation', implementation)}</div></button>`; }).join('') || '<div class="library-empty"><strong>Nicio activitate potrivită</strong><p>Întoarce-te și schimbă unul dintre filtre.</p></div>'}</div>`;
   }
 
+  function activityRoundsMarkup(rounds, activityId = '') {
+    if (!Array.isArray(rounds) || !rounds.length) return '';
+    return `<section class="library-detail-panel is-rounds"><div><small>8 REPRIZE DE TESTARE</small><h3>Cum testezi statuile</h3><ol>${rounds.map(round => `<li><strong>${safe(round.test)}</strong>${round.punishment ? `<span><b>Pedeapsă:</b> ${safe(round.punishment)}</span>` : ''}</li>`).join('')}</ol><a class="library-rounds-app-link" href="/shake-test?activity_id=${encodeURIComponent(activityId)}">Deschide jocul în aplicația de facilitare →</a></div></section>`;
+  }
+
+  const materialAliases = [['pahare', ['pahar']], ['mingi', ['minge', 'mingiuță', 'mingiuta', 'bilă', 'bila']], ['baloane', ['balon']], ['cărți', ['carte', 'cărți', 'carti']], ['pai', ['pai']], ['zar', ['zar']], ['masă', ['masă', 'masa']], ['bandă adezivă', ['bandă', 'banda']]];
+  const activityMaterials = activity => {
+    if (Array.isArray(activity.materialTags) && activity.materialTags.length) return activity.materialTags;
+    const text = String(activity.materials || '').toLowerCase();
+    return materialAliases.filter(([, aliases]) => aliases.some(alias => text.includes(alias))).map(([name]) => name);
+  };
+  const materialKind = material => ['pahare', 'mingi', 'baloane', 'cărți', 'pai', 'zar', 'masă', 'bandă adezivă'].includes(material) ? 'generic' : 'special';
+  function relatedActivities(activity) {
+    const current = new Set(activityMaterials(activity));
+    if (!current.size) return [];
+    return allActivities().filter(item => item.id !== activity.id && activityLibraryType(item) === activityLibraryType(activity) && activityMaterials(item).length).map(item => {
+      const materials = activityMaterials(item);
+      const shared = materials.filter(material => current.has(material));
+      const missing = materials.filter(material => !current.has(material));
+      const genericMissing = missing.filter(material => materialKind(material) === 'generic');
+      const specialMissing = missing.filter(material => materialKind(material) === 'special');
+      const tier = shared.length === materials.length ? 0 : genericMissing.length && shared.length ? 1 : specialMissing.length && shared.length ? 2 : 3;
+      return { item, shared, missing, tier, score: tier * 100 + missing.length * 10 - shared.length };
+    }).sort((a, b) => a.score - b.score || a.item.title.localeCompare(b.item.title, 'ro')).slice(0, 6);
+  }
+  function relatedActivitiesMarkup(activity) {
+    const related = relatedActivities(activity);
+    if (!related.length) return '';
+    const reason = entry => {
+      if (!entry.missing.length) return 'Ai deja toată recuzita';
+      if (entry.shared.length && entry.missing.length === 1) return `Îți mai trebuie doar ${entry.missing[0]}`;
+      if (entry.shared.length) return `Folosește ${entry.shared.join(' și ')}`;
+      return 'Alt joc cu recuzită asemănătoare';
+    };
+    return `<section class="library-related-activities"><header><div><small>CONTINUĂ CU CE AI PREGĂTIT</small><h2>Mai poți încerca</h2><p>Jocuri ordonate după cât de ușor refolosești materialele.</p></div></header><div class="library-related-carousel">${related.map(({ item, shared, missing, tier }) => `<button type="button" class="library-related-card tone-${categoryPresentation[item.category]?.[1] || 'teal'}" data-related-activity="${safe(item.id)}"><span class="library-related-tier">${tier === 0 ? 'Aceleași materiale' : tier === 1 ? 'Mai trebuie ceva generic' : tier === 2 ? 'Cu recuzită specială' : 'Altă variantă'}</span><strong>${safe(item.title)}</strong><small>${safe(reason({ shared, missing }))}</small><i>Deschide →</i></button>`).join('')}</div></section>`;
+  }
+  function injectRelatedStyles() {
+    if (document.getElementById('library-related-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'library-related-styles';
+    style.textContent = `.library-detail-collection{max-width:920px;margin:-8px auto 18px;padding:10px 15px;border-radius:12px;background:#f4faf9;color:#66808b;font-size:12px}.library-detail-collection b{color:#168f9f}.library-open-facilitator{display:grid;min-height:58px;place-items:center;margin:18px 26px 26px;border-radius:18px;background:#233448;box-shadow:0 7px 0 #e16c7e;color:#fff;font-weight:900;text-decoration:none}.library-related-activities{max-width:920px;margin:26px auto 0;padding:22px 0 8px}.library-related-activities header{margin-bottom:14px}.library-related-activities header small{color:#8263b5;font-size:10px;font-weight:900;letter-spacing:.13em}.library-related-activities h2{margin:5px 0;color:#26384c;font:700 24px/1.15 Mali,sans-serif}.library-related-activities p{margin:0;color:#6f8298;font-size:13px}.library-related-carousel{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 14px;scroll-snap-type:x proximity}.library-related-card{display:grid;min-width:220px;min-height:132px;align-content:start;gap:7px;padding:16px;border:1px solid color-mix(in srgb,var(--tone) 28%,#d7e5e8);border-radius:18px;background:#fff;color:var(--ink);text-align:left;cursor:pointer;scroll-snap-align:start;box-shadow:0 8px 20px rgba(35,52,72,.06)}.library-related-card:hover{transform:translateY(-2px);box-shadow:0 13px 25px rgba(35,52,72,.11)}.library-related-card strong{font-size:16px}.library-related-card small{color:#6f8298;font-weight:800;line-height:1.35}.library-related-card i{margin-top:auto;color:var(--tone);font-size:11px;font-style:normal;font-weight:900}.library-related-tier{color:var(--tone);font-size:9px;font-weight:900;letter-spacing:.06em;text-transform:uppercase}`;
+    document.head.appendChild(style);
+  }
+  function injectPlaylistStyles() {
+    if (document.getElementById('activity-playlist-styles')) return;
+    const style = document.createElement('style'); style.id = 'activity-playlist-styles';
+    style.textContent = `.activity-playlists{max-width:1100px;margin:30px auto 0;padding:24px;border:1px solid #b4dbde;border-radius:24px;background:#fffdfa}.activity-playlists header{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin-bottom:16px}.activity-playlists header small,.activity-playlist-view>header small{color:#198e9f;font-size:10px;font-weight:900;letter-spacing:.12em}.activity-playlists h2,.activity-playlist-view h1{margin:5px 0;color:#233448;font:600 27px Mali,sans-serif}.activity-playlists header p,.activity-playlist-view>header p{margin:0;color:#6f8298;font-size:13px}.activity-playlists header button{padding:10px 14px;border:0;border-radius:12px;background:#198e9f;color:#fff;font-weight:900}.activity-playlist-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.activity-playlist-card{display:grid;min-height:112px;align-content:start;gap:7px;padding:16px;border:1px solid #b4dbde;border-radius:18px;background:#f7fcfb;color:#233448;text-align:left}.activity-playlist-card small{color:#6f8298}.activity-playlist-card i{margin-top:auto;color:#198e9f;font-size:11px;font-style:normal;font-weight:900}.activity-playlist-card.is-drop-target{background:#fff0d9;border-color:#e99562}.activity-playlist-view{max-width:900px;margin:0 auto;padding:20px}.activity-playlist-view>header{margin:20px 0}.activity-playlist-items{display:grid;gap:10px}.activity-playlist-item{display:grid;grid-template-columns:32px 1fr auto auto;align-items:center;gap:10px;padding:12px 14px;border:1px solid #b4dbde;border-radius:16px;background:#fff}.playlist-drag{color:#198e9f;font-size:20px;cursor:grab}.activity-playlist-item strong,.activity-playlist-item small{display:block}.activity-playlist-item small{margin-top:3px;color:#6f8298;font-size:11px}.activity-playlist-item button{border:0;border-radius:9px;background:#eef7f6;color:#198e9f;padding:8px;font-size:11px;font-weight:900}.activity-playlist-item button:last-child{background:transparent;color:#c45d55;font-size:18px}.playlist-delete{margin-top:20px;border:0;background:transparent;color:#c45d55;font-size:12px;font-weight:900}@media(max-width:600px){.activity-playlists{padding:18px}.activity-playlists header{align-items:flex-start}.activity-playlist-grid{grid-template-columns:1fr}.activity-playlist-item{grid-template-columns:28px 1fr auto}.activity-playlist-item button:last-child{grid-column:3}.activity-playlist-item button[data-playlist-open]{grid-column:3}.activity-playlist-item button[data-playlist-remove]{grid-column:3}`;
+    document.head.appendChild(style);
+  }
+
   function activityView() {
     const activity = selectedActivity;
     const list = value => String(value || '').split(/\n+/).filter(Boolean).map(item => `<li>${safe(item)}</li>`).join('');
     const artwork = activity.displayImage || activity.image;
     const [, tone] = categoryPresentation[activity.category] || ['✦', 'teal'];
     const variants = activity.easier || activity.harder;
-    return `<div class="library-detail-view"><button class="library-back-to-results" data-results-back>← Înapoi la activități</button><article class="library-activity-detail tone-${tone}"><header class="library-detail-hero"><div class="library-detail-copy"><small>${safe(categoryTitles[activity.category] || activity.category || 'Activitate Becky')}</small><h1>${safe(activity.title)}</h1><p>${safe(activity.subtitle || '')}</p></div>${artwork ? `<figure><img src="${safe(artwork)}" alt=""></figure>` : ''}<div class="library-detail-meta">${detailMeta('age', 'Vârstă', activityAgeLabel(activity))}${detailMeta('duration', 'Timp', activity.duration)}${detailMeta('participants', 'Participanți', activityParticipantLabel(activity))}${detailMeta('implementation', 'Materiale', activity.difficulty)}</div></header>${activity.skills ? `<section class="library-detail-skills">${detailPanelIcon('detail-skills.png')}<div><b>CE EXERSĂM</b><p>${safe(activity.skills)}</p></div></section>` : ''}<div class="library-detail-sections">${activity.materials ? `<section class="library-detail-panel is-materials">${detailPanelIcon('detail-materials.png')}<div><small>PREGĂTEȘTE</small><h3>Materiale</h3><ul>${list(activity.materials)}</ul></div></section>` : ''}${activity.steps ? `<section class="library-detail-panel is-steps">${detailPanelIcon('detail-steps.png')}<div><small>PAS CU PAS</small><h3>Cum se joacă</h3><ol>${list(activity.steps)}</ol></div></section>` : ''}${activity.rules ? `<section class="library-detail-panel is-rules">${detailPanelIcon('detail-rules.png')}<div><small>REPER CLAR</small><h3>Reguli</h3><ul>${list(activity.rules)}</ul></div></section>` : ''}${activity.facilitator ? `<section class="library-detail-panel is-facilitator">${detailPanelIcon('detail-facilitator.png')}<div><small>POȚI SPUNE</small><h3>Replica facilitatorului</h3><p>„${safe(activity.facilitator.replace(/^[„"]|[”"]$/g, ''))}”</p></div></section>` : ''}${variants ? `<section class="library-detail-panel is-variants">${detailPanelIcon('detail-adapt.png')}<div><small>REGLEAZĂ PROVOCAREA</small><h3>Adaptează activitatea</h3>${activity.easier ? `<p><b>Mai ușor:</b> ${safe(activity.easier)}</p>` : ''}${activity.harder ? `<p><b>Mai greu:</b> ${safe(activity.harder)}</p>` : ''}</div></section>` : ''}${activity.caution ? `<section class="library-detail-panel is-caution">${detailPanelIcon('detail-caution.png')}<div><small>DE ȚINUT MINTE</small><h3>Atenție</h3><p>${safe(activity.caution)}</p></div></section>` : ''}</div>${activity.reflection ? `<footer class="library-detail-reflection">${detailPanelIcon('detail-reflection.png')}<div><small>LA FINAL</small><strong>${safe(activity.reflection)}</strong></div></footer>` : ''}</article></div>`;
+    return `<div class="library-detail-view"><button class="library-back-to-results" data-results-back>← Înapoi la activități</button><article class="library-activity-detail tone-${tone}"><header class="library-detail-hero"><div class="library-detail-copy"><small>${safe(categoryTitles[activity.category] || activity.category || 'Activitate Becky')}</small><h1>${safe(activity.title)}</h1><p>${safe(activity.subtitle || '')}</p></div>${artwork ? `<figure><img src="${safe(artwork)}" alt=""></figure>` : ''}<div class="library-detail-meta">${detailMeta('age', 'Vârstă', activityAgeLabel(activity))}${detailMeta('duration', 'Timp', activity.duration)}${detailMeta('participants', 'Participanți', activityParticipantLabel(activity))}${detailMeta('implementation', 'Materiale', activity.difficulty)}</div></header>${activity.collection ? `<div class="library-detail-collection">Colecție: <b>${safe(activity.collection)}</b></div>` : ''}${activity.skills ? `<section class="library-detail-skills">${detailPanelIcon('detail-skills.png')}<div><b>CE EXERSĂM</b><p>${safe(activity.skills)}</p></div></section>` : ''}<div class="library-detail-sections">${activity.materials ? `<section class="library-detail-panel is-materials">${detailPanelIcon('detail-materials.png')}<div><small>PREGĂTEȘTE</small><h3>Materiale</h3><ul>${list(activity.materials)}</ul></div></section>` : ''}${activityRoundsMarkup(activity.rounds, activity.id)}${activity.steps ? `<section class="library-detail-panel is-steps">${detailPanelIcon('detail-steps.png')}<div><small>PAS CU PAS</small><h3>Cum se joacă</h3><ol>${list(activity.steps)}</ol></div></section>` : ''}${activity.rules ? `<section class="library-detail-panel is-rules">${detailPanelIcon('detail-rules.png')}<div><small>REPER CLAR</small><h3>Reguli</h3><ul>${list(activity.rules)}</ul></div></section>` : ''}${activity.facilitator ? `<section class="library-detail-panel is-facilitator">${detailPanelIcon('detail-facilitator.png')}<div><small>POȚI SPUNE</small><h3>Replica facilitatorului</h3><p>„${safe(activity.facilitator.replace(/^[„"]|[”"]$/g, ''))}”</p></div></section>` : ''}${variants ? `<section class="library-detail-panel is-variants">${detailPanelIcon('detail-adapt.png')}<div><small>REGLEAZĂ PROVOCAREA</small><h3>Adaptează activitatea</h3>${activity.easier ? `<p><b>Mai ușor:</b> ${safe(activity.easier)}</p>` : ''}${activity.harder ? `<p><b>Mai greu:</b> ${safe(activity.harder)}</p>` : ''}</div></section>` : ''}${activity.caution ? `<section class="library-detail-panel is-caution">${detailPanelIcon('detail-caution.png')}<div><small>DE ȚINUT MINTE</small><h3>Atenție</h3><p>${safe(activity.caution)}</p></div>` : ''}</div>${activity.reflection ? `<footer class="library-detail-reflection">${detailPanelIcon('detail-reflection.png')}<div><small>LA FINAL</small><strong>${safe(activity.reflection)}</strong></div></footer>` : ''}</article>${relatedActivitiesMarkup(activity)}</div>`;
   }
 
   const observationResultIcon = result => result === 'A mers bine' ? '🟢' : result === 'Nu a mers' ? '🔴' : '🟡';
   function observationsMarkup() { return `<section class="library-observations" id="testari-observatii"><header><div><small>MEMORIE EMPIRICĂ</small><h2>Testări & observații</h2><p>Ce s-a întâmplat în realitate, separat de designul activității.</p></div><button type="button" data-add-observation>＋ Notează o testare</button></header><div class="library-observation-list">${activityObservations.map(item => `<article class="library-observation-card" data-observation-id="${safe(item.id)}"><button class="library-observation-summary" type="button" data-expand-observation><span><strong>${safe(item.tested_at)}</strong><small>${safe((item.age_categories || []).join(' · ') || 'Vârstă nespecificată')} · ${safe(item.participants)} · ${observationResultIcon(item.result)} ${safe(item.result)}</small></span><b>⌄</b></button><div class="library-observation-body"><div><small>AM OBSERVAT</small><p>${safe(item.observed)}</p></div>${item.interpreted ? `<div><small>CRED CĂ ÎNSEAMNĂ</small><p>${safe(item.interpreted)}</p></div>` : ''}${item.hypothesized ? `<div><small>VREAU SĂ VERIFIC</small><p>${safe(item.hypothesized)}</p></div>` : ''}${item.action ? `<div><small>DATA VIITOARE</small><p>${safe(item.action)}</p></div>` : ''}${item.capacity ? `<div><small>CAPACITATE URMĂRITĂ</small><p>${safe(item.capacity)}${item.behavior_observed === true ? ' · Observat' : item.behavior_observed === false ? ' · Nu a fost observat' : ''}</p></div>` : ''}<footer><button type="button" data-edit-observation>Editează</button><button type="button" data-delete-observation>Șterge</button></footer></div></article>`).join('') || '<p class="library-observations-empty">Nu există încă testări înregistrate.</p>'}</div></section>`; }
   function renderObservationBehaviors() { root.querySelectorAll('.library-observation-card').forEach(card => { const item = activityObservations.find(entry => entry.id === card.dataset.observationId); if (!item || !Array.isArray(item.behaviors) || !item.behaviors.length) return; const body = card.querySelector('.library-observation-body'); if (!body || body.querySelector('.library-observation-behaviors')) return; const block = document.createElement('div'); block.className = 'library-observation-behaviors'; block.innerHTML = `<small>CAPACITĂȚI / COMPORTAMENTE URMĂRITE</small>${item.behaviors.map(behavior => `<p class="library-observation-behavior"><span>${safe(behavior.label)}</span><b>${safe(behavior.status || '—')}</b></p>`).join('')}`; body.insertBefore(block, body.querySelector('footer')); }); }
   function mountObservations() { const host = root.querySelector('.library-detail-view'); if (!host || host.querySelector('.library-observations')) return; host.insertAdjacentHTML('beforeend', observationsMarkup()); bindObservationEvents(); renderObservationBehaviors(); }
+  function mountFacilitatorLaunch() { const article = root.querySelector('.library-activity-detail'); if (!article || article.querySelector('.library-open-facilitator') || !selectedActivity) return; article.insertAdjacentHTML('beforeend', `<a class="library-open-facilitator" href="/joaca?activity_id=${encodeURIComponent(selectedActivity.id)}">Pornește în aplicația de facilitare →</a>`); }
   async function loadObservations() { if (!selectedActivity) return; try { const response = await api(`/api/admin/activity-observations?activity_id=${encodeURIComponent(selectedActivity.id)}`); activityObservations = response.ok ? ((await response.json()).observations || []) : []; } catch { activityObservations = []; } const section = root.querySelector('.library-observations'); if (section) { section.outerHTML = observationsMarkup(); bindObservationEvents(); renderObservationBehaviors(); } }
   function observationModal(item = null) {
     const modal = document.createElement('div');
@@ -382,6 +501,7 @@
   function bindObservationEvents() { const section = root.querySelector('.library-observations'); if (!section) return; section.querySelector('[data-add-observation]')?.addEventListener('click', () => observationModal()); section.querySelectorAll('[data-expand-observation]').forEach(button => button.addEventListener('click', () => button.closest('.library-observation-card').classList.toggle('is-expanded'))); section.querySelectorAll('[data-edit-observation]').forEach(button => button.addEventListener('click', () => { const item = activityObservations.find(item => item.id === button.closest('[data-observation-id]').dataset.observationId); if (item) observationModal(item); })); section.querySelectorAll('[data-delete-observation]').forEach(button => button.addEventListener('click', async () => { const id = button.closest('[data-observation-id]').dataset.observationId; if (!window.confirm('Ștergi această testare?')) return; const response = await api(`/api/admin/activity-observations/${encodeURIComponent(id)}`, { method: 'DELETE' }); if (response.ok) await loadObservations(); })); }
   function body() {
     if (step === 'hub') return hubView();
+    if (step === 'playlists') return playlistView();
     if (!currentItems().length) return emptyLibraryView();
     if (libraryMode === 'physical' || libraryMode === 'magic') {
       if (step.endsWith('results')) return specialResultsView();
@@ -396,7 +516,7 @@
   }
 
   function render(direction = 'forward') {
-    root.innerHTML = `<section class="library-shell"><header><button data-back ${step === 'hub' ? 'disabled' : ''}>← Înapoi</button>${breadcrumb()}<button data-reset ${step === 'hub' ? 'disabled' : ''}>Biblioteca Becky</button></header><div class="library-viewport"><div class="library-screen enter-${direction}">${body()}</div></div></section>`;
+    root.innerHTML = `<section class="library-shell"><header><button data-back ${step === 'hub' ? 'disabled' : ''}>← Înapoi</button>${breadcrumb()}<button data-reset ${step === 'hub' ? 'disabled' : ''}>Biblioteca Becky</button></header><div class="library-viewport"><div class="library-screen enter-${direction}">${step === 'results' ? activityPlaylistsMarkup() : ''}${body()}</div></div></section>`;
     bind();
     requestAnimationFrame(() => root.querySelector('.library-screen')?.classList.remove(`enter-${direction}`));
   }
@@ -408,7 +528,14 @@
   }
 
   function bind() {
-    if (step === 'activity') { mountObservations(); loadObservations(); }
+    root.querySelector('[data-new-activity-playlist]')?.addEventListener('click', createActivityPlaylist);
+    root.querySelectorAll('[data-open-activity-playlist]').forEach(button => button.addEventListener('click', () => { selectedSpecialItem = activityPlaylists.find(item => item.id === button.dataset.openActivityPlaylist); step = 'playlists'; render('forward'); }));
+    root.querySelector('[data-playlists-back]')?.addEventListener('click', () => { selectedSpecialItem = null; step = 'hub'; render('back'); });
+    root.querySelectorAll('[data-playlist-open]').forEach(button => button.addEventListener('click', () => { selectedActivity = allActivities().find(item => item.id === button.dataset.playlistOpen) || null; libraryMode = activityLibraryType(selectedActivity); step = 'activity'; render('forward'); }));
+    root.querySelectorAll('[data-playlist-remove]').forEach(button => button.addEventListener('click', () => updateActivityPlaylist(button.closest('[data-playlist-item]').dataset.playlistItem, 'remove')));
+    root.querySelector('[data-delete-activity-playlist]')?.addEventListener('click', () => { const id = root.querySelector('[data-delete-activity-playlist]').dataset.deleteActivityPlaylist; if (window.confirm('Ștergi această listă? Activitățile rămân în Bibliotecă.')) { activityPlaylists = activityPlaylists.filter(item => item.id !== id); saveActivityPlaylists().then(() => { step = 'hub'; selectedSpecialItem = null; render('back'); }); } });
+    root.querySelectorAll('[data-playlist-item]').forEach(item => { item.addEventListener('dragstart', () => { draggedActivityId = item.dataset.playlistItem; }); item.addEventListener('dragover', event => event.preventDefault()); item.addEventListener('drop', () => reorderActivityPlaylist(draggedActivityId, item.dataset.playlistItem)); });
+    if (step === 'activity') { mountFacilitatorLaunch(); mountObservations(); loadObservations(); }
     root.querySelectorAll('[data-library-mode]').forEach(button => button.addEventListener('click', () => move(
       button.dataset.libraryMode === 'physical' ? 'physical-age' : button.dataset.libraryMode === 'magic' ? 'magic-age' : 'category',
       () => { libraryMode = button.dataset.libraryMode; resetFilters(); }
@@ -457,15 +584,17 @@
       minInput?.addEventListener('input', event => refreshRange(event.currentTarget)); maxInput?.addEventListener('input', event => refreshRange(event.currentTarget)); refreshRange();
       root.querySelectorAll('[data-age-card]').forEach(button => button.addEventListener('click', () => {
         const value = Number(button.dataset.ageCard);
-        move('duration', () => { filters.age = ages[value]; filters.ageRange = null; });
+        move(libraryMode === 'internal' ? 'duration' : 'implementation', () => { filters.age = ages[value]; filters.ageRange = null; });
       }));
       root.querySelectorAll('[data-age-pick]').forEach(button => button.addEventListener('click', () => {
         const value = Number(button.dataset.agePick);
         minInput.value = value; maxInput.value = value; refreshRange();
       }));
-      root.querySelector('[data-age-range-continue]')?.addEventListener('click', () => move('duration', () => { filters.age = ''; filters.ageRange = { min: Number(minInput.value), max: Number(maxInput.value) }; }));
+      root.querySelector('[data-age-range-continue]')?.addEventListener('click', () => move(libraryMode === 'internal' ? 'duration' : 'implementation', () => { filters.age = ''; filters.ageRange = { min: Number(minInput.value), max: Number(maxInput.value) }; }));
     }
-    root.querySelectorAll('[data-activity]').forEach(button => button.addEventListener('click', () => move('activity', () => { selectedActivity = all().find(activity => activity.id === button.dataset.activity) || null; activityObservations = []; })));
+    root.querySelectorAll('[data-activity]').forEach(button => { button.draggable = true; button.addEventListener('dragstart', () => { draggedActivityId = button.dataset.activity; }); button.addEventListener('click', () => move('activity', () => { selectedActivity = all().find(activity => activity.id === button.dataset.activity) || null; activityObservations = []; })); let startX = 0; button.addEventListener('touchstart', event => { startX = event.changedTouches[0].screenX; }, { passive: true }); button.addEventListener('touchend', event => { if (event.changedTouches[0].screenX - startX > 70) { event.preventDefault(); chooseActivityPlaylist(button.dataset.activity); } }); });
+    root.querySelectorAll('[data-drop-playlist]').forEach(button => { button.addEventListener('dragover', event => event.preventDefault()); button.addEventListener('drop', event => { event.preventDefault(); addToActivityPlaylist(button.dataset.dropPlaylist, draggedActivityId); }); });
+    root.querySelectorAll('[data-related-activity]').forEach(button => button.addEventListener('click', () => { selectedActivity = all().find(activity => activity.id === button.dataset.relatedActivity) || null; activityObservations = []; render('forward'); }));
     root.querySelector('[data-results-back]')?.addEventListener('click', () => move('results', null, 'back'));
     root.querySelectorAll('[data-special-choice]').forEach(button => button.addEventListener('click', () => {
       const key = button.dataset.specialChoice;
@@ -479,7 +608,7 @@
     root.querySelector('[data-reset]')?.addEventListener('click', () => move('hub', () => { libraryMode = ''; resetFilters(); }, 'back'));
     root.querySelector('[data-back]')?.addEventListener('click', () => {
       const previous = {
-        category:'hub', participants:'category', age:'participants', duration:'age', implementation:'duration',
+        category:'hub', participants:'category', age:'participants', duration:'age', implementation:libraryMode === 'internal' ? 'duration' : 'age',
         results:libraryMode === 'internal' ? 'duration' : 'implementation', activity:'results',
         'physical-age':'hub', 'physical-participants':'physical-age', 'physical-level':'physical-participants', 'physical-results':'physical-level', 'physical-detail':'physical-results',
         'magic-age':'hub', 'magic-level':'magic-age', 'magic-duration':'magic-level', 'magic-results':magicUsesDuration() ? 'magic-duration' : 'magic-level', 'magic-detail':'magic-results'
@@ -492,7 +621,9 @@
     const [response, coverageResponse] = await Promise.all([apiFetch('/api/workspaces'), apiFetch('/api/admin/pedagogic-coverage').catch(() => null)]);
     if (response.status === 401) return location.replace('/admin?view=children');
     const data = await response.json();
+    workspacePayload = data;
     const workspace = data.workspaces?.find(item => item.id === 'children') || {};
+    activityPlaylists = Array.isArray(workspace.activityPlaylists) ? workspace.activityPlaylists : [];
     const legacyActivities = Array.isArray(workspace.activityPages) ? workspace.activityPages.flatMap(page => page.activities || []) : [];
     activities = (Array.isArray(workspace.activities) && workspace.activities.length ? workspace.activities : legacyActivities).map(activity => ({ ...activity, libraryType: activity.libraryType === 'internal' ? 'internal' : 'public' }));
     physicalInteractions = Array.isArray(workspace.physicalInteractions) ? workspace.physicalInteractions.map((item, index) => ({ ...item, id:item.id || `physical-${index + 1}` })) : [];
@@ -506,6 +637,8 @@
     if (!selectedActivity && libraryDefinitions[requestedLibrary]) { libraryMode = requestedLibrary; step = requestedLibrary === 'physical' ? 'physical-age' : requestedLibrary === 'magic' ? 'magic-age' : 'category'; }
     window.addEventListener('focus', refreshValidationCoverage);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshValidationCoverage(); });
+    injectRelatedStyles();
+    injectPlaylistStyles();
     render();
     if (selectedActivity && location.hash === '#testari-observatii') setTimeout(() => document.getElementById('testari-observatii')?.scrollIntoView({ behavior:'smooth', block:'start' }), 300);
   })().catch(() => { root.innerHTML = '<div class="library-loading">Biblioteca nu a putut fi încărcată.</div>'; });

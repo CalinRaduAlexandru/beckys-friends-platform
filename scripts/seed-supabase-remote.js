@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { loadWorkspaces } = require('./load-workspaces');
 
 const root = path.resolve(__dirname, '..');
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -21,7 +22,7 @@ const documents = [
   },
   {
     key: 'workspaces',
-    payload: JSON.parse(fs.readFileSync(path.join(root, 'data', 'workspaces.json'), 'utf8'))
+    payload: loadWorkspaces(root)
   }
 ];
 
@@ -47,4 +48,3 @@ main().catch(error => {
   console.error(error);
   process.exit(1);
 });
-

@@ -2,6 +2,9 @@ import { EXECUTABLE_DESTINATIONS, resolveAiProposal, validateProposedChange, pro
 import { analyzeDailyNoteWithOpenAI } from './becky-inbox/analyze.mjs';
 import { resolveMemorySignal, isSpeculativeMemorySignal, isTaskCandidateMemorySignal, memorySignalDedupeKey, memorySignalContentMatches, selectAttentionCandidates, historicEvidenceContext } from './becky-memory/core.mjs';
 import { analyzeDailyNoteForMemory } from './becky-memory/analyze.mjs';
+import workspaceSeed from '../data/workspaces.json';
+import cupGamesSeed from '../data/cup-games.json';
+import facilitatorToolsSeed from '../data/facilitator-tools.json';
 
 const ROUTES = new Map([
   ['/', '/coming-soon.html'],
@@ -19,7 +22,11 @@ const ROUTES = new Map([
   ['/ingrediente-alergeni-valori-nutritionale', '/ingrediente-alergeni-valori-nutritionale.html'],
   ['/chestionare', '/chestionare.html'],
   ['/chestionar-evenimente', '/chestionar-evenimente.html'],
-  ['/chestionar-loc-de-joaca', '/chestionar-loc-de-joaca.html']
+  ['/chestionar-loc-de-joaca', '/chestionar-loc-de-joaca.html'],
+  ['/shake-test', '/shake-test.html'],
+  ['/shake-test/', '/shake-test.html'],
+  ['/joaca', '/shake-test.html'],
+  ['/joaca/', '/shake-test.html']
 ]);
 
 const HTML_ASSET_VERSION = '20260807-3';
@@ -696,7 +703,51 @@ async function getDocument(env, key) {
   const response = await supabaseRequest(env, `/rest/v1/app_documents?key=eq.${encodeURIComponent(key)}&select=payload&limit=1`);
   const rows = await response.json();
   if (!rows.length) throw Object.assign(new Error(`Document not seeded: ${key}`), { status: 404 });
-  return rows[0].payload;
+  const payload = rows[0].payload;
+  if (key !== 'workspaces') return payload;
+  const targetChildren = (payload.workspaces || []).find(item => item.id === 'children');
+  const seedChildren = (workspaceSeed.workspaces || []).find(item => item.id === 'children');
+  if (!targetChildren || !seedChildren) return payload;
+  const existing = new Set((targetChildren.activities || []).map(item => item.id));
+  const seededActivities = [...(seedChildren.activities || []), ...cupGamesSeed].filter(item => item?.id && !existing.has(item.id));
+  targetChildren.activities = [...(targetChildren.activities || []), ...seededActivities];
+  for (const key of ['challengeDecks', 'musicTracks', 'playlists', 'soundEffects']) {
+    const currentItems = Array.isArray(targetChildren[key]) ? targetChildren[key] : [];
+    const currentIds = new Set(currentItems.map(item => item?.id).filter(Boolean));
+    const seededItems = Array.isArray(facilitatorToolsSeed[key]) ? facilitatorToolsSeed[key] : [];
+    targetChildren[key] = [...currentItems, ...seededItems.filter(item => item?.id && !currentIds.has(item.id))];
+    if (key === 'musicTracks') {
+      const seededById = new Map(seededItems.map(item => [item.id, item]));
+      targetChildren[key] = targetChildren[key].map(item => seededById.has(item.id) ? { ...item, ...seededById.get(item.id) } : item);
+    }
+  }
+  const energySeed = (facilitatorToolsSeed.playlists || []).find(item => item?.id === 'energie-copii');
+  const energyPlaylist = (targetChildren.playlists || []).find(item => item?.id === 'energie-copii');
+  if (energySeed && energyPlaylist) {
+    energyPlaylist.trackIds = [...new Set((targetChildren.musicTracks || []).filter(item => item?.audience === 'copii').map(item => item.id))];
+  }
+  return payload;
+}
+
+async function handleFacilitatorLibrary(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, { Allow: 'POST' });
+  const body = await readJson(request, 20_000);
+  if (String(body?.code || '') !== (env.FACILITATOR_ACCESS_CODE || 'becky2026')) return json({ error: 'Cod invalid' }, 401);
+  return json(await getDocument(env, 'workspaces'));
+}
+
+async function handleFacilitatorPlaylists(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, { Allow: 'POST' });
+  const body = await readJson(request, 30_000);
+  if (String(body?.code || '') !== (env.FACILITATOR_ACCESS_CODE || 'becky2026')) return json({ error: 'Cod invalid' }, 401);
+  const payload = await getDocument(env, 'workspaces');
+  const children = payload.workspaces?.find(item => item.id === 'children');
+  const activities = new Set((children?.activities || []).map(item => item.id));
+  const playlists = Array.isArray(body.playlists) ? body.playlists.map(item => ({ id: String(item.id || '').trim(), title: String(item.title || '').trim(), activityIds: [...new Set((item.activityIds || []).map(String).filter(id => activities.has(id)))], completedIds: [...new Set((item.completedIds || []).map(String).filter(id => (item.activityIds || []).map(String).includes(id) && activities.has(id)))] })).filter(item => item.id && item.title) : [];
+  if (!children) return json({ error: 'Biblioteca copiilor nu există' }, 404);
+  children.activityPlaylists = playlists;
+  const saved = await saveDocument(env, 'workspaces', payload, null);
+  return json(saved.workspaces?.find(item => item.id === 'children') || children);
 }
 
 async function saveDocument(env, key, payload, userId) {
@@ -713,6 +764,10 @@ async function requireAdmin(request, env) {
   const authorization = request.headers.get('authorization') || '';
   if (!authorization.startsWith('Bearer ')) {
     throw Object.assign(new Error('Authentication required'), { status: 401 });
+  }
+  const codeToken = authorization.slice(7);
+  if (codeToken === `admin-code:${env.ADMIN_ACCESS_CODE || 'admin2026'}`) {
+    return { id: null, email: 'admin@beckys-garden.local' };
   }
   const response = await fetch(`${env.SUPABASE_URL}/auth/v1/user`, {
     headers: {
@@ -770,12 +825,19 @@ async function handleAuth(request, env, pathname) {
   assertSameOrigin(request);
   const body = await readJson(request, 20_000);
   if (pathname === '/api/auth/login') {
+    if (typeof body.code === 'string' && body.code === (env.ADMIN_ACCESS_CODE || 'admin2026')) {
+      return json({ access_token: `admin-code:${body.code}`, refresh_token: `admin-code:${body.code}`, token_type: 'bearer', user: { id: null, email: 'admin@beckys-garden.local' } });
+    }
     if (typeof body.email !== 'string' || typeof body.password !== 'string') {
-      return json({ error: 'Emailul și parola sunt obligatorii' }, 400);
+      return json({ error: 'Codul de acces este obligatoriu' }, 400);
     }
     return json(await supabaseAuth(env, 'password', { email: body.email, password: body.password }));
   }
   if (pathname === '/api/auth/refresh') {
+    if (typeof body.refresh_token === 'string' && body.refresh_token === `admin-code:${env.ADMIN_ACCESS_CODE || 'admin2026'}`) {
+      const code = env.ADMIN_ACCESS_CODE || 'admin2026';
+      return json({ access_token: `admin-code:${code}`, refresh_token: `admin-code:${code}`, token_type: 'bearer', user: { id: null, email: 'admin@beckys-garden.local' } });
+    }
     if (typeof body.refresh_token !== 'string') return json({ error: 'Sesiune invalidă' }, 400);
     return json(await supabaseAuth(env, 'refresh_token', { refresh_token: body.refresh_token }));
   }
@@ -1174,6 +1236,25 @@ async function handlePlaygroundRaffle(request, env) {
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST' });
 }
 
+async function handleTextToSpeech(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405, { Allow: 'POST' });
+  if (!env.ELEVENLABS_API_KEY) throw Object.assign(new Error('ElevenLabs nu este configurat'), { status: 503 });
+  const body = await readJson(request, 4_000);
+  const text = typeof body?.text === 'string' ? body.text.trim() : '';
+  if (!text || text.length > 500) return json({ error: 'Text invalid' }, 400);
+  const voiceId = env.ELEVENLABS_VOICE_ID || 'cgSgspJ2msm6clMCkdW9';
+  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`, {
+    method: 'POST',
+    headers: { 'xi-api-key': env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+    body: JSON.stringify({ text, model_id: env.ELEVENLABS_MODEL_ID || 'eleven_v3', language_code: 'ro', voice_settings: { stability: 0.62, similarity_boost: 0.88, style: 0.24, use_speaker_boost: true }, output_format: 'mp3_44100_128' })
+  });
+  if (!response.ok) {
+    console.error('ElevenLabs TTS failed', response.status, (await response.text()).slice(0, 500));
+    throw Object.assign(new Error('Vocea nu a putut fi generată.'), { status: response.status === 429 ? 429 : 502 });
+  }
+  return new Response(response.body, { headers: { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store', ...SECURITY_HEADERS } });
+}
+
 function escapeHtml(value) {
   return String(value).replace(/[&<>"']/g, character => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
@@ -1202,6 +1283,8 @@ async function handleApi(request, env, pathname) {
     testingMode: env.APP_ENV === 'testing'
   });
   if (pathname.startsWith('/api/auth/')) return handleAuth(request, env, pathname);
+  if (pathname === '/api/facilitator/library') return handleFacilitatorLibrary(request, env);
+  if (pathname === '/api/facilitator/playlists') return handleFacilitatorPlaylists(request, env);
   if (pathname === '/api/calendar') return handlePublicCalendar(request, env);
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
   if (pathname === '/api/admin/becky-memory/analyze' || pathname === '/api/admin/becky-memory/signals' || pathname.startsWith('/api/admin/becky-memory/signals/') || pathname === '/api/admin/becky-memory/attention' || pathname.startsWith('/api/admin/becky-memory/attention/')) return handleBeckyMemory(request, env);
@@ -1224,6 +1307,7 @@ async function handleApi(request, env, pathname) {
   if (pathname === '/api/playground-survey/results') return handlePlaygroundResults(request, env);
   if (pathname === '/api/playground-survey/funnel') return handlePlaygroundFunnel(request, env);
   if (pathname === '/api/playground-survey/raffle') return handlePlaygroundRaffle(request, env);
+  if (pathname === '/api/tts') return handleTextToSpeech(request, env);
   if (pathname === '/api/playground-survey') return handlePlaygroundSurvey(request, env);
   if (pathname === '/api/content/carousel/image') return handleCarouselImage(request, env);
   if (pathname === '/api/content/story-candidates') return handleStoryCandidates(request, env);

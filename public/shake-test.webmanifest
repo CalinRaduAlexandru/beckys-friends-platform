@@ -1,0 +1,21 @@
+{
+  "id": "/shake-test",
+  "name": "Activități Becky",
+  "short_name": "Activități Becky",
+  "description": "Aplicația facilitatorului Becky pentru jocuri, muzică și momente de joacă.",
+  "lang": "ro",
+  "start_url": "/shake-test",
+  "scope": "/shake-test",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f1e8",
+  "theme_color": "#f6f1e8",
+  "icons": [
+    {
+      "src": "/assets/provocari/favicon_provoca%CC%86ri_app.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

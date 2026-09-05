@@ -50,7 +50,7 @@ function showAdminLogin(message = '') {
     overlay = document.createElement('div');
     overlay.id = 'admin-login';
     overlay.className = 'admin-login';
-    overlay.innerHTML = `<form class="admin-login-card"><img src="/assets/logo-mark-sun.png" alt=""><span class="eyebrow">BECKY’S GARDEN · ADMIN</span><h1>Intră în panoul de administrare</h1><p>Folosește contul autorizat pentru acest spațiu.</p><label>Email<input type="email" name="email" autocomplete="username" required></label><label>Parolă<input type="password" name="password" autocomplete="current-password" required></label><div class="admin-login-error" aria-live="polite"></div><button class="primary" type="submit">Autentifică-mă</button></form>`;
+    overlay.innerHTML = `<form class="admin-login-card"><img src="/assets/logo-mark-sun.png" alt=""><span class="eyebrow">BECKY’S GARDEN · ADMIN</span><h1>Intră în panoul de administrare</h1><p>Introdu codul de acces al echipei.</p><label>Cod de acces<input type="password" name="code" inputmode="text" autocomplete="current-password" autocapitalize="none" required></label><div class="admin-login-error" aria-live="polite"></div><button class="primary" type="submit">Intră în panou</button></form>`;
     document.body.appendChild(overlay);
     overlay.querySelector('form').addEventListener('submit', async event => {
       event.preventDefault();
@@ -63,7 +63,7 @@ function showAdminLogin(message = '') {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: form.email.value.trim(), password: form.password.value })
+        body: JSON.stringify({ code: form.code.value.trim() })
       });
       if (response.ok) {
         saveAdminSession(await response.json());
@@ -74,7 +74,7 @@ function showAdminLogin(message = '') {
       const result = await response.json().catch(() => ({}));
       error.textContent = result.error || 'Autentificarea nu a reușit.';
       button.disabled = false;
-      button.textContent = 'Autentifică-mă';
+      button.textContent = 'Intră în panou';
     });
   }
   overlay.querySelector('.admin-login-error').textContent = message;

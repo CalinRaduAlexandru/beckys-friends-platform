@@ -489,6 +489,14 @@
 .library-detail-panel ol { margin: 0; padding-left: 20px; }
 .library-detail-panel li + li { margin-top: 5px; }
 .library-detail-panel.is-steps { grid-row: span 2; background: #f7fbfb; }
+.library-detail-panel.is-rounds { grid-column: 1 / -1; border-color: #efc6ad; background: linear-gradient(145deg, #fff8f1, #fffdf8); }
+.library-detail-panel.is-rounds ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 28px; padding-left: 24px; }
+.library-detail-panel.is-rounds li { padding-left: 5px; }
+.library-detail-panel.is-rounds li strong, .library-detail-panel.is-rounds li span { display: block; }
+.library-detail-panel.is-rounds li span { margin-top: 3px; color: #8a6a56; font-size: 11px; }
+.library-detail-panel.is-rounds li span b { color: #b46732; }
+.library-rounds-app-link { display: inline-flex; margin-top: 18px; color: #c55367; font-size: 12px; font-weight: 900; text-decoration: none; }
+.library-rounds-app-link:hover { text-decoration: underline; }
 .library-detail-panel.is-materials { background: #f7f2fb; }
 .library-detail-panel.is-rules { background: #f8f7ee; }
 .library-detail-panel.is-facilitator { background: #eaf7f7; border-color: transparent; }
@@ -686,6 +694,7 @@
   .library-special-detail { padding: 22px 16px; }
   .library-special-detail > header, .library-special-detail-grid { grid-template-columns: 1fr; }
   .library-special-detail h1 { font-size: 27px; }
+  .library-detail-panel.is-rounds ol { grid-template-columns: 1fr; gap: 9px; }
 
   .library-intro h1,
   .library-step-copy h1,
