@@ -12,6 +12,7 @@ const WORKSPACES_FILE = process.env.BECKY_WORKSPACES_FILE || path.join(ROOT, 'da
 const USING_DEFAULT_WORKSPACES_FILE = !process.env.BECKY_WORKSPACES_FILE;
 const CUP_GAMES_FILE = path.join(ROOT, 'data', 'cup-games.json');
 const FACILITATOR_TOOLS_FILE = path.join(ROOT, 'data', 'facilitator-tools.json');
+const PARENT_EXPERIENCES_FILE = path.join(ROOT, 'data', 'parent-experiences.json');
 const FACILITATOR_ACCESS_CODE = process.env.BECKY_FACILITATOR_CODE || 'becky2026';
 const EVENT_SURVEY_FILE = path.join(ROOT, 'data', 'event-survey-responses.json');
 const EVENT_FUNNEL_FILE = path.join(ROOT, 'data', 'event-survey-funnel-events.json');
@@ -702,7 +703,7 @@ function localSecret(name) {
 }
 
 function serve(res, pathname) {
-  const routes = {'/':'/index.html','/admin':'/admin/index.html','/admin/biblioteca-copii':'/admin/children-library.html','/admin/biblioteca-activitati-copii':'/admin/children-library.html','/music-for-kids':'/music-for-kids/index.html','/music-for-kids/':'/music-for-kids/index.html','/music-for-kids/parent':'/music-for-kids/parent.html','/p':'/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf','/petreceri':'/petreceri.html','/evenimente':'/evenimente.html','/comunitate':'/comunitate.html','/ingrediente-alergeni-valori-nutritionale':'/ingrediente-alergeni-valori-nutritionale.html','/chestionare':'/chestionare.html','/chestionar-evenimente':'/chestionar-evenimente.html','/chestionar-loc-de-joaca':'/chestionar-loc-de-joaca.html','/joaca':'/shake-test.html','/joaca/':'/shake-test.html','/shake-test':'/shake-test.html','/shake-test/':'/shake-test.html'};
+  const routes = {'/':'/index.html','/admin':'/admin/index.html','/admin/biblioteca-copii':'/admin/children-library.html','/admin/biblioteca-activitati-copii':'/admin/children-library.html','/music-for-kids':'/music-for-kids/index.html','/music-for-kids/':'/music-for-kids/index.html','/music-for-kids/parent':'/music-for-kids/parent.html','/p':'/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf','/petreceri':'/petreceri.html','/evenimente':'/evenimente.html','/comunitate':'/comunitate.html','/ingrediente-alergeni-valori-nutritionale':'/ingrediente-alergeni-valori-nutritionale.html','/chestionare':'/chestionare.html','/chestionar-evenimente':'/chestionar-evenimente.html','/chestionar-loc-de-joaca':'/chestionar-loc-de-joaca.html','/parinti':'/parents-tablet.html','/parinti/':'/parents-tablet.html','/joaca':'/shake-test.html','/joaca/':'/shake-test.html','/shake-test':'/shake-test.html','/shake-test/':'/shake-test.html'};
   let decodedPathname;
   try { decodedPathname = decodeURIComponent(pathname); }
   catch { return send(res, 400, { error: 'Invalid path' }); }
@@ -1412,6 +1413,48 @@ const server = http.createServer(async (req, res) => {
     const html = `<!doctype html><html lang="ro"><head><meta charset="utf-8"><title>${doc.title}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@400;500;600;700&display=swap"><style>body{font:16px 'Nunito',sans-serif;max-width:820px;margin:50px auto;line-height:1.6;color:#243447}h1,h2,h3{font-family:'Mali',sans-serif;font-weight:500;color:#168F9F}.manual-content .chapter-number{font-family:'Nunito',sans-serif;font-weight:700;color:#FB7176}li{margin:.35rem 0}</style><style>${customCss}</style></head><body><main class="manual-content"><h1>${doc.title}</h1>${doc.blocks.map(b => b.html).join('\n')}</main></body></html>`;
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Disposition': 'attachment; filename="becky-friends-manual.html"' });
     return res.end(html);
+  }
+  if (req.method === 'GET' && url.pathname === '/api/parents/experiences') {
+    try {
+      const experiences = JSON.parse(fs.readFileSync(PARENT_EXPERIENCES_FILE, 'utf8'));
+      return send(res, 200, { surface: 'parents', experiences });
+    } catch { return send(res, 500, { error: 'Experiențele pentru părinți nu sunt disponibile' }); }
+  }
+  if (req.method === 'POST' && url.pathname === '/api/tts') {
+    let raw = '';
+    req.on('data', chunk => {
+      raw += chunk;
+      if (Buffer.byteLength(raw) > 4_000) req.destroy();
+    });
+    req.on('end', async () => {
+      try {
+        const apiKey = localSecret('ELEVENLABS_API_KEY');
+        if (!apiKey) return send(res, 503, { error: 'ElevenLabs nu este configurat' });
+        const body = JSON.parse(raw);
+        const text = typeof body?.text === 'string' ? body.text.trim() : '';
+        if (!text || text.length > 500) return send(res, 400, { error: 'Text invalid' });
+        const voiceId = localSecret('ELEVENLABS_VOICE_ID') || 'kzOjSddNpacn5uKPKxDC';
+        const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`, {
+          method: 'POST',
+          headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
+          body: JSON.stringify({
+            text,
+            model_id: localSecret('ELEVENLABS_MODEL_ID') || 'eleven_v3',
+            language_code: 'ro',
+            voice_settings: { stability: 0.62, similarity_boost: 0.88, style: 0.24, use_speaker_boost: true },
+            output_format: 'mp3_44100_128'
+          })
+        });
+        if (!response.ok) {
+          console.error('ElevenLabs TTS failed locally', response.status);
+          return send(res, response.status === 429 ? 429 : 502, { error: 'Vocea nu a putut fi generată' });
+        }
+        return send(res, 200, Buffer.from(await response.arrayBuffer()), 'audio/mpeg');
+      } catch {
+        return send(res, 500, { error: 'Vocea nu a putut fi generată' });
+      }
+    });
+    return;
   }
   serve(res, url.pathname);
 });

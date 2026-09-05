@@ -1,0 +1,74 @@
+[
+  {
+    "id": "intrebarea-serii",
+    "title": "Întrebarea serii",
+    "category": "Conversație",
+    "duration": "5–10 min",
+    "participants": "2+ adulți",
+    "energy": "calm",
+    "prompt": "Dacă ai putea retrăi o singură zi frumoasă din viața ta, pe care ai alege-o și de ce?",
+    "steps": ["Citiți întrebarea cu voce tare.", "Răspunde fiecare, pe rând.", "Puneți o singură întrebare de continuare."],
+    "optionalChildVariation": "Copiii pot răspunde cu propria lor zi preferată, dacă vor.",
+    "tags": ["conversație", "fără mișcare"]
+  },
+  {
+    "id": "doua-adevaruri-o-minciuna",
+    "title": "Două adevăruri și o minciună",
+    "category": "Ghicește",
+    "duration": "10 min",
+    "participants": "3+ adulți",
+    "energy": "râs",
+    "prompt": "Spuneți trei lucruri despre voi: două adevărate și unul inventat. Ceilalți ghicesc minciuna.",
+    "steps": ["Fiecare își pregătește trei afirmații.", "Citiți-le fără să dați indicii.", "Votați și apoi dezvăluiți răspunsul."],
+    "optionalChildVariation": "Copiii pot participa doar dacă grupul îi invită.",
+    "tags": ["râs", "grup"]
+  },
+  {
+    "id": "ghiceste-raspunsul-prietenei",
+    "title": "Ghicește răspunsul prietenei",
+    "category": "Conectare",
+    "duration": "5–10 min",
+    "participants": "3+ adulți",
+    "energy": "calm",
+    "prompt": "Cine credeți că ar alege prima o vacanță spontană? Scrieți sau arătați răspunsul în același timp.",
+    "steps": ["Alegeți o persoană și o întrebare.", "Toată lumea răspunde simultan.", "Persoana aleasă spune răspunsul real și povestește puțin."],
+    "optionalChildVariation": "Înlocuiți întrebarea cu una potrivită pentru toată familia.",
+    "tags": ["conversație", "fără mișcare"]
+  },
+  {
+    "id": "voteaza-in-secret",
+    "title": "Votează în secret",
+    "category": "Alegeți",
+    "duration": "5 min",
+    "participants": "3+ adulți",
+    "energy": "râs",
+    "prompt": "Care este cel mai mic lux care îți face ziua mai bună?",
+    "steps": ["Fiecare scrie un răspuns fără să-l arate.", "Citiți răspunsurile pe rând.", "Votați favoritul și spuneți de ce l-ați ales."],
+    "optionalChildVariation": "Copiii pot desena răspunsul în loc să-l scrie.",
+    "tags": ["vot", "la masă"]
+  },
+  {
+    "id": "inventam-reclama-absurda",
+    "title": "Inventăm o reclamă absurdă",
+    "category": "Creativ",
+    "duration": "10 min",
+    "participants": "2+ adulți",
+    "energy": "râs",
+    "prompt": "Vindeți un obiect banal de pe masă ca pe cel mai exclusivist produs din lume.",
+    "steps": ["Alegeți obiectul.", "Inventați-i un nume și un slogan.", "Prezentați reclama în 20 de secunde."],
+    "optionalChildVariation": "Copiii pot fi juriul sau pot inventa ambalajul.",
+    "tags": ["creativ", "râs", "la masă"]
+  },
+  {
+    "id": "impro-cu-trei-cuvinte",
+    "title": "Impro cu trei cuvinte",
+    "category": "Improvizație",
+    "duration": "5–10 min",
+    "participants": "3+ adulți",
+    "energy": "mai energic",
+    "prompt": "Construiți o poveste în care trebuie să apară trei cuvinte alese de grup.",
+    "steps": ["Alegeți trei cuvinte neașteptate.", "Fiecare adaugă o singură propoziție.", "Încheiați povestea când toți au contribuit."],
+    "optionalChildVariation": "Copiii pot alege cuvintele sau pot adăuga efecte sonore.",
+    "tags": ["creativ", "grup"]
+  }
+]

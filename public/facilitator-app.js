@@ -34,6 +34,7 @@ const state = {
   sheet: '',
   currentTrack: null,
   currentPlaylist: null,
+  userPausedAudio: false,
   playlistQueues: {},
   timerSeconds: 0,
   timerInitial: 0,
@@ -308,13 +309,13 @@ function changeStep(delta) { state.session.step=Math.max(0,Math.min(state.sessio
 
 function playTrack(track, playlist = null) {
   if (!track?.src) { toast('Piesa nu are încă o sursă audio disponibilă.'); return; }
-  state.currentTrack=track; state.currentPlaylist=playlist; audio.pause(); audio.src=track.src; audio.volume=Number(localStorage.getItem(VOLUME_KEY) || .35); audio.load(); const start=audio.play(); if(start?.catch)start.catch(()=>setTimeout(()=>{if(state.currentTrack?.id===track.id)audio.play().catch(()=>{});},250)); render();
+  state.currentTrack=track; state.currentPlaylist=playlist; state.userPausedAudio=false; audio.pause(); audio.src=track.src; audio.volume=Number(localStorage.getItem(VOLUME_KEY) || .35); audio.load(); const start=audio.play(); if(start?.catch)start.catch(()=>setTimeout(()=>{if(state.currentTrack?.id===track.id)audio.play().catch(()=>recoverPlaylistAudio());},400)); render();
 }
 function toggleTrack(id) { const track=selectedTrack(id); if (state.currentTrack?.id===id) toggleAudio(); else playTrack(track, allPlaylists().find(playlist => playlist.trackIds?.includes(id)) || null); }
 function shuffledTracks(playlist) { const tracks=(playlist?.trackIds||[]).map(selectedTrack).filter(Boolean); for(let i=tracks.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tracks[i],tracks[j]]=[tracks[j],tracks[i]];} return tracks; }
-function playPlaylist(id) { const playlist=allPlaylists().find(item=>item.id===id); const queue=shuffledTracks(playlist); if(queue.length){state.playlistQueues[playlist.id]=queue.slice(1);playTrack(queue[0],playlist);} else toast('Playlistul nu are încă piese disponibile.'); }
-function playNextTrack() { if (!state.currentPlaylist) return; let queue=state.playlistQueues[state.currentPlaylist.id]||[]; if(!queue.length) queue=shuffledTracks(state.currentPlaylist); const next=queue.shift(); state.playlistQueues[state.currentPlaylist.id]=queue; const duck=state.library?.soundEffects?.find(effect=>effect.id==='duck'); if(next&&duck?.src&&Math.random()<.3)playEffectAudio(duck.src,.75); if(next)playTrack(next,state.currentPlaylist); }
-function toggleAudio() { if(!state.currentTrack)return; audio.paused ? audio.play().catch(()=>{}) : audio.pause(); render(); }
+function playPlaylist(id) { const playlist=allPlaylists().find(item=>item.id===id); const queue=playlist?.shuffle===false?(playlist.trackIds||[]).map(selectedTrack).filter(Boolean):shuffledTracks(playlist); if(queue.length){state.playlistQueues[playlist.id]=queue.slice(1);playTrack(queue[0],playlist);} else toast('Playlistul nu are încă piese disponibile.'); }
+function playNextTrack() { if (!state.currentPlaylist) return; let queue=state.playlistQueues[state.currentPlaylist.id]||[]; if(!queue.length){if(state.currentPlaylist.nextPlaylistId){playPlaylist(state.currentPlaylist.nextPlaylistId);return;}if(state.currentPlaylist.shuffle!==false)queue=shuffledTracks(state.currentPlaylist);else return;} const next=queue.shift(); state.playlistQueues[state.currentPlaylist.id]=queue; const duck=state.library?.soundEffects?.find(effect=>effect.id==='duck'); if(next&&duck?.src&&Math.random()<.3)playEffectAudio(duck.src,.75); if(next)playTrack(next,state.currentPlaylist); }
+function toggleAudio() { if(!state.currentTrack)return; if(audio.paused){state.userPausedAudio=false;audio.play().catch(()=>{});}else{state.userPausedAudio=true;audio.pause();} render(); }
 
 function savePlaylist(event) {
   event.preventDefault(); const form=new FormData(event.currentTarget); const title=String(form.get('title')||'').trim(); const trackIds=form.getAll('trackIds'); if(!title||!trackIds.length){toast('Alege un nume și cel puțin o piesă.');return;} state.customPlaylists.push({id:`custom-${Date.now()}`,title,occasion:'Playlist personalizat',trackIds}); saveJson(PLAYLIST_KEY,state.customPlaylists); state.sheet=''; render(); toast('Playlist salvat.');
@@ -379,8 +380,10 @@ async function init(){
   }catch(error){if(error.code==='AUTH'){root.innerHTML='<div class="app-loading"><span>✦</span><strong>Biblioteca Becky este protejată.</strong></div>';showLogin();return;}root.innerHTML=`<div class="app-loading"><span>♡</span><strong>${esc(error.message)}</strong></div>`;}
 }
 
-let audioRecoveryTimer=0;function recoverPlaylistAudio(){if(!state.currentPlaylist||audio.paused===false)return;clearTimeout(audioRecoveryTimer);audioRecoveryTimer=setTimeout(()=>{if(state.currentPlaylist&&audio.paused){if(audio.error)playNextTrack();else audio.play().catch(()=>playNextTrack());}},350);}
-audio.addEventListener('play',()=>{restoreAudioVolume();updateAudioControls();}); audio.addEventListener('pause',updateAudioControls); audio.addEventListener('timeupdate',()=>{updateAudioProgress();softenTrackEnding();}); audio.addEventListener('loadedmetadata',updateAudioProgress); audio.addEventListener('ended',()=>{restoreAudioVolume();setTimeout(playNextTrack,120);}); audio.addEventListener('error',recoverPlaylistAudio); audio.addEventListener('stalled',recoverPlaylistAudio);
+let audioRecoveryTimer=0;function recoverPlaylistAudio(){if(!state.currentPlaylist||state.userPausedAudio||audio.paused===false)return;clearTimeout(audioRecoveryTimer);audioRecoveryTimer=setTimeout(()=>{if(state.currentPlaylist&&!state.userPausedAudio&&audio.paused){if(audio.error){playNextTrack();}else{const attempt=audio.play();if(attempt?.catch)attempt.catch(()=>{audioRecoveryTimer=setTimeout(recoverPlaylistAudio,900);});}}},350);}
+audio.addEventListener('play',()=>{restoreAudioVolume();updateAudioControls();}); audio.addEventListener('pause',()=>{updateAudioControls();recoverPlaylistAudio();}); audio.addEventListener('timeupdate',()=>{updateAudioProgress();softenTrackEnding();}); audio.addEventListener('loadedmetadata',updateAudioProgress); audio.addEventListener('ended',()=>{restoreAudioVolume();setTimeout(playNextTrack,120);}); audio.addEventListener('error',recoverPlaylistAudio); audio.addEventListener('stalled',recoverPlaylistAudio); document.addEventListener('visibilitychange',()=>{if(!document.hidden)recoverPlaylistAudio();});
+if('mediaSession' in navigator){try{navigator.mediaSession.setActionHandler('play',()=>{state.userPausedAudio=false;audio.play().catch(()=>recoverPlaylistAudio());});navigator.mediaSession.setActionHandler('pause',()=>{state.userPausedAudio=true;audio.pause();});navigator.mediaSession.setActionHandler('nexttrack',playNextTrack);}catch{}}
+setInterval(()=>{if(state.currentPlaylist&&!state.userPausedAudio&&audio.paused&&!audio.ended)recoverPlaylistAudio();},15000);
 function updateAudioControls(){root.querySelectorAll('[data-toggle-audio]').forEach(button=>{button.textContent=audio.paused?'▶':'Ⅱ';button.setAttribute('aria-label',audio.paused?'Pornește':'Pauză');});}
 function updateAudioProgress(){if(!state.currentTrack)return;const percent=audio.duration?Math.min(100,(audio.currentTime/audio.duration)*100):0;root.querySelectorAll(`[data-track-progress="${CSS.escape(state.currentTrack.id)}"]`).forEach(bar=>{bar.style.width=`${percent}%`;});root.querySelectorAll('[data-now-playing-progress]').forEach(bar=>{bar.style.width=`${percent}%`;});}
 function restoreAudioVolume(){audio.volume=Number(localStorage.getItem(VOLUME_KEY)||.35);}

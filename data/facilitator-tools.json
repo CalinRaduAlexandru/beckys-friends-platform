@@ -63,6 +63,9 @@
     {"id":"tiki-taka-original","title":"Tiki-Taka – Dansăm Azi","mood":"Energie","audience":"copii","src":"/assets/mp3s/Music/23%20Tiki-Taka%20Dansam%20Azi.mp3"},
     {"id":"party-germana-original","title":"Petrecerea Veselă – Varianta 2","mood":"Energie","audience":"copii","src":"/assets/mp3s/Music/19%20Petrecerea%20Vesela.mp3"},
     {"id":"sare-parcul-original","title":"Sare prin Parc – Repriza 2","mood":"Energie","audience":"copii","src":"/assets/mp3s/Music/26%20Sare%20prin%20Parc%20-%20Varianta%202.mp3"},
+    {"id":"birthday-1","title":"Mulți Ani Trăiască","mood":"Aniversare","audience":"copii","src":"/assets/mp3s/Music/Birthday_Moment/1.Mult%CC%A6i%20ani%20tra%CC%86iasca%CC%86%20(pentru%20orice%20petrecere)%20-%20Ca%CC%82ntece%20pentru%20copii%20%20TraLaLa.mp3"},
+    {"id":"birthday-2","title":"Azi e Ziua Mea","mood":"Aniversare","audience":"copii","src":"/assets/mp3s/Music/Birthday_Moment/2.Ciao%20Patricia%20-%20AZI%20E%20ZIUA%20MEA%20Muzica%CC%86%20pentru%20copii%20%20LA%20MULT%CC%A6I%20ANI%20DE%20ZIUA%20TA%20%20Happy%20birthday%20to%20you.mp3"},
+    {"id":"birthday-3","title":"Zoo – Dansul Aniversar","mood":"Aniversare","audience":"copii","src":"/assets/mp3s/Music/Birthday_Moment/3.Shakira%20-%20Zoo%20(From%20Zootopia%202)%20Official%20Music%20Video.mp3"},
     {"id":"aoarecare","title":"Oarecare","mood":"Relaxare","audience":"adulti","src":"/assets/mp3s/Music/Adult%CC%A6i/AOarecare%20copy.mp3"},
     {"id":"avicii-wake-me-up","title":"Wake Me Up","artist":"Avicii","mood":"Energie","audience":"adulti","src":"/assets/mp3s/Music/Adult%CC%A6i/Avicii%20-%20Wake%20Me%20Up%20(Official%20Video).mp3"},
     {"id":"ay-haiti","title":"Ay Haiti!","mood":"Energie","audience":"adulti","src":"/assets/mp3s/Music/Adult%CC%A6i/Ay%20Haiti!.mp3"},
@@ -100,6 +103,7 @@
     {"id":"je-veux","title":"Je veux","artist":"ZAZ","mood":"Energie","audience":"adulti","src":"/assets/mp3s/Music/Adult%CC%A6i/Zaz%20-%20Je%20veux%20(Studio%20version%2C%20HD).mp3"}
   ],
   "playlists": [
+    {"id":"birthday-moment","title":"Birthday Moment","occasion":"Momentul aniversar, apoi joacă","audience":"copii","shuffle":false,"nextPlaylistId":"energie-copii","trackIds":["birthday-1","birthday-2","birthday-3"]},
     {"id":"energie-copii","title":"Joacă – Energie","occasion":"Când sunt doar cu copiii","audience":"copii","trackIds":["allegro-ventigo","a-mohicani","bellissima","despacito","manana","apt","dai-dai","waka-waka","chipi-chipi","baila-copii","zig-zag","filastrocca","sare-parcul","bim-bam-boo","nossa-roda","lara-ppu","wiggle-worries","tiki-taka","boop-zap","pomu-pomu","bibi-bop","bibbbidi","party-germana","mañana-copii","gangnam-copii","ducky-clap","bibi-bop-original","bim-bam-boo-original","wiggle-worries-original","filastrocca-original","baila-original","pomu-pomu-original","zig-zag-original","nossa-roda-original","lara-ppu-original","tiki-taka-original","party-germana-original","sare-parcul-original"]},
     {"id":"terasa-adulti","title":"Terasa – Adulți","occasion":"Când rămânem la terasă","audience":"adulti","trackIds":["aoarecare","avicii-wake-me-up","ay-haiti","jerusalema","bailando-bachata","bomba-estereo","calvin-harris-rihanna","la-bicicleta","cheerleader","mamma-mia","rockabye","solo","nos-fuimos-lejos","diferentemente-iguales","dont-go-yet","dove-e-quando","bailando","everything-is-sound","feel-it-still","feels","flowers","fragole","girasoles","hflowers","happy","have-it-all","hawai-remix","iko-iko","jason-have-it-all","might-as-well-dance","la-cintura","zaz-imagine","zaz-on-ira","lush-life","je-veux"]}
   ],

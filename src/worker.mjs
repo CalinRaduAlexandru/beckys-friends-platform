@@ -5,6 +5,7 @@ import { analyzeDailyNoteForMemory } from './becky-memory/analyze.mjs';
 import workspaceSeed from '../data/workspaces.json';
 import cupGamesSeed from '../data/cup-games.json';
 import facilitatorToolsSeed from '../data/facilitator-tools.json';
+import parentExperiencesSeed from '../data/parent-experiences.json';
 
 const ROUTES = new Map([
   ['/', '/coming-soon.html'],
@@ -26,7 +27,9 @@ const ROUTES = new Map([
   ['/shake-test', '/shake-test.html'],
   ['/shake-test/', '/shake-test.html'],
   ['/joaca', '/shake-test.html'],
-  ['/joaca/', '/shake-test.html']
+  ['/joaca/', '/shake-test.html'],
+  ['/parinti', '/parents-tablet.html'],
+  ['/parinti/', '/parents-tablet.html']
 ]);
 
 const HTML_ASSET_VERSION = '20260807-3';
@@ -750,6 +753,11 @@ async function handleFacilitatorPlaylists(request, env) {
   return json(saved.workspaces?.find(item => item.id === 'children') || children);
 }
 
+async function handleParentExperiences(request) {
+  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405, { Allow: 'GET' });
+  return json({ surface: 'parents', experiences: parentExperiencesSeed });
+}
+
 async function saveDocument(env, key, payload, userId) {
   const response = await supabaseRequest(env, '/rest/v1/app_documents?on_conflict=key', {
     method: 'POST',
@@ -1285,6 +1293,7 @@ async function handleApi(request, env, pathname) {
   if (pathname.startsWith('/api/auth/')) return handleAuth(request, env, pathname);
   if (pathname === '/api/facilitator/library') return handleFacilitatorLibrary(request, env);
   if (pathname === '/api/facilitator/playlists') return handleFacilitatorPlaylists(request, env);
+  if (pathname === '/api/parents/experiences') return handleParentExperiences(request);
   if (pathname === '/api/calendar') return handlePublicCalendar(request, env);
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
   if (pathname === '/api/admin/becky-memory/analyze' || pathname === '/api/admin/becky-memory/signals' || pathname.startsWith('/api/admin/becky-memory/signals/') || pathname === '/api/admin/becky-memory/attention' || pathname.startsWith('/api/admin/becky-memory/attention/')) return handleBeckyMemory(request, env);
@@ -1329,6 +1338,7 @@ async function handleAsset(request, env, pathname) {
   url.pathname = target;
   if (target.endsWith('.html')) url.searchParams.set('__asset', HTML_ASSET_VERSION);
   const response = withSecurityHeaders(await env.ASSETS.fetch(new Request(url, request)));
+  if (target === '/parents-tablet.html') response.headers.set('Permissions-Policy', 'microphone=(self), camera=(), geolocation=()');
   if (target.endsWith('.html')) response.headers.set('Cache-Control', 'no-store');
   return response;
 }

@@ -1,0 +1,688 @@
++# Idei pentru timpul dintre adulți
+
+Sursă brută primită pentru noua experiență Becky destinată părinților. Lista nu este încă validată, redactată sau publicată ca activități finale. Se păstrează separat ca material editorial de lucru.
+
+-  Întrebarea serii 
+-  Două adevăruri și o minciună 
+-  Ai prefera...? 
+-  Cine dintre noi...? 
+-  Ghicește răspunsul prietenei 
+-  Ce avem în comun? 
+-  Top 3 
+-  Povestea dintr-o fotografie 
+-  Povestea pe rând 
+-  Completează propoziția 
+-  Cea mai amuzantă amintire 
+-  Cea mai proastă idee pe care ai avut-o 
+-  Cel mai inutil talent 
+-  Cea mai ciudată frică 
+-  Ce ai face dacă...? 
+-  Dacă ai avea o zi liberă complet... 
+-  Dacă ai putea pleca mâine oriunde... 
+-  Dacă ai putea schimba o meserie... 
+-  Un lucru pe care l-ai încerca 
+-  Un lucru pe care nu l-ai mai face 
+-  „N-am făcut niciodată...” 
+-  Ghicește cine a spus asta 
+-  Ghicește ce aleg ceilalți 
+-  Majoritatea decide 
+-  Votează în secret 
+-  Clasamentul grupului 
+-  Pune lucrurile în ordine 
+-  Ghicește prețul 
+-  Ghicește anul 
+-  Ghicește melodia 
+-  Ghicește filmul 
+-  Ghicește personajul 
+-  Ghicește obiectul 
+-  Ghicește sunetul 
+-  Ghicește expresia 
+-  Ghicește emoji-ul 
+-  Ghicește desenul 
+-  Desen pe rând 
+-  Desen fără să ridici pixul 
+-  Desen cu ochii închiși 
+-  Desenează în 20 de secunde 
+-  Telefonul fără fir desenat 
+-  Scrie și pasează 
+-  Poveste din 3 cuvinte 
+-  Poveste din 3 obiecte 
+-  Poveste absurdă colectivă 
+-  Titlul perfect pentru grupul vostru 
+-  Inventăm o reclamă absurdă 
+-  Inventăm un produs inutil 
+-  Inventăm un cocktail imaginar 
+-  Inventăm un nume de trupă 
+-  Inventăm o vacanță imposibilă 
+-  Inventăm un business ridicol 
+-  Meme caption challenge 
+-  Caption pentru o fotografie 
+-  Finish the lyric 
+-  Completează replica 
+-  Ce melodie te descrie azi? 
+-  Playlist-ul grupului 
+-  Melodia care îți amintește de... 
+-  Melodia copilăriei 
+-  Melodia rușinoasă preferată 
+-  Filmul pe care îl știi pe de rost 
+-  Serialul pe care îl aperi orice ar fi 
+-  Personajul cu care te identifici 
+-  Prima celebritate de care ți-a plăcut 
+-  Ce trend nu înțelegi? 
+-  Ce expresie folosești prea des? 
+-  Ce obiect ai mereu în geantă? 
+-  Ce ai cumpărat și n-ai folosit? 
+-  Ce mic lux îți place? 
+-  Ce lucru banal te bucură? 
+-  Ce lucru te enervează disproporționat? 
+-  Ce regulă socială ai elimina? 
+-  Ce ai păstra dacă ai avea voie doar 5 lucruri? 
+-  Desert draft 
+-  Vacanță draft 
+-  Filme draft 
+-  Melodii draft 
+-  Orașe draft 
+-  Mâncare draft 
+-  „Alege una și renunță la restul” 
+-  „Salvează 3” 
+-  Blind ranking 
+-  Bingo de grup 
+-  Bingo „mame” 
+-  Bingo al prieteniei 
+-  Bingo al serii 
+-  Mini-quiz general 
+-  Mini-quiz muzical 
+-  Mini-quiz filme 
+-  Mini-quiz anii 2000 
+-  Mini-quiz copilărie 
+-  Quiz despre grup 
+-  Quiz despre fiecare prietenă 
+-  „Cât de bine ne cunoaștem?” 
+-  Cine mă cunoaște cel mai bine? 
+-  Predicții despre răspunsurile celorlalte 
+-  Cartonașe cu conversații 
+-  Zarul întrebărilor 
+-  Roata întrebărilor 
+-  Borcanul cu provocări ușoare 
+-  Cartonaș „alege pe cineva” 
+-  Cartonaș „spune ceva frumos” 
+-  Compliment anonim 
+-  Superlative amuzante 
+-  Premii imaginare 
+-  „Cel mai probabil să...” 
+-  „Cine ar supraviețui...?” 
+-  „Cine ar face prima...?” 
+-  „Cine ar suna pe cine la 3 dimineața?” 
+-  Provocare de memorie 
+-  Observă camera 20 secunde 
+-  Ce s-a schimbat? 
+-  Găsește 5 lucruri 
+-  Joc de categorii 
+-  Fazan 
+-  ȚOMAPAN adaptat 
+-  Cuvinte pe aceeași literă 
+-  Lanț de asocieri 
+-  Cuvânt interzis 
+-  Taboo light 
+-  Alias 
+-  Heads Up 
+-  Charades din șezut 
+-  Pictionary 
+-  Mini-Codenames 
+-  Dobble 
+-  Uno 
+-  Jenga cu întrebări 
+-  Turn din pahare 
+-  Puzzle rapid 
+-  Joc de cărți simplu 
+-  Joc de zaruri 
+-  Minute to Win It la masă 
+-  Aruncare de biluțe într-un pahar 
+-  Mută obiectul fără mâini 
+-  Turn din obiecte 
+-  Echilibru pe deget 
+-  Provocări cu paiul 
+-  Ștafetă de desen 
+-  Ștafetă de cuvinte 
+-  Mimă 
+-  Mimă cu emoții 
+-  Mimă cu profesii 
+-  Mimă cu filme 
+-  Mimă cu celebrități 
+-  Mimă cu situații de părinte 
+-  Charades în perechi 
+-  Impro de 30 secunde 
+-  Impro cu un obiect 
+-  Impro cu 3 cuvinte obligatorii 
+-  Impro cu o emoție 
+-  Impro schimbând emoția la semnal 
+-  Impro „prima întâlnire” 
+-  Impro „interviu de angajare absurd” 
+-  Impro „client imposibil” 
+-  Impro „emisiune TV” 
+-  Impro „vânzător de produs inutil” 
+-  Reclama de 20 secunde 
+-  Teleshopping absurd 
+-  Prezintă un obiect banal ca obiect de lux 
+-  Vinde-mi acest șervețel 
+-  Discurs de Oscar 
+-  Discurs electoral absurd 
+-  TED Talk de 30 secunde despre ceva inutil 
+-  Știri inventate 
+-  Meteo dramatic 
+-  Interviu cu o celebritate imaginară 
+-  Reporter și martor 
+-  Talk-show improvizat 
+-  Podcast de 60 secunde 
+-  Dublaj live 
+-  Dublează o scenă mută 
+-  Voce pentru altcineva 
+-  Schimb de personalități 
+-  Imită o prietenă 
+-  Imită un personaj 
+-  Imită o celebritate 
+-  Imită un copil 
+-  Imită o reclamă 
+-  Imită o profesie 
+-  Accent challenge 
+-  Vorbește ca un prezentator TV 
+-  Vorbește doar în întrebări 
+-  Vorbește fără un cuvânt comun 
+-  Povestește ceva banal dramatic 
+-  Povestește ceva dramatic foarte calm 
+-  Spune aceeași replică în 5 emoții 
+-  Citește un meniu ca pe Shakespeare 
+-  Citește o propoziție ca într-un thriller 
+-  Citește o propoziție ca într-o telenovelă 
+-  Lip-sync 
+-  Lip-sync battle 
+-  Air guitar 
+-  Air drums 
+-  Air band 
+-  Dirijorul grupului 
+-  Beatbox încercare 
+-  Inventăm un jingle 
+-  Jingle pentru grup 
+-  Rap din 3 cuvinte 
+-  Rap despre ziua de azi 
+-  Poezie improvizată 
+-  Rimă rapidă 
+-  Finish the rhyme 
+-  Battle de complimente 
+-  Battle de replici amuzante 
+-  Battle de glume proaste 
+-  Dad-joke battle 
+-  „Nu râde” 
+-  Staring contest 
+-  Try not to laugh 
+-  Spune gluma fără să râzi 
+-  Telefonul fără fir cu mimă 
+-  Telefonul fără fir cu dans 
+-  Telefonul fără fir cu desen 
+-  Oglinda 
+-  Oglinda în perechi 
+-  Urmează liderul 
+-  Liderul secret 
+-  Cine conduce mișcarea? 
+-  Simon spune pentru adulți 
+-  Statuile muzicale 
+-  Statuile cu teme 
+-  Statuile emoțiilor 
+-  Freeze dance light 
+-  Dans în oglindă 
+-  Dans doar cu mâinile 
+-  Dans doar de pe scaun 
+-  Dans în slow motion 
+-  Dans ca într-un anumit deceniu 
+-  Dans ca un personaj 
+-  Mișcare pe ritm 
+-  Copy the move 
+-  Pasează mișcarea 
+-  Construim o coregrafie pe rând 
+-  3 mișcări fiecare 
+-  Catwalk de 10 secunde 
+-  Catwalk cu temă 
+-  Poză de album 
+-  Poză de trupă 
+-  Poză „coperta revistei” 
+-  Poză „familie regală” 
+-  Poză „film de acțiune” 
+-  Poză „telenovelă” 
+-  Poză „red carpet” 
+-  Freeze-frame de film 
+-  Tableau vivant 
+-  Recreează o fotografie celebră 
+-  Recreează un emoji 
+-  Recreează un meme 
+-  Photo pose challenge 
+-  Selfie challenge 
+-  Selfie cu temă 
+-  5 poze în 30 secunde 
+-  Fotograf oficial pentru o rundă 
+-  Fashion challenge cu ce aveți la îndemână 
+-  Accesoriu improvizat 
+-  Coroană improvizată 
+-  Cel mai absurd outfit improvizat 
+-  Personaj dintr-un obiect 
+-  Mascotă de grup 
+-  Nume + slogan de echipă 
+-  Intrare dramatică 
+-  Intrare de wrestling 
+-  Intrare pe scenă 
+-  Prezentarea unei prietene ca superstar 
+-  Prezentare de box a două prietene 
+-  Roast foarte blând 
+-  Compliment exagerat 
+-  Laudă absurd de grandioasă 
+-  Spune ceva frumos uitându-te în ochii persoanei 
+-  Toast improvizat 
+-  Mulțumire publică 
+-  „Un lucru pe care îl admir la tine” 
+-  Poveste rușinoasă light 
+-  Confesiune inocentă 
+-  „Ce n-ai recunoaște de obicei?” 
+-  „Cel mai cringe moment” 
+-  „Cea mai proastă întâlnire” 
+-  „Cel mai prost sfat primit” 
+-  „Cea mai impulsivă decizie” 
+-  Secret talent reveal 
+-  Demonstrează talentul inutil 
+-  Învață grupul ceva în 30 secunde 
+-  Fă un tutorial absurd 
+-  Challenge de dicție 
+-  Tongue twisters 
+-  Spune alfabetul într-o emoție 
+-  Spune ceva cu gura aproape închisă 
+-  Ghicește ce spun fără sunet 
+-  Citit pe buze 
+-  Descrie fără cuvintele evidente 
+-  Hot seat 
+-  30 secunde de întrebări rapide 
+-  Speed interview 
+-  Speed friendship 
+-  Schimbă partenerul la fiecare minut 
+-  Debate absurd 
+-  Apără o opinie ridicolă 
+-  Convige grupul că... 
+-  Proces fictiv 
+-  Avocatul unui obiect banal 
+-  Juriul grupului 
+-  Alege tabăra 
+-  Schimbă tabăra 
+-  Stand on the line 
+-  This or that fizic 
+-  Colțurile camerei 
+-  Votează cu picioarele 
+-  Ghicește majoritatea 
+-  Human bingo 
+-  Find someone who... 
+-  Misiuni sociale secrete 
+-  Rol secret pentru fiecare 
+-  Obiectiv secret pentru fiecare 
+-  Fă pe cineva să spună un anumit cuvânt 
+-  Strecoară o expresie în conversație 
+-  Fă un compliment fără să fii prins 
+-  Convinge pe cineva să schimbe locul 
+-  Sabotor amuzant 
+-  Detectivul grupului 
+-  Cine are misiunea? 
+-  Cine minte? 
+-  Mafia light 
+-  Wink murderer 
+-  Spy game simplificat 
+-  Karaoke clasic 
+-  Karaoke pe echipe 
+-  Karaoke duet 
+-  Karaoke roulette 
+-  Karaoke blind pick 
+-  Karaoke cu melodii alese de ceilalți 
+-  Karaoke „guilty pleasure” 
+-  Karaoke anii ’90 
+-  Karaoke anii 2000 
+-  Karaoke românesc 
+-  Karaoke Disney 
+-  Karaoke boyband 
+-  Karaoke girlband 
+-  Karaoke rock 
+-  Karaoke manele 
+-  Karaoke hituri de vară 
+-  Karaoke balade dramatice 
+-  Karaoke refren only 
+-  Karaoke 30 secunde 
+-  Karaoke fără versuri pe ecran 
+-  Karaoke șoptit 
+-  Karaoke operatic 
+-  Karaoke ca un personaj 
+-  Karaoke cu emoție aleasă 
+-  Karaoke schimbând stilul 
+-  Karaoke cu accent 
+-  Karaoke cu voce exagerat de gravă 
+-  Karaoke cu voce exagerat de subțire 
+-  Karaoke în slow motion 
+-  Karaoke lip-sync 
+-  Lip-sync battle 
+-  Duet imposibil 
+-  Grupul completează refrenul 
+-  Finish the lyric live 
+-  Ghicește piesa din primele 2 secunde 
+-  Ghicește piesa fredonată 
+-  Ghicește piesa din beat 
+-  Fredonează și ceilalți ghicesc 
+-  Song association 
+-  Cuvânt → melodie 
+-  Medley improvizat 
+-  Schimbă melodia la semnal 
+-  DJ roulette 
+-  Fiecare alege următoarea piesă 
+-  Playlist battle 
+-  Hit contra hit 
+-  Generație contra generație 
+-  Echipa ’90 vs echipa 2000 
+-  Dans liber 
+-  Dance floor open 
+-  Freeze dance 
+-  Statuile muzicale 
+-  Dance roulette 
+-  Dance battle 
+-  Dance battle pe echipe 
+-  Dance-off 10 secunde 
+-  Solo de 10 secunde 
+-  Dans în perechi 
+-  Dans în oglindă 
+-  Follow the leader dance 
+-  Copy the move 
+-  Pasează mișcarea 
+-  Coregrafie colectivă 
+-  Coregrafie în 4 mișcări 
+-  Coregrafie TikTok fără filmare 
+-  Coregrafie TikTok cu filmare 
+-  Just Dance style 
+-  Dans pe decade 
+-  Dans ’70s 
+-  Dans ’80s 
+-  Dans ’90s 
+-  Dans 2000s 
+-  Disco 
+-  Salsa improvizată 
+-  Bachata improvizată 
+-  Twist 
+-  Macarena 
+-  YMCA 
+-  Cha Cha Slide 
+-  Cotton Eye Joe 
+-  Conga line 
+-  Limbo 
+-  Trenuleț 
+-  Dans cu balon 
+-  Dans cu obiect 
+-  Dans cu pălărie 
+-  Dans cu eșarfă 
+-  Dans cu scaunul 
+-  Chair dance light 
+-  Dans fără să miști picioarele 
+-  Dans fără să miști mâinile 
+-  Dans doar cu umerii 
+-  Dans doar cu fața 
+-  Dans în slow motion 
+-  Dans robot 
+-  Dans zombie 
+-  Dans diva 
+-  Dans rockstar 
+-  Dans „mama la nuntă” 
+-  Dans „prima ieșire în club” 
+-  Dans „am 18 ani din nou” 
+-  Dans „tocmai am câștigat la loto” 
+-  Dans „nu mă vede nimeni” 
+-  Dans dramatic 
+-  Dans ridicol intenționat 
+-  Dans cu emoție 
+-  Dans cu personaj 
+-  Dans cu animal 
+-  Dans schimbând personajul 
+-  Dans cu opriri-surpriză 
+-  Dans și schimbă partenerul 
+-  Cerc de dans 
+-  Intră în cerc 5 secunde 
+-  Spotlight roulette 
+-  Dance spotlight 
+-  Dance dare 
+-  Mystery dance card 
+-  Roata dansurilor 
+-  Musical chairs pentru adulți 
+-  Scaune muzicale cu provocări 
+-  Limbo cu provocări 
+-  Balonul nu atinge podeaua 
+-  Keep the balloon up 
+-  Balloon dance 
+-  Balloon relay 
+-  Cup flip challenge 
+-  Flip cup fără alcool 
+-  Cup stacking race 
+-  Ping-pong bounce 
+-  Pong cu apă 
+-  Ring toss 
+-  Beanbag toss 
+-  Sock toss 
+-  Paper plane challenge 
+-  Avion de hârtie: distanță 
+-  Avion de hârtie: precizie 
+-  Aruncă în țintă 
+-  Basket challenge 
+-  Bottle flip 
+-  Coin slide 
+-  Coin toss challenge 
+-  Minute to Win It 
+-  Cookie face challenge 
+-  Mută bila cu paiul 
+-  Transfer cu lingurița 
+-  Turn contra cronometru 
+-  Construiește cel mai înalt turn 
+-  Jenga giant 
+-  Jenga cu provocări 
+-  Twister 
+-  Human knot 
+-  Hula hoop challenge 
+-  Pass the hoop 
+-  Echilibru challenge 
+-  Stai într-un picior 
+-  Provocare de coordonare 
+-  Clap challenge 
+-  Rhythm challenge 
+-  Body percussion 
+-  Beat challenge 
+-  Follow the beat 
+-  Drum circle improvizat 
+-  Percuție cu pahare 
+-  Cup song 
+-  Clap song 
+-  Create the beat 
+-  Battle de ritm 
+-  Air guitar battle 
+-  Air band battle 
+-  Air orchestra 
+-  Formație improvizată 
+-  Concert imaginar 
+-  Eurovision improvizat 
+-  Mini-Eurovision 
+-  Fiecare echipă inventează o piesă 
+-  Imn de grup 
+-  Jingle de grup 
+-  Rap battle light 
+-  Freestyle cu cuvinte date 
+-  Rap pe echipe 
+-  Rime pe beat 
+-  Beatbox challenge 
+-  Musical improv 
+-  Opera absurdă 
+-  Musical despre o situație banală 
+-  Telenovelă cântată 
+-  Dialog doar cântat 
+-  Răspunde doar prin melodii 
+-  Spune numele cuiva cântând 
+-  Compliment cântat 
+-  La mulți ani în 5 stiluri 
+-  Concert la cerere 
+-  Playback superstar 
+-  Red carpet entrance 
+-  Runway battle 
+-  Catwalk battle 
+-  Fashion show improvizat 
+-  Drag queen energy challenge fără costume 
+-  Diva entrance 
+-  Rockstar entrance 
+-  Celebrity entrance 
+-  Paparazzi moment 
+-  Awards night 
+-  Premiile grupului 
+-  Oscar speech 
+-  Grammy speech 
+-  Discurs de câștigător 
+-  Discurs de mulțumire absurd 
+-  Talent show 
+-  Mini „Românii au talent” 
+-  Talent inutil 
+-  Talent inventat 
+-  Talent în perechi 
+-  Juriu și concurenți 
+-  Golden buzzer imaginar 
+-  Stand-up de 30 secunde 
+-  Joke battle 
+-  Storytime battle 
+-  Worst joke wins 
+-  Cringe contest 
+-  Bad dancing contest 
+-  Worst singing wins 
+-  Cea mai dramatică interpretare 
+-  Cea mai exagerată interpretare 
+-  Cea mai proastă coregrafie 
+-  Cea mai bună coregrafie făcută prost 
+-  Cel mai absurd duet 
+-  Cel mai dramatic refren 
+-  Soap opera improv 
+-  Telenovelă improvizată 
+-  Film horror improvizat 
+-  Trailer de film improvizat 
+-  Trailer despre grup 
+-  Trailer despre seara asta 
+-  Reality show improvizat 
+-  Confessional booth fictiv 
+-  Interviu după „eliminare” 
+-  Survivor Becky 
+-  Big Brother light 
+-  Fashion police 
+-  Talent jury 
+-  Roast battle blând 
+-  Compliment battle 
+-  Meme reenactment 
+-  Viral pose challenge 
+-  Emoji reenactment 
+-  Freeze-frame challenge 
+-  Scene recreation 
+-  Movie scene parody 
+-  Music video improvizat 
+-  Filmăm un videoclip de 20 secunde 
+-  One-take music video 
+-  Slow-motion video 
+-  Boomerang pose challenge 
+-  Group transition video 
+-  Before/after dance 
+-  Intrare pe rând în cadru 
+-  Camera pass challenge 
+-  Fake commercial 
+-  Fake perfume ad 
+-  Fake luxury ad 
+-  Fake music video 
+-  Fake news bulletin 
+-  Fake red carpet interview 
+-  Photo booth improvizat 
+-  Prop roulette 
+-  Pose roulette 
+-  Emotion roulette 
+-  Character roulette 
+-  Song roulette 
+-  Dance roulette 
+-  Dare roulette 
+-  Wheel of chaos 
+-  Mystery envelope 
+-  Provocarea secretă 
+-  Provocare la fiecare 10 minute 
+-  Cartonașe „fă-o acum” 
+-  Zarul nebuniei 
+-  Zarul mișcărilor 
+-  Zarul karaoke 
+-  Zarul personajelor 
+-  Roata curajului 
+-  Roata rușinii light 
+-  Roata spectacolelor 
+-  „Alege pe cineva” 
+-  „Alege o melodie” 
+-  „Alege o mișcare” 
+-  „Alege un duet” 
+-  „Alege un personaj” 
+-  „Alege o provocare” 
+-  Echipe trase la sorți 
+-  Girls vs girls 
+-  Masă contra masă 
+-  Prietene vechi vs prietene noi 
+-  Mame vs copii 
+-  Adulți vs copii 
+-  Părinți + copii în echipe 
+-  Mamă + copil duet 
+-  Mamă + copil dance battle 
+-  Family karaoke 
+-  Family lip-sync 
+-  Family talent show 
+-  Family freeze dance 
+-  Family limbo 
+-  Family charades 
+-  Family music quiz 
+-  Family relay 
+-  Generații battle 
+-  Copiii aleg melodia adulților 
+-  Adulții aleg melodia copiilor 
+-  Copiii dau provocări adulților 
+-  Adulții dau provocări copiilor 
+-  Copiii sunt juriul 
+-  Părinții sunt juriul 
+-  Final comun de karaoke 
+-  Final comun de dans 
+-  Dansul întregului grup 
+-  Refrenul întregului grup 
+-  Conga finală 
+-  Poză finală de gașcă 
+-  Video final de gașcă 
+-  „Momentul serii” 
+-  „Provocarea Becky” 
+-  „Becky Dare” 
+-  „5 minute de nebunie” 
+-  „Ora de curaj” 
+-  „Microfonul deschis” 
+-  „Ringul de dans” 
+-  „Spotlight” 
+-  „Scena e a voastră” 
+-  „Challenge de masă” 
+-  „Ruleta serii” 
+-  „Misiunea secretă” 
+-  „Bătălia generațiilor” 
+-  „Mama știe?” 
+-  „Cât de bine ne cunoaștem?” 
+-  „Cine îndrăznește?” 
+-  „Doar 30 de secunde” 
+-  „Nu ai voie să refuzi” 
+-  „Alege-ți victima” 
+-  „Publicul decide” 
+-  „Copiii decid” 
+-  „Prietenii decid” 
+-  „Ultimul care râde” 
+-  „Ultimul care se oprește din dans” 
+-  „Nu rata refrenul” 
+-  „Continuă melodia” 
+-  „Intră în scenă” 
+-  „Fură spotlight-ul” 
+-  „Salvează petrecerea” 
+-  „Ridică masa” 
+-  „Toată lumea în picioare” 
+-  „O singură melodie” 
+-  „Un singur dans” 
+
+
