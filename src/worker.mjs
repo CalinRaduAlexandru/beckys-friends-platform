@@ -6,6 +6,7 @@ import workspaceSeed from '../data/workspaces.json';
 import cupGamesSeed from '../data/cup-games.json';
 import facilitatorToolsSeed from '../data/facilitator-tools.json';
 import parentExperiencesSeed from '../data/parent-experiences.json';
+import parentQuestionPoolsSeed from '../data/parent-question-pools.json';
 
 const ROUTES = new Map([
   ['/', '/coming-soon.html'],
@@ -201,6 +202,66 @@ async function handleActivityObservations(request, env) {
   const id = decodeURIComponent(match[1]); if (request.method === 'DELETE') { await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' }); return json({ ok: true }); }
   if (request.method === 'PATCH') { const body = await readJson(request, 100_000); const currentResponse = await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}&select=${ACTIVITY_OBSERVATION_COLUMNS}`); const current = (await currentResponse.json())[0]; if (!current) return json({ error: 'Testarea nu a fost găsită' }, 404); const item = normalizeActivityObservationInput({ ...current, ...body, id }, current); const response = await supabaseRequest(env, `/rest/v1/admin_activity_observations?id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', headers: { Prefer: 'return=representation' }, body: JSON.stringify(item) }); return json((await response.json())[0]); }
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, PATCH, DELETE' });
+}
+function normalizeParentUsername(value) {
+  const username = String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ');
+  const username_key = username.toLocaleLowerCase('ro-RO');
+  if (!username || username.length > 80) throw Object.assign(new Error('Numele trebuie să aibă între 1 și 80 de caractere.'), { status: 400 });
+  return { username, username_key };
+}
+async function handleParentProgress(request, env) {
+  const url = new URL(request.url);
+  if (request.method === 'GET') {
+    const { username_key } = normalizeParentUsername(url.searchParams.get('username'));
+    const response = await supabaseRequest(env, `/rest/v1/parent_progress_profiles?username_key=eq.${encodeURIComponent(username_key)}&select=username,username_key,progress,updated_at`);
+    return json((await response.json())[0] || { username: null, progress: null });
+  }
+  assertSameOrigin(request);
+  if (request.method === 'PUT') {
+    const body = await readJson(request, 120_000);
+    const { username, username_key } = normalizeParentUsername(body?.username);
+    if (!body?.progress || typeof body.progress !== 'object' || Array.isArray(body.progress)) return json({ error: 'Progres invalid' }, 400);
+    const progress = JSON.stringify(body.progress);
+    if (new TextEncoder().encode(progress).byteLength > 100_000) return json({ error: 'Progresul este prea mare' }, 413);
+    const response = await supabaseRequest(env, '/rest/v1/parent_progress_profiles?on_conflict=username_key', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify({ username, username_key, progress: body.progress }) });
+    return json((await response.json())[0] || { username, username_key, progress: body.progress });
+  }
+  if (request.method === 'DELETE') {
+    const { username_key } = normalizeParentUsername(url.searchParams.get('username'));
+    await supabaseRequest(env, `/rest/v1/parent_progress_profiles?username_key=eq.${encodeURIComponent(username_key)}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, PUT, DELETE' });
+}
+async function handleParentFeedback(request, env) {
+  const url = new URL(request.url);
+  if (request.method === 'POST') {
+    assertSameOrigin(request);
+    const body = await readJson(request, 20_000);
+    const session_id = String(body?.session_id || '').trim();
+    const activity_id = String(body?.activity_id || '').trim();
+    const question_text = String(body?.question_text || '').trim();
+    const question_index = Number(body?.question_index);
+    const rating = Number(body?.rating);
+    const group_size = body?.group_size === 'large' ? 'large' : 'small';
+    if (!session_id || !activity_id || !question_text || !Number.isInteger(question_index) || question_index < 0 || !Number.isInteger(rating) || rating < 1 || rating > 5) return json({ error: 'Feedback invalid' }, 400);
+    const response = await supabaseRequest(env, '/rest/v1/parent_question_feedback', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ session_id, activity_id, question_index, question_text, rating, group_size }) });
+    return json((await response.json())[0] || { session_id, activity_id, question_index, question_text, rating, group_size }, 201);
+  }
+  if (request.method === 'GET') {
+    const response = await supabaseRequest(env, '/rest/v1/parent_question_feedback?select=id,session_id,activity_id,question_index,question_text,rating,group_size,created_at&order=created_at.desc&limit=10000');
+    const feedback = await response.json();
+    const rows = Array.isArray(feedback) ? feedback : [];
+    const byQuestion = new Map();
+    for (const row of rows) {
+      const key = `${row.activity_id}:${row.question_index}`;
+      const current = byQuestion.get(key) || { activity_id: row.activity_id, question_index: row.question_index, question_text: row.question_text, ratings: [0, 0, 0, 0, 0], total: 0, sum: 0 };
+      current.ratings[row.rating - 1] += 1; current.total += 1; current.sum += row.rating; byQuestion.set(key, current);
+    }
+    const questions = [...byQuestion.values()].map(row => ({ ...row, average: row.total ? Number((row.sum / row.total).toFixed(2)) : 0 })).sort((a, b) => b.total - a.total || a.activity_id.localeCompare(b.activity_id));
+    return json({ feedback: rows, questions, totals: { ratings: rows.length, sessions: new Set(rows.map(row => row.session_id)).size, average: rows.length ? Number((rows.reduce((sum, row) => sum + row.rating, 0) / rows.length).toFixed(2)) : 0 } });
+  }
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST' });
 }
 async function handleExperienceRepertoire(request, env) {
   await requireAdmin(request, env); const url = new URL(request.url);
@@ -625,14 +686,19 @@ function crmCompanionSummary(companion, {children,visits,child_companions}) { co
 const CALENDAR_COLUMNS = 'id,title,type,date,start_time,end_time,note,created_at,updated_at';
 const CALENDAR_TYPES = new Set(['open', 'event', 'private', 'closed']);
 
+function normalizeCalendarTime(value) {
+  const match = String(value || '').trim().match(/^(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/);
+  return match ? `${match[1]}:${match[2]}` : '';
+}
+
 function normalizeCalendarEntryInput(input, existing = {}) {
   const entry = {
     id: String(input?.id ?? existing.id ?? '').trim(),
     title: String(input?.title ?? existing.title ?? '').trim(),
     type: String(input?.type ?? existing.type ?? '').trim(),
     date: String(input?.date ?? existing.date ?? '').trim(),
-    start_time: String(input?.start_time ?? existing.start_time ?? '').trim(),
-    end_time: String(input?.end_time ?? existing.end_time ?? '').trim(),
+    start_time: normalizeCalendarTime(input?.start_time ?? existing.start_time),
+    end_time: normalizeCalendarTime(input?.end_time ?? existing.end_time),
     note: String(input?.note ?? existing.note ?? '').trim(),
     ...(input?.created_at ? { created_at: input.created_at } : {}),
     updated_at: new Date().toISOString()
@@ -665,7 +731,7 @@ async function handleAdminCalendar(request, env) {
     const existing = await existingResponse.json();
     if (existing.length) await supabaseRequest(env, `/rest/v1/calendar_becky_entries?id=in.(${existing.map(entry => encodeURIComponent(entry.id)).join(',')})`, { method: 'DELETE' });
     if (!entries.length) return json({ entries: [] });
-    const response = await supabaseRequest(env, '/rest/v1/calendar_becky_entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(entries) });
+    const response = await supabaseRequest(env, '/rest/v1/calendar_becky_entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(entries) });
     const rows = await response.json();
     rows.sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`));
     return json({ entries: rows });
@@ -755,7 +821,9 @@ async function handleFacilitatorPlaylists(request, env) {
 
 async function handleParentExperiences(request) {
   if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405, { Allow: 'GET' });
-  return json({ surface: 'parents', experiences: parentExperiencesSeed });
+  const musicTracks = (facilitatorToolsSeed.musicTracks || []).filter(track => track.audience === 'adulti' && ['Dans', 'Energie'].includes(track.mood));
+  const experiences = parentExperiencesSeed.map(item => item.questionPoolId && parentQuestionPoolsSeed[item.questionPoolId] ? { ...item, questionPool: parentQuestionPoolsSeed[item.questionPoolId] } : item);
+  return json({ surface: 'parents', experiences, musicTracks });
 }
 
 async function saveDocument(env, key, payload, userId) {
@@ -1250,11 +1318,12 @@ async function handleTextToSpeech(request, env) {
   const body = await readJson(request, 4_000);
   const text = typeof body?.text === 'string' ? body.text.trim() : '';
   if (!text || text.length > 500) return json({ error: 'Text invalid' }, 400);
-  const voiceId = env.ELEVENLABS_VOICE_ID || 'cgSgspJ2msm6clMCkdW9';
+  const parentContext = body?.context === 'parents';
+  const voiceId = parentContext ? (env.ELEVENLABS_PARENT_VOICE_ID || 'RjgBjNgGkuZd49zyCxIq') : (env.ELEVENLABS_VOICE_ID || 'cgSgspJ2msm6clMCkdW9');
   const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`, {
     method: 'POST',
     headers: { 'xi-api-key': env.ELEVENLABS_API_KEY, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
-    body: JSON.stringify({ text, model_id: env.ELEVENLABS_MODEL_ID || 'eleven_v3', language_code: 'ro', voice_settings: { stability: 0.62, similarity_boost: 0.88, style: 0.24, use_speaker_boost: true }, output_format: 'mp3_44100_128' })
+    body: JSON.stringify({ text, model_id: parentContext ? 'eleven_multilingual_v2' : (env.ELEVENLABS_MODEL_ID || 'eleven_v3'), language_code: 'ro', voice_settings: parentContext ? { stability: 0.78, similarity_boost: 0.78, style: 0, use_speaker_boost: false } : { stability: 0.62, similarity_boost: 0.88, style: 0.24, use_speaker_boost: true }, output_format: 'mp3_44100_128' })
   });
   if (!response.ok) {
     console.error('ElevenLabs TTS failed', response.status, (await response.text()).slice(0, 500));
@@ -1294,6 +1363,8 @@ async function handleApi(request, env, pathname) {
   if (pathname === '/api/facilitator/library') return handleFacilitatorLibrary(request, env);
   if (pathname === '/api/facilitator/playlists') return handleFacilitatorPlaylists(request, env);
   if (pathname === '/api/parents/experiences') return handleParentExperiences(request);
+  if (pathname === '/api/parents/progress') return handleParentProgress(request, env);
+  if (pathname === '/api/parents/feedback' || pathname === '/api/admin/parents-feedback') return handleParentFeedback(request, env);
   if (pathname === '/api/calendar') return handlePublicCalendar(request, env);
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);
   if (pathname === '/api/admin/becky-memory/analyze' || pathname === '/api/admin/becky-memory/signals' || pathname.startsWith('/api/admin/becky-memory/signals/') || pathname === '/api/admin/becky-memory/attention' || pathname.startsWith('/api/admin/becky-memory/attention/')) return handleBeckyMemory(request, env);
@@ -1343,6 +1414,11 @@ async function handleAsset(request, env, pathname) {
   return response;
 }
 
+async function runSupabaseKeepalive(env) {
+  await supabaseRequest(env, '/rest/v1/calendar_becky_entries?select=id&limit=1');
+  console.log('Supabase keepalive completed');
+}
+
 export default {
   async fetch(request, env) {
     try {
@@ -1356,5 +1432,11 @@ export default {
       if (!error.status || error.status >= 500) console.error(error);
       return json({ error: error.message || 'Unexpected error' }, error.status || 500);
     }
+  },
+  scheduled(_controller, env, ctx) {
+    ctx.waitUntil(runSupabaseKeepalive(env).catch(error => {
+      console.error('Supabase keepalive failed', error);
+      throw error;
+    }));
   }
 };

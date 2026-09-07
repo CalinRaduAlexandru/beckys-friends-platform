@@ -1,0 +1,16 @@
+{
+  "id": "/parinti",
+  "name": "Becky’s Garden · Timp pentru voi",
+  "short_name": "Becky’s Garden",
+  "description": "Activități pentru timpul petrecut împreună.",
+  "lang": "ro",
+  "start_url": "/parinti?tv=1",
+  "scope": "/parinti",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#f6efe5",
+  "theme_color": "#263746",
+  "icons": [
+    { "src": "/assets/logo_sun_square.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

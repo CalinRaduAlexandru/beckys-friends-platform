@@ -13,6 +13,8 @@ const USING_DEFAULT_WORKSPACES_FILE = !process.env.BECKY_WORKSPACES_FILE;
 const CUP_GAMES_FILE = path.join(ROOT, 'data', 'cup-games.json');
 const FACILITATOR_TOOLS_FILE = path.join(ROOT, 'data', 'facilitator-tools.json');
 const PARENT_EXPERIENCES_FILE = path.join(ROOT, 'data', 'parent-experiences.json');
+const PARENT_QUESTION_POOLS_FILE = path.join(ROOT, 'data', 'parent-question-pools.json');
+const PARENT_PROGRESS_FILE = process.env.BECKY_PARENT_PROGRESS_FILE || path.join(ROOT, 'data', 'parent-progress.local.json');
 const FACILITATOR_ACCESS_CODE = process.env.BECKY_FACILITATOR_CODE || 'becky2026';
 const EVENT_SURVEY_FILE = path.join(ROOT, 'data', 'event-survey-responses.json');
 const EVENT_FUNNEL_FILE = path.join(ROOT, 'data', 'event-survey-funnel-events.json');
@@ -305,6 +307,36 @@ function send(res, status, body, type = 'application/json; charset=utf-8') {
   res.end(shouldSerialize ? JSON.stringify(body) : body);
 }
 
+function normalizeParentUsername(value) {
+  const username = String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ');
+  if (!username || username.length > 80) throw Object.assign(new Error('Numele trebuie să aibă între 1 și 80 de caractere.'), { status: 400 });
+  return { username, username_key: username.toLocaleLowerCase('ro-RO') };
+}
+function readParentProgressStore() {
+  try { return fs.existsSync(PARENT_PROGRESS_FILE) ? JSON.parse(fs.readFileSync(PARENT_PROGRESS_FILE, 'utf8')) : {}; } catch { throw Object.assign(new Error('Progresul local nu este disponibil.'), { status: 500 }); }
+}
+function writeParentProgressStore(store) {
+  fs.mkdirSync(path.dirname(PARENT_PROGRESS_FILE), { recursive: true });
+  fs.writeFileSync(PARENT_PROGRESS_FILE, JSON.stringify(store, null, 2));
+}
+async function handleParentProgressLocal(req, res, url) {
+  if (req.method === 'GET') {
+    const { username_key } = normalizeParentUsername(url.searchParams.get('username'));
+    const row = readParentProgressStore()[username_key];
+    return send(res, 200, row || { username: null, progress: null });
+  }
+  const store = readParentProgressStore();
+  if (req.method === 'DELETE') { const { username_key } = normalizeParentUsername(url.searchParams.get('username')); delete store[username_key]; writeParentProgressStore(store); return send(res, 200, { ok: true }); }
+  if (req.method === 'PUT') {
+    const body = await readRequestJsonAsync(req, 120_000);
+    const { username, username_key } = normalizeParentUsername(body?.username);
+    if (!body?.progress || typeof body.progress !== 'object' || Array.isArray(body.progress)) return send(res, 400, { error: 'Progres invalid' });
+    const row = { username, username_key, progress: body.progress, updated_at: new Date().toISOString() };
+    store[username_key] = row; writeParentProgressStore(store); return send(res, 200, row);
+  }
+  return send(res, 405, { error: 'Method not allowed' });
+}
+
 function readArrayFile(file) {
   if (!fs.existsSync(file)) return [];
   const value = JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -360,13 +392,18 @@ function writeCalendarEntries(entries) {
   fs.writeFileSync(ADMIN_CALENDAR_FILE, JSON.stringify(entries, null, 2));
 }
 
+function normalizeCalendarTime(value) {
+  const match = String(value || '').trim().match(/^(\d{2}):(\d{2})(?::\d{2}(?:\.\d+)?)?$/);
+  return match ? `${match[1]}:${match[2]}` : '';
+}
+
 function normalizeCalendarEntry(input, existing = {}) {
   const id = String(input?.id ?? existing.id ?? crypto.randomUUID()).trim();
   const title = String(input?.title ?? existing.title ?? '').trim();
   const type = String(input?.type ?? existing.type ?? '').trim();
   const date = String(input?.date ?? existing.date ?? '').trim();
-  const startTime = String(input?.start_time ?? existing.start_time ?? '').trim();
-  const endTime = String(input?.end_time ?? existing.end_time ?? '').trim();
+  const startTime = normalizeCalendarTime(input?.start_time ?? existing.start_time);
+  const endTime = normalizeCalendarTime(input?.end_time ?? existing.end_time);
   const note = String(input?.note ?? existing.note ?? '').trim();
   const hideOpenIntervals = Boolean(input?.hide_open_intervals ?? existing.hide_open_intervals ?? false);
   const hidePrivateTimes = Boolean(input?.hide_private_times ?? existing.hide_private_times ?? false);
@@ -1417,8 +1454,14 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'GET' && url.pathname === '/api/parents/experiences') {
     try {
       const experiences = JSON.parse(fs.readFileSync(PARENT_EXPERIENCES_FILE, 'utf8'));
-      return send(res, 200, { surface: 'parents', experiences });
+      const questionPools = JSON.parse(fs.readFileSync(PARENT_QUESTION_POOLS_FILE, 'utf8'));
+      const facilitatorTools = JSON.parse(fs.readFileSync(FACILITATOR_TOOLS_FILE, 'utf8'));
+      const musicTracks = (facilitatorTools.musicTracks || []).filter(track => track.audience === 'adulti' && ['Dans', 'Energie'].includes(track.mood));
+      return send(res, 200, { surface: 'parents', experiences: experiences.map(item => item.questionPoolId && questionPools[item.questionPoolId] ? { ...item, questionPool: questionPools[item.questionPoolId] } : item), musicTracks });
     } catch { return send(res, 500, { error: 'Experiențele pentru părinți nu sunt disponibile' }); }
+  }
+  if (url.pathname === '/api/parents/progress') {
+    try { return await handleParentProgressLocal(req, res, url); } catch (error) { return send(res, error.status || 500, { error: error.message || 'Progresul nu este disponibil' }); }
   }
   if (req.method === 'POST' && url.pathname === '/api/tts') {
     let raw = '';
@@ -1433,15 +1476,16 @@ const server = http.createServer(async (req, res) => {
         const body = JSON.parse(raw);
         const text = typeof body?.text === 'string' ? body.text.trim() : '';
         if (!text || text.length > 500) return send(res, 400, { error: 'Text invalid' });
-        const voiceId = localSecret('ELEVENLABS_VOICE_ID') || 'kzOjSddNpacn5uKPKxDC';
+        const parentContext = body?.context === 'parents';
+        const voiceId = parentContext ? (localSecret('ELEVENLABS_PARENT_VOICE_ID') || 'RjgBjNgGkuZd49zyCxIq') : (localSecret('ELEVENLABS_VOICE_ID') || 'kzOjSddNpacn5uKPKxDC');
         const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`, {
           method: 'POST',
           headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json', Accept: 'audio/mpeg' },
           body: JSON.stringify({
             text,
-            model_id: localSecret('ELEVENLABS_MODEL_ID') || 'eleven_v3',
+            model_id: parentContext ? 'eleven_multilingual_v2' : (localSecret('ELEVENLABS_MODEL_ID') || 'eleven_v3'),
             language_code: 'ro',
-            voice_settings: { stability: 0.62, similarity_boost: 0.88, style: 0.24, use_speaker_boost: true },
+            voice_settings: parentContext ? { stability: 0.78, similarity_boost: 0.78, style: 0, use_speaker_boost: false } : { stability: 0.62, similarity_boost: 0.88, style: 0.24, use_speaker_boost: true },
             output_format: 'mp3_44100_128'
           })
         });

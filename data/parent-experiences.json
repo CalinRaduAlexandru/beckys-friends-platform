@@ -1,15 +1,44 @@
 [
   {
-    "id": "intrebarea-serii",
-    "title": "Întrebarea serii",
+    "id": "intrebari-profunde",
+    "title": "Întrebări profunde",
     "category": "Conversație",
+    "duration": "10–15 min",
+    "participants": "2+ adulți",
+    "groupSizes": ["small"],
+    "energy": "calm",
+    "questionPoolId": "intrebari-profunde",
+    "prompt": "Alegeți o întrebare care vă face curioși și răspundeți fără grabă. Nu trebuie să găsiți răspunsul perfect — doar unul sincer.",
+    "steps": ["Alegeți o întrebare.", "Răspunde fiecare, pe rând.", "Puneți o singură întrebare de continuare, doar dacă persoana vrea să continue."],
+    "optionalChildVariation": "Copiii pot răspunde cu propria lor zi preferată, dacă vor.",
+    "tags": ["conversație", "fără mișcare", "profund"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/questions.webp"
+  },
+  {
+    "id": "intrebari-amuzante",
+    "title": "Întrebări amuzante",
+    "category": "Râs și conversație",
     "duration": "5–10 min",
     "participants": "2+ adulți",
-    "energy": "calm",
-    "prompt": "Dacă ai putea retrăi o singură zi frumoasă din viața ta, pe care ai alege-o și de ce?",
-    "steps": ["Citiți întrebarea cu voce tare.", "Răspunde fiecare, pe rând.", "Puneți o singură întrebare de continuare."],
-    "optionalChildVariation": "Copiii pot răspunde cu propria lor zi preferată, dacă vor.",
-    "tags": ["conversație", "fără mișcare"]
+    "groupSizes": ["small"],
+    "energy": "râs",
+    "prompt": "Răspundeți rapid la întrebări absurde sau neașteptate și explicați alegerea doar dacă vă vine să o faceți.",
+    "questionSets": [
+      [{"id":"fun-01-safe","tier":"safe","text":"Ce lucru simplu faci surprinzător de prost?"},{"id":"fun-01-medium","tier":"medium","text":"Ce tehnologie ți se părea incredibil de modernă când a apărut, iar acum pare antică?"},{"id":"fun-01-wildcard","tier":"wildcard","text":"Ce situație care te-a enervat sau stresat atunci a devenit între timp o poveste de care râzi?"}],
+      [{"id":"fun-02-safe","tier":"safe","text":"Ce lucru mic îți poate îmbunătăți instantaneu dispoziția?"},{"id":"fun-02-medium","tier":"medium","text":"Ce lucru credeai că vei ști automat să faci când vei deveni adult?"},{"id":"fun-02-wildcard","tier":"wildcard","text":"Ce lucru ai cumpărat sau comandat doar din curiozitate și s-a dovedit o alegere foarte bună?"}],
+      [{"id":"fun-03-safe","tier":"safe","text":"Ce mâncare foarte populară nu-ți place deloc sau nu înțelegi de ce place atât de mult altora?"},{"id":"fun-03-medium","tier":"medium","text":"Ce expresie te-ai surprins spunând și te-ai gândit: «Am ajuns la vârsta aia»?"},{"id":"fun-03-wildcard","tier":"wildcard","text":"Ce lucru care îți plăcea enorm în copilărie ai încercat din nou ca adult și ai descoperit că nu mai e deloc la fel?"}],
+      [{"id":"fun-04-safe","tier":"safe","text":"Ce lucru te enervează mult mai tare decât ar justifica situația?"},{"id":"fun-04-medium","tier":"medium","text":"Ce lucru banal de azi ți s-ar fi părut incredibil dacă îl aveai când erai copil?"},{"id":"fun-04-wildcard","tier":"wildcard","text":"Ce lucru ai încercat doar pentru că te-a convins cineva și apoi a trebuit să recunoști că avea dreptate?"}],
+      [{"id":"fun-05-safe","tier":"safe","text":"Ce lucru ai cumpărat crezând că îl vei folosi mult și acum stă mai mult degeaba?"},{"id":"fun-05-medium","tier":"medium","text":"Ce lucru din copilărie ți se părea un adevărat lux?"},{"id":"fun-05-wildcard","tier":"wildcard","text":"Ce idee care părea proastă la început s-a dovedit surprinzător de bună?"}],
+      [{"id":"fun-06-safe","tier":"safe","text":"Ce lucru îți plăcea foarte mult când erai copil și încă îți place?"},{"id":"fun-06-medium","tier":"medium","text":"Ce lucru ai învățat mult mai târziu decât ai vrea să recunoști?"},{"id":"fun-06-wildcard","tier":"wildcard","text":"În ce loc ai ajuns fără mari așteptări și ai fost surprins de cât de mult ți-a plăcut?"}],
+      [{"id":"fun-07-safe","tier":"safe","text":"Ce lucru faci într-un anumit fel și te deranjează puțin când vezi că altcineva îl face «greșit»?"},{"id":"fun-07-medium","tier":"medium","text":"Ce lucru te bucură acum mult mai mult decât te-ar fi bucurat la 20 de ani?"},{"id":"fun-07-wildcard","tier":"wildcard","text":"Ce lucru ai făcut o dată și ai știut imediat: «Nu mai fac asta»?"}],
+      [{"id":"fun-08-safe","tier":"safe","text":"Ce lucru foarte banal îți dă o satisfacție surprinzător de mare?"},{"id":"fun-08-medium","tier":"medium","text":"Ce lucru din copilărie ar trebui să-i explici unui copil de azi ce era și cum funcționa?"},{"id":"fun-08-wildcard","tier":"wildcard","text":"Ce melodie, reclamă sau replică veche îți vine și acum în minte din senin?"}],
+      [{"id":"fun-09-safe","tier":"safe","text":"Ce lucru care ți se părea plictisitor când erai mai tânăr îți place acum?"},{"id":"fun-09-medium","tier":"medium","text":"Ce regulă de bun-simț crezi că ar trebui să respecte toată lumea, chiar dacă nu e scrisă nicăieri?"},{"id":"fun-09-wildcard","tier":"wildcard","text":"Ce lucru ai visat să poți face «când vei fi mare», iar ca adult ai descoperit că nu e mare lucru?"}],
+      [{"id":"fun-10-safe","tier":"safe","text":"Ce lucru alegi acum pentru confort, chiar dacă în trecut ai fi ales ceva mai cool?"},{"id":"fun-10-medium","tier":"medium","text":"Ce lucru ai refuzat mult timp să încerci, iar după ce l-ai încercat ți-a plăcut?"},{"id":"fun-10-wildcard","tier":"wildcard","text":"Ce lucru îi spui copilului atât de des încât ai putea să-l înregistrezi și să apeși Play?"}]
+    ],
+    "steps": ["Alegeți o întrebare și răspundeți în maximum 10 secunde.", "Fiecare poate cere o explicație sau poate adăuga propria variantă.", "Continuați până când conversația curge singură."],
+    "optionalChildVariation": "Copiii pot inventa întrebări și pot vota răspunsul cel mai neașteptat.",
+    "tags": ["râs", "conversație", "fără mișcare"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/question_that_makes_you_laugh.webp"
   },
   {
     "id": "doua-adevaruri-o-minciuna",
@@ -17,11 +46,363 @@
     "category": "Ghicește",
     "duration": "10 min",
     "participants": "3+ adulți",
+    "groupSizes": ["small"],
     "energy": "râs",
     "prompt": "Spuneți trei lucruri despre voi: două adevărate și unul inventat. Ceilalți ghicesc minciuna.",
     "steps": ["Fiecare își pregătește trei afirmații.", "Citiți-le fără să dați indicii.", "Votați și apoi dezvăluiți răspunsul."],
     "optionalChildVariation": "Copiii pot participa doar dacă grupul îi invită.",
-    "tags": ["râs", "grup"]
+    "tags": ["râs", "grup"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/two_truths_and_a_lie.webp"
+  },
+  {
+    "id": "reproduceti-sunetul",
+    "title": "Reproduceți sunetul",
+    "category": "Ghicește",
+    "duration": "5–10 min",
+    "participants": "2+ adulți",
+    "groupSizes": ["small", "large"],
+    "energy": "râs",
+    "prompt": "Gândiți-vă la un obiect, un animal sau o situație și reproduceți sunetul fără cuvinte. Ceilalți încearcă să ghicească.",
+    "steps": ["Alegeți în secret ce sunet veți reproduce.", "Reproduceți-l cât mai convingător, fără să vorbiți.", "Cine ghicește primul alege următorul sunet."],
+    "optionalChildVariation": "Copiii pot propune sunetele sau pot face echipă cu un adult.",
+    "tags": ["râs", "ghicit", "fără mișcare"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/vocal_commands.webp"
+  },
+  {
+    "id": "recunoaste-ti-animalul",
+    "title": "Recunoaște animalul",
+    "category": "Sunet și ghicit",
+    "duration": "5 min",
+    "participants": "2+ adulți",
+    "groupSizes": ["small", "large"],
+    "energy": "râs",
+    "prompt": "Ascultați sunetul și ghiciți pe rând ce animal ar putea fi. Când sunteți gata, întoarceți cardul.",
+    "steps": ["Ascultați sunetul.", "Ghiciți fiecare, pe rând.", "Atingeți cardul ca să vedeți răspunsul."],
+    "optionalChildVariation": "Copiii pot imita sunetul sau pot ghici împreună cu adulții.",
+    "tags": ["râs", "ghicit", "sunet"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/recunoaste_animalul.webp",
+    "animalSound": "/assets/mp3s/Effects/freesound_community-075176_duck-quack-40345.mp3",
+    "revealLabel": "Rață",
+    "revealImage": "/assets/duck.png",
+    "animalRounds": [
+      {"sound": "/assets/mp3s/Effects/animale/aligator.mp3", "label": "Aligator", "emoji": "🐊", "type": "reptilă", "habitat": "apă dulce și zone mlăștinoase", "climate": "zonă caldă", "options": [{"label": "Cămilă", "emoji": "🐪"}, {"label": "Hipopotam", "emoji": "🦛"}]},
+      {"sound": "/assets/mp3s/Effects/animale/arici.mp3", "label": "Arici", "emoji": "🦔", "type": "mamifer", "habitat": "uscat", "climate": "climă temperată"},
+      {"sound": "/assets/mp3s/Effects/animale/camila.mp3", "label": "Cămilă", "emoji": "🐪", "type": "mamifer", "habitat": "deșert", "climate": "zonă foarte caldă și uscată"},
+      {"sound": "/assets/mp3s/Effects/animale/cangur.mp3", "label": "Cangur", "emoji": "🦘", "type": "mamifer", "habitat": "uscat", "climate": "climă caldă"},
+      {"sound": "/assets/mp3s/Effects/animale/caprioară.mp3", "label": "Căprioară", "emoji": "🦌", "type": "mamifer", "habitat": "pădure și poieni", "climate": "climă temperată"},
+      {"sound": "/assets/mp3s/Effects/animale/flamingo.mp3", "label": "Flamingo", "emoji": "🦩", "type": "pasăre", "habitat": "lacuri și lagune", "climate": "zonă caldă"}
+    ],
+    "animalRoundsReserve": [
+      {"sound": "/assets/mp3s/Effects/animale/gâscă.mp3", "label": "Gâscă", "emoji": "🪿", "type": "pasăre", "habitat": "lacuri și ferme", "climate": "climă temperată"},
+      {"sound": "/assets/mp3s/Effects/animale/girafa.mp3", "label": "Girafă", "emoji": "🦒", "type": "mamifer", "habitat": "savană", "climate": "zonă caldă"},
+      {"sound": "/assets/mp3s/Effects/animale/hipopotam.mp3", "label": "Hipopotam", "emoji": "🦛", "type": "mamifer", "habitat": "râuri și lacuri", "climate": "zonă caldă"},
+      {"sound": "/assets/mp3s/Effects/animale/iepure.mp3", "label": "Iepure", "emoji": "🐇", "type": "mamifer", "habitat": "câmp și pădure", "climate": "climă temperată", "options": [{"label": "Veveriță", "emoji": "🐿️"}, {"label": "Șoarece", "emoji": "🐭"}]},
+      {"sound": "/assets/mp3s/Effects/animale/lebada.mp3", "label": "Lebădă", "emoji": "🦢", "type": "pasăre", "habitat": "lacuri și râuri", "climate": "climă temperată"},
+      {"sound": "/assets/mp3s/Effects/animale/panda.mp3", "label": "Panda", "emoji": "🐼", "type": "mamifer", "habitat": "pădure de bambus", "climate": "climă răcoroasă"},
+      {"sound": "/assets/mp3s/Effects/animale/piguin.mp3", "label": "Pinguin", "emoji": "🐧", "type": "pasăre", "habitat": "coastă și ocean", "climate": "zonă rece"},
+      {"sound": "/assets/mp3s/Effects/animale/raton.mp3", "label": "Raton", "emoji": "🦝", "type": "mamifer", "habitat": "pădure și oraș", "climate": "climă temperată"},
+      {"sound": "/assets/mp3s/Effects/animale/rinocer.mp3", "label": "Rinocer", "emoji": "🦏", "type": "mamifer", "habitat": "savană", "climate": "zonă caldă"},
+      {"sound": "/assets/mp3s/Effects/animale/strut.mp3", "label": "Struț", "image": "/assets/Iconuri/strut.png", "type": "pasăre", "habitat": "savană", "climate": "zonă caldă și uscată"},
+      {"sound": "/assets/mp3s/Effects/animale/urs_brun.mp3", "label": "Urs brun", "emoji": "🐻", "type": "mamifer", "habitat": "pădure și munte", "climate": "climă temperată sau rece", "options": [{"label": "Crocodil", "emoji": "🐊"}, {"label": "Leu", "emoji": "🦁"}]},
+      {"sound": "/assets/mp3s/Effects/animale/veverita.mp3", "label": "Veveriță", "emoji": "🐿️", "type": "mamifer", "habitat": "pădure", "climate": "climă temperată"},
+      {"sound": "/assets/mp3s/Effects/animale/vulpe.mp3", "label": "Vulpe", "emoji": "🦊", "type": "mamifer", "habitat": "pădure și câmp", "climate": "climă temperată", "options": [{"label": "Pisică", "emoji": "🐱"}, {"label": "Câine", "emoji": "🐶"}]}
+    ]
+  },
+  {
+    "id": "ai-prefera",
+    "title": "Ce ai prefera...?",
+    "category": "Conversație",
+    "duration": "5–10 min",
+    "participants": "2+ adulți",
+    "groupSizes": ["small", "large"],
+    "energy": "calm",
+    "prompt": "Alegeți rapid între două variante și spuneți povestea din spatele alegerii, doar dacă aveți chef.",
+    "questions": ["Ai prefera să ai o zi liberă în plus în fiecare săptămână sau două luni consecutive de vacanță pe an?", "Ai prefera să locuiești într-o casă mică într-un loc extraordinar sau într-o casă extraordinară într-un loc banal?", "Ai prefera să ai în fiecare zi micul dejun perfect sau cina perfectă?", "Ai prefera să fii excelent la a spune povești sau la a spune glume?", "Ai prefera să ai o cafenea excelentă la parterul blocului sau un parc superb chiar peste drum?", "Ai prefera să vizitezi 10 locuri noi pentru puțin timp sau să petreci o lună întreagă într-un singur loc extraordinar?", "Ai prefera o vacanță în care totul este planificat perfect dinainte sau una în care nu știi dimineața ce vei face până seara?", "Ai prefera să fii cunoscut drept omul care știe mereu ce trebuie făcut sau omul care face orice situație mai plăcută?", "Ai prefera să petreci timpul cu oameni care te fac mereu să râzi sau cu oameni care te fac mereu să gândești?", "Ai prefera să fii de obicei cel mai calm om din încăpere sau cel mai entuziast?", "Ai prefera să fii foarte bun la a observa detaliile sau la a vedea imaginea de ansamblu?", "Ai prefera să ai mai multă răbdare sau mai multă spontaneitate?", "Ai prefera să poți retrăi o zi foarte frumoasă din trecut sau să poți vedea o zi obișnuită din viața ta peste 20 de ani?", "Ai prefera să păstrezi pentru totdeauna energia pe care o aveai la 30 de ani sau să ai acum experiența și înțelepciunea pe care le vei avea la 70?", "Ai prefera să poți învăța instantaneu o limbă străină sau să poți cânta instantaneu la un instrument muzical?", "Ai prefera să poți vedea cum ar fi fost viața ta dacă luai altă decizie sau să nu te mai întrebi niciodată «ce-ar fi fost dacă?»?", "Ai prefera să fii excelent la ceva care te relaxează sau la ceva care te provoacă și te scoate din zona de confort?", "Ai prefera o viață cu multe aventuri și povești bune de spus sau una cu multă liniște și confort?", "Ai prefera să ai o hartă care îți arată mereu cel mai frumos loc din apropiere sau una care îți arată cea mai bună mâncare din apropiere?", "Ai prefera să bei pentru totdeauna cafeaua puțin prea rece sau apa puțin prea caldă?", "Ai prefera să porți mereu șosete puțin umede sau să dormi mereu cu o firimitură în pat?", "Ai prefera să nu mai poți asculta niciodată muzică sau să nu mai poți vedea niciodată filme și seriale?", "Ai prefera să ai pentru tot restul vieții vacanțe extraordinare, dar o casă obișnuită sau casa visurilor tale, dar vacanțe obișnuite?", "Ai prefera să știi dinainte care vor fi cele mai frumoase 10 zile din următorii 10 ani sau să nu știi nimic și să te surprindă atunci când vin?"],
+    "steps": ["Alegeți întrebarea.", "Răspundeți rapid, pe rând.", "Cine vrea poate explica alegerea."],
+    "optionalChildVariation": "Copiii pot inventa următoarea dilemă.",
+    "tags": ["conversație", "fără mișcare"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/would_you_rather.webp"
+  },
+  {
+    "id": "ce-avem-in-comun",
+    "title": "Ce avem în comun?",
+    "category": "Conectare",
+    "duration": "5–10 min",
+    "participants": "3+ adulți",
+    "energy": "calm",
+    "prompt": "Descoperiți cât mai multe lucruri pe care le aveți în comun, de la preferințe mici la experiențe neașteptate.",
+    "steps": ["Alegeți o categorie: mâncare, călătorii, obiceiuri sau amintiri.", "Spuneți pe rând câte un lucru și vedeți cine se regăsește.", "Păstrați cele mai surprinzătoare trei potriviri."],
+    "optionalChildVariation": "Copiii pot alege categoria.",
+    "tags": ["conectare", "conversație"],
+    "cardIcon": "🧩"
+  },
+  {
+    "id": "ghiceste-melodia",
+    "title": "Ghicește melodia",
+    "category": "Muzică și ghicit",
+    "duration": "5–10 min",
+    "participants": "2+ adulți",
+    "energy": "râs",
+    "prompt": "Fredonați, bateți ritmul sau spuneți o singură replică dintr-o melodie. Ceilalți încearcă să o recunoască.",
+    "steps": ["Alegeți o melodie pe care o știu și ceilalți.", "Dați un singur indiciu muzical, fără să spuneți titlul.", "Cine ghicește primul alege următoarea melodie."],
+    "optionalChildVariation": "Copiii pot fredona sau pot alege melodia.",
+    "tags": ["muzică", "ghicit", "râs"],
+    "cardIcon": "🎵"
+  },
+  {
+    "id": "compliment-anonim",
+    "title": "Compliment anonim",
+    "category": "Conectare",
+    "duration": "5 min",
+    "participants": "3+ adulți",
+    "energy": "calm",
+    "prompt": "Scrieți câte un compliment sincer pentru cineva din grup, fără să semnați. Citiți-le și ghiciți cui i se potrivesc.",
+    "steps": ["Fiecare scrie un compliment.", "Amestecați bilețelele și citiți-le pe rând.", "Persoana care se recunoaște îl păstrează."],
+    "optionalChildVariation": "Copiii pot desena complimentul.",
+    "tags": ["conectare", "la masă"],
+    "cardIcon": "💌"
+  },
+  {
+    "id": "mini-quiz-general",
+    "title": "Mini-quiz general",
+    "category": "Quiz",
+    "duration": "5–10 min",
+    "participants": "2+ adulți",
+    "groupSizes": ["small", "large"],
+    "energy": "râs",
+    "prompt": "Puneți-vă întrebări scurte din domenii diferite și răspundeți înainte să vă răzgândiți.",
+    "steps": ["Alegeți o temă sau amestecați întrebările.", "Răspundeți fără să căutați pe telefon.", "Păstrați scorul doar dacă vă face plăcere."],
+    "optionalChildVariation": "Copiii pot pune întrebări despre animale, natură sau desene animate.",
+    "tags": ["quiz", "râs", "grup"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/mini-quiz.webp",
+    "quizAudiences": {
+      "general": {
+        "label": "General",
+        "categories": [
+          {
+            "id": "filme-cultura-pop",
+            "title": "Filme & seriale pe care le știm",
+            "icon": "🎬",
+            "questions": [
+              {"question": "Cum se numesc cei doi protagoniști îndrăgostiți din Titanic?", "answer": "Jack și Rose."},
+              {"question": "Cum se numește cafeneaua în care se întâlnesc personajele din Friends?", "answer": "Central Perk."},
+              {"question": "Cum îl cheamă pe copilul uitat acasă în Singur acasă?", "answer": "Kevin McCallister."},
+              {"question": "La ce școală de magie învață Harry Potter?", "answer": "Hogwarts."},
+              {"question": "Ce pastilă alege Neo în Matrix pentru a afla adevărul?", "answer": "Pastila roșie."},
+              {"question": "Cum îl cheamă pe tatăl lui Simba în Regele Leu?", "answer": "Mufasa."},
+              {"question": "Cum se numește revista condusă de Miranda Priestly în Diavolul se îmbracă de la Prada?", "answer": "Runway."},
+              {"question": "Melodiile cărei formații stau la baza musicalului Mamma Mia!?", "answer": "ABBA."},
+              {"question": "Cum se numește tronul pentru care se luptă personajele din Game of Thrones?", "answer": "Tronul de Fier."},
+              {"question": "Ce familie galbenă locuiește în orașul Springfield?", "answer": "Familia Simpson."}
+            ]
+          },
+          {
+            "id": "hituri-universale",
+            "title": "Hituri fredonate de toată lumea",
+            "icon": "🎵",
+            "questions": [
+              {"question": "Ce trupă cântă Bohemian Rhapsody?", "answer": "Queen."},
+              {"question": "Cine este supranumit Regele muzicii pop?", "answer": "Michael Jackson."},
+              {"question": "Din ce oraș britanic provin The Beatles?", "answer": "Liverpool."},
+              {"question": "Cine cântă hitul Rolling in the Deep?", "answer": "Adele."},
+              {"question": "Ce trupă suedeză a câștigat Eurovision cu Waterloo?", "answer": "ABBA."},
+              {"question": "Cine interpretează Despacito alături de Daddy Yankee?", "answer": "Luis Fonsi."},
+              {"question": "Cine cântă celebra versiune din 1992 a piesei I Will Always Love You?", "answer": "Whitney Houston."},
+              {"question": "Ce artist cântă Shape of You?", "answer": "Ed Sheeran."},
+              {"question": "Cine interpretează Careless Whisper?", "answer": "George Michael."},
+              {"question": "Ce formație cântă Dancing Queen?", "answer": "ABBA."}
+            ]
+          },
+          {
+            "id": "viata-de-zi-cu-zi",
+            "title": "Lucruri utile din viața de zi cu zi",
+            "icon": "☕",
+            "questions": [
+              {"question": "Care este numărul unic european pentru urgențe?", "answer": "112."},
+              {"question": "Care este ingredientul principal din guacamole?", "answer": "Avocado."},
+              {"question": "La câte grade Celsius îngheață apa?", "answer": "0°C."},
+              {"question": "Din ce țară provine espresso-ul?", "answer": "Italia."},
+              {"question": "Ce înseamnă când pastele sunt gătite al dente?", "answer": "Sunt fierte, dar rămân ușor ferme la mușcătură."},
+              {"question": "Ce înseamnă prescurtarea QR din QR code?", "answer": "Quick Response."},
+              {"question": "Din ce regiune franceză trebuie să provină vinul spumant ca să se numească Champagne?", "answer": "Champagne."},
+              {"question": "Cafeaua decofeinizată este complet lipsită de cofeină?", "answer": "Nu. Conține de obicei o cantitate mică de cofeină."},
+              {"question": "Ce indică SPF-ul de pe o cremă de protecție solară?", "answer": "Factorul de protecție solară."},
+              {"question": "La ce ajută sarea specială din mașina de spălat vase?", "answer": "La dedurizarea apei și prevenirea depunerilor de calcar."}
+            ]
+          }
+        ]
+      },
+      "femei": {
+        "label": "Femei",
+        "categories": [
+          {
+            "id": "beauty-ingrijire",
+            "title": "Beauty & îngrijire fără mituri",
+            "icon": "✨",
+            "questions": [
+              {"question": "Ce produs se aplică de obicei înaintea fondului de ten pentru o bază mai uniformă?", "answer": "Primerul."},
+              {"question": "Ce face șamponul uscat, de fapt?", "answer": "Absoarbe temporar excesul de sebum; nu spală părul."},
+              {"question": "Ce ingredient cosmetic este cunoscut pentru faptul că atrage și reține apa în piele?", "answer": "Acidul hialuronic."},
+              {"question": "Unde se aplică de regulă balsamul de păr pentru a evita încărcarea rădăcinilor?", "answer": "Pe lungimi și vârfuri."},
+              {"question": "Ce este un patch test?", "answer": "Testarea unei cantități mici de produs pe o zonă restrânsă a pielii."},
+              {"question": "Ce produs ajută machiajul să reziste mai bine după aplicare?", "answer": "Spray-ul sau pudra de fixare."},
+              {"question": "Ce este cuticula?", "answer": "Pielița subțire de la baza unghiei."},
+              {"question": "În ce parte a zilei se recomandă cel mai des folosirea retinolului?", "answer": "Seara, urmat de protecție solară în timpul zilei."},
+              {"question": "Apa micelară este folosită cel mai des pentru ce pas?", "answer": "Pentru demachiere și curățare ușoară."},
+              {"question": "Ce înseamnă un produs cosmetic waterproof?", "answer": "Este formulat să reziste la apă."}
+            ]
+          },
+          {
+            "id": "romcom-seriale",
+            "title": "Comedii romantice & seriale confort",
+            "icon": "🍿",
+            "questions": [
+              {"question": "Ce actriță o interpretează pe Vivian în Pretty Woman?", "answer": "Julia Roberts."},
+              {"question": "Cine o joacă pe Bridget Jones?", "answer": "Renée Zellweger."},
+              {"question": "Cum se numește protagonista naratoare din Sex and the City?", "answer": "Carrie Bradshaw."},
+              {"question": "Cum o cheamă pe eroina din Legally Blonde?", "answer": "Elle Woods."},
+              {"question": "Cine este temuta șefă a revistei Runway în Diavolul se îmbracă de la Prada?", "answer": "Miranda Priestly."},
+              {"question": "Cum se numesc mama și fiica din Gilmore Girls?", "answer": "Lorelai și Rory Gilmore."},
+              {"question": "Pe ce insulă fictivă grecească are loc acțiunea din Mamma Mia!?", "answer": "Kalokairi."},
+              {"question": "Ce actriță joacă rolul principal în 13 Going on 30?", "answer": "Jennifer Garner."},
+              {"question": "Cum se numesc cei doi îndrăgostiți din The Notebook?", "answer": "Noah și Allie."},
+              {"question": "Ce personaj din Friends lucrează în modă după ce renunță la meseria de chelneriță?", "answer": "Rachel Green."}
+            ]
+          },
+          {
+            "id": "divas-pop",
+            "title": "Dive pop & refrene iconice",
+            "icon": "🎤",
+            "questions": [
+              {"question": "Din ce trupă a făcut parte Beyoncé înaintea carierei solo?", "answer": "Destiny's Child."},
+              {"question": "Cum se numește albumul Adele pe care apare Rolling in the Deep?", "answer": "21."},
+              {"question": "Din ce țară este Shakira?", "answer": "Columbia."},
+              {"question": "Care a fost single-ul de debut care a făcut-o celebră pe Britney Spears?", "answer": "...Baby One More Time."},
+              {"question": "Pe ce insulă s-a născut Rihanna?", "answer": "Barbados."},
+              {"question": "Care este prenumele real al lui Lady Gaga?", "answer": "Stefani."},
+              {"question": "Cine cântă My Heart Will Go On din Titanic?", "answer": "Céline Dion."},
+              {"question": "Ce artistă cântă hitul Levitating?", "answer": "Dua Lipa."},
+              {"question": "Care Spice Girl era cunoscută drept Posh Spice?", "answer": "Victoria Beckham."},
+              {"question": "Cum se numește turneul Taylor Swift construit în jurul etapelor carierei sale?", "answer": "The Eras Tour."}
+            ]
+          }
+        ]
+      },
+      "barbati": {
+        "label": "Bărbați",
+        "categories": [
+          {
+            "id": "fotbal-de-gasca",
+            "title": "Fotbal de știut în gașcă",
+            "icon": "⚽",
+            "questions": [
+              {"question": "Câți jucători are o echipă de fotbal pe teren la începutul meciului?", "answer": "11."},
+              {"question": "De la ce distanță se execută lovitura de pedeapsă?", "answer": "11 metri."},
+              {"question": "Câte minute are un meci regulamentar, fără prelungiri și timpul adițional?", "answer": "90 de minute."},
+              {"question": "Ce înseamnă un hat-trick?", "answer": "Trei goluri marcate de același jucător într-un meci."},
+              {"question": "La câți ani se organizează Campionatul Mondial de fotbal?", "answer": "La patru ani."},
+              {"question": "Ce culoare are cartonașul care elimină un jucător?", "answer": "Roșu."},
+              {"question": "În ce zonă poate portarul să joace mingea cu mâna?", "answer": "În propria suprafață de pedeapsă."},
+              {"question": "Cum se numește stadionul tradițional al clubului FC Barcelona?", "answer": "Camp Nou."},
+              {"question": "Ce națională a câștigat Campionatul Mondial de fotbal din 2002?", "answer": "Brazilia."},
+              {"question": "Ce jucător este cunoscut drept CR7?", "answer": "Cristiano Ronaldo."}
+            ]
+          },
+          {
+            "id": "masini-drumuri",
+            "title": "Mașini, bord & drumuri",
+            "icon": "🚗",
+            "questions": [
+              {"question": "Ce înseamnă prescurtarea ABS la o mașină?", "answer": "Sistem de frânare antiblocare."},
+              {"question": "Ce indică de obicei martorul roșu în formă de recipient de ulei?", "answer": "O problemă legată de presiunea uleiului de motor."},
+              {"question": "Ce măsoară turometrul?", "answer": "Turațiile motorului pe minut."},
+              {"question": "Ce face funcția cruise control?", "answer": "Menține automat viteza setată."},
+              {"question": "Ce este acvaplanarea?", "answer": "Pierderea aderenței când anvelopele rulează pe un strat de apă."},
+              {"question": "Ce rol are convertorul catalitic?", "answer": "Reduce o parte dintre emisiile nocive ale gazelor de eșapament."},
+              {"question": "Ce identifică seria VIN?", "answer": "În mod unic, vehiculul."},
+              {"question": "Ce simbol are de obicei butonul luminilor de avarie?", "answer": "Un triunghi."},
+              {"question": "Ce indică cifra octanică a benzinei?", "answer": "Rezistența combustibilului la autoaprindere sau detonație."},
+              {"question": "Ce înseamnă simbolul cu munte și fulg de zăpadă de pe o anvelopă?", "answer": "Că anvelopa este certificată pentru condiții severe de iarnă."}
+            ]
+          },
+          {
+            "id": "tech-gaming",
+            "title": "Tech, gaming & gadgeturi",
+            "icon": "🎮",
+            "questions": [
+              {"question": "Ce combinație de taste copiază un text pe Windows?", "answer": "Ctrl + C."},
+              {"question": "Ce transportă în mod obișnuit un cablu HDMI?", "answer": "Semnal video și audio digital."},
+              {"question": "Cum îl cheamă pe fratele lui Mario?", "answer": "Luigi."},
+              {"question": "Ce companie produce consola PlayStation?", "answer": "Sony."},
+              {"question": "Ce companie produce consola Xbox?", "answer": "Microsoft."},
+              {"question": "Cum se numește studioul care a creat Minecraft?", "answer": "Mojang."},
+              {"question": "La ce folosește memoria RAM?", "answer": "Păstrează temporar datele folosite activ de sistem și aplicații."},
+              {"question": "Pentru ce tip de conexiune este folosit cel mai des Bluetooth?", "answer": "Conexiuni wireless pe distanță scurtă între dispozitive."},
+              {"question": "Cum se numesc piesele formate din patru pătrate din Tetris?", "answer": "Tetromino-uri."},
+              {"question": "Ce înseamnă GPS?", "answer": "Global Positioning System, adică Sistem de Poziționare Globală."}
+            ]
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "karaoke",
+    "title": "Karaoke",
+    "category": "Muzică",
+    "duration": "10–20 min",
+    "participants": "2+ adulți",
+    "groupSizes": ["small", "large"],
+    "energy": "mai energic",
+    "prompt": "Alegeți o melodie pe care o știți sau una care vă face să zâmbiți și cântați împreună, fără presiunea de a cânta perfect.",
+    "steps": ["Alegeți melodia.", "Cântați împreună sau pe rând.", "La final, schimbați melodia fără să dați note."],
+    "optionalChildVariation": "Copiii pot alege melodia sau pot fi publicul entuziast.",
+    "tags": ["muzică", "râs", "mai energic"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/karaoke.webp"
+  },
+  {
+    "id": "dans-schimbare-lider",
+    "title": "Dans cu schimbare de lider",
+    "category": "Mișcare",
+    "duration": "5–15 min",
+    "participants": "2+ adulți · ideal 4+",
+    "groupSizes": ["small", "large"],
+    "preferredGroupSize": "large",
+    "energy": "dezmăț",
+    "prompt": "Stați în cerc. Pe rând, fiecare devine lider timp de 20 de secunde și dansează în stilul melodiei care apare. Toți ceilalți îi copiază mișcările și energia.",
+    "steps": ["Faceți un cerc și alegeți primul lider.", "Porniți colajul: fiecare secvență durează 20 de secunde.", "La schimbarea melodiei intră următorul lider, iar grupul îl copiază."],
+    "tags": ["muzică", "dans", "grup", "dezmăț"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/dans_cu_schimbare_lider.webp",
+    "musicGame": {"type": "leader-circle", "clipSeconds": 20, "autoAdvance": true}
+  },
+  {
+    "id": "intrarea-dramatica",
+    "title": "Intrarea dramatică",
+    "category": "Muzică și improvizație",
+    "duration": "5–15 min",
+    "participants": "2+ adulți · ideal 4+",
+    "groupSizes": ["small", "large"],
+    "preferredGroupSize": "large",
+    "energy": "dezmăț",
+    "prompt": "Toată lumea rămâne la masă, iar o persoană iese din aria vizuală. Când pornește muzica, revine la masă cu mersul, expresia și energia sugerate de melodie.",
+    "steps": ["Alegeți cine face prima intrare și lăsați persoana să iasă din aria vizuală.", "Apăsați «Dă muzica». Persoana revine în energia secvenței surpriză.", "Treceți la următoarea persoană și porniți o altă secvență."],
+    "tags": ["muzică", "improvizație", "grup", "dezmăț"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/intrare_spectaculoasa.webp",
+    "musicGame": {"type": "dramatic-entry", "clipSeconds": 16, "autoAdvance": false}
+  },
+  {
+    "id": "dans",
+    "title": "Dansuri de grup",
+    "category": "Mișcare",
+    "duration": "5–15 min",
+    "participants": "2+ adulți",
+    "groupSizes": ["large"],
+    "energy": "mai energic",
+    "prompt": "Alegeți un dans cu pași cunoscuți și încercați să îl faceți împreună: Macarena, Cotton Eye Joe, horă sau orice alt dans cu mișcări coordonate.",
+    "steps": ["Alegeți dansul și melodia.", "Urmăriți pașii și țineți ritmul împreună.", "Schimbați dansul când vreți o nouă provocare."],
+    "optionalChildVariation": "Copiii pot propune prima mișcare sau pot dansa împreună cu adulții.",
+    "tags": ["muzică", "mișcare", "mai energic"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/dans_de_grup.webp"
   },
   {
     "id": "ghiceste-raspunsul-prietenei",
@@ -34,41 +415,5 @@
     "steps": ["Alegeți o persoană și o întrebare.", "Toată lumea răspunde simultan.", "Persoana aleasă spune răspunsul real și povestește puțin."],
     "optionalChildVariation": "Înlocuiți întrebarea cu una potrivită pentru toată familia.",
     "tags": ["conversație", "fără mișcare"]
-  },
-  {
-    "id": "voteaza-in-secret",
-    "title": "Votează în secret",
-    "category": "Alegeți",
-    "duration": "5 min",
-    "participants": "3+ adulți",
-    "energy": "râs",
-    "prompt": "Care este cel mai mic lux care îți face ziua mai bună?",
-    "steps": ["Fiecare scrie un răspuns fără să-l arate.", "Citiți răspunsurile pe rând.", "Votați favoritul și spuneți de ce l-ați ales."],
-    "optionalChildVariation": "Copiii pot desena răspunsul în loc să-l scrie.",
-    "tags": ["vot", "la masă"]
-  },
-  {
-    "id": "inventam-reclama-absurda",
-    "title": "Inventăm o reclamă absurdă",
-    "category": "Creativ",
-    "duration": "10 min",
-    "participants": "2+ adulți",
-    "energy": "râs",
-    "prompt": "Vindeți un obiect banal de pe masă ca pe cel mai exclusivist produs din lume.",
-    "steps": ["Alegeți obiectul.", "Inventați-i un nume și un slogan.", "Prezentați reclama în 20 de secunde."],
-    "optionalChildVariation": "Copiii pot fi juriul sau pot inventa ambalajul.",
-    "tags": ["creativ", "râs", "la masă"]
-  },
-  {
-    "id": "impro-cu-trei-cuvinte",
-    "title": "Impro cu trei cuvinte",
-    "category": "Improvizație",
-    "duration": "5–10 min",
-    "participants": "3+ adulți",
-    "energy": "mai energic",
-    "prompt": "Construiți o poveste în care trebuie să apară trei cuvinte alese de grup.",
-    "steps": ["Alegeți trei cuvinte neașteptate.", "Fiecare adaugă o singură propoziție.", "Încheiați povestea când toți au contribuit."],
-    "optionalChildVariation": "Copiii pot alege cuvintele sau pot adăuga efecte sonore.",
-    "tags": ["creativ", "grup"]
   }
 ]

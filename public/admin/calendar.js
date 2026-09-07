@@ -1160,12 +1160,17 @@
                 : entry.id,
           })),
       );
-      const response = await api("/api/admin/calendar/week", {
+      const request = () => api("/api/admin/calendar/week", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ week_start: localDate(weekStart), entries }),
       });
-      if (!response.ok) throw new Error();
+      let response = await request();
+      if (response.status === 502 || response.status === 503) response = await request();
+      if (!response.ok) {
+        const result = await response.json().catch(() => ({}));
+        throw new Error(result.error || "Calendarul nu a putut fi salvat.");
+      }
       allEntries = [
         ...allEntries.filter(
           (entry) => !weekDates(weekStart).includes(entry.date),

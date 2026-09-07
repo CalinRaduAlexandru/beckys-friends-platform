@@ -13,6 +13,9 @@
     "run_worker_first": true,
     "html_handling": "none"
   },
+  "triggers": {
+    "crons": ["17 5,13,21 * * *"]
+  },
   "observability": {
     "enabled": true
   }
