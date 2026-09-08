@@ -818,9 +818,9 @@ function activityGuide(item) {
       options: 'Macarena merge și solo; fiecare variantă arată numărul minim de participanți.'
     },
     'mini-quiz-general': {
-      who: 'Oricine poate răspunde; grupul se poate consulta înainte de alegerea finală.',
-      how: 'Alegeți câți jucați. Pentru 2–9, tableta merge spre stânga după fiecare întrebare.',
-      options: 'Hotărâți-vă împreună, verificați răspunsul, apoi voi sau Quizul primiți câte un punct.'
+      who: 'Pentru 2–9, persoana cu tableta coordonează runda și introduce răspunsul grupului.',
+      how: 'Grupul se consultă, verificați răspunsul, apoi dați tableta spre stânga. La 10+, răspundeți mai organic, împreună.',
+      options: 'Alegeți răspunsul final ca grup. Voi sau Quizul primiți câte un punct.'
     },
     'reproduceti-sunetul': {
       who: 'Cine are tableta memorează secretul și îl reproduce fără cuvinte.',
@@ -1512,7 +1512,12 @@ function renderMiniQuiz(item, mode = 'setup') {
   if (!question) { state.index = index + 1; saveActivityProgress(item.id, state); renderMiniQuiz(item, 'play'); return; }
   track('mini_quiz_question_viewed', { question_id: question.id, question_index: index, player_count: state.player_count });
   const miniQuizGroupNote = state.player_count >= 10 && index === 0 ? '<div class="mini-quiz-group-note">Oricine poate răspunde. Hotărâți-vă împreună, apoi verificați răspunsul.</div>' : '';
-  root.innerHTML = `<main class="quiz-experience quiz-play mini-quiz-play"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-player"><div class="mini-quiz-score"><strong>VOI ${state.you_score || 0}</strong><span>—</span><strong>QUIZ ${state.quiz_score || 0}</strong></div><div class="quiz-player-heading"><strong>${index + 1} / ${state.question_ids.length}</strong><small>${state.player_count >= 10 ? 'Grup organic' : 'Cercul'}</small></div><div class="mini-quiz-turn">${state.player_count >= 10 ? 'Oricine poate răspunde. Jucați ca un singur grup.' : index === 0 ? 'Cine are tableta începe.' : 'După răspuns, dă tableta spre stânga →'}</div>${miniQuizGroupNote}<button class="quiz-flip-card" type="button" data-quiz-flip aria-label="Vezi răspunsul"><span class="quiz-flip-inner"><span class="quiz-face quiz-front"><small>ÎNTREBAREA</small><strong>${esc(question.question)}</strong></span><span class="quiz-face quiz-back"><small>${esc(question.answer)}</small><strong>${esc(question.funFact)}</strong></span></span></button><div class="quiz-player-actions"><button class="primary quiz-reveal" type="button" data-quiz-reveal>Verificați răspunsul</button><div class="mini-quiz-scoring" hidden><p>Ați nimerit-o?</p><button type="button" data-score="you">Ați nimerit-o ✓</button><button type="button" data-score="quiz">N-ați nimerit-o</button></div><button class="primary quiz-next-question" type="button" data-quiz-next hidden>${state.player_count >= 10 ? 'Următoarea întrebare' : 'Dă tableta spre stânga →'}</button></div><button class="quiz-skip" type="button" data-quiz-skip>Altă întrebare</button></div></main>`;
+    const turnMessage = state.player_count >= 10
+      ? 'Oricine poate răspunde. Hotărâți împreună răspunsul final.'
+      : index === 0
+        ? 'Cine are tableta coordonează prima întrebare.'
+        : 'După răspuns, dă tableta spre stânga →';
+    root.innerHTML = `<main class="quiz-experience quiz-play mini-quiz-play"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-player"><div class="mini-quiz-score"><strong>VOI ${state.you_score || 0}</strong><span>—</span><strong>QUIZ ${state.quiz_score || 0}</strong></div><div class="quiz-player-heading"><strong>${index + 1} / ${state.question_ids.length}</strong><small>${state.player_count >= 10 ? 'Grup organic' : 'Cercul'}</small></div><div class="mini-quiz-turn">${turnMessage}</div>${miniQuizGroupNote}<button class="quiz-flip-card" type="button" data-quiz-flip aria-label="Vezi răspunsul"><span class="quiz-flip-inner"><span class="quiz-face quiz-front"><small>ÎNTREBAREA</small><strong>${esc(question.question)}</strong></span><span class="quiz-face quiz-back"><small>${esc(question.answer)}</small><strong>${esc(question.funFact)}</strong></span></span></button><div class="quiz-player-actions"><button class="primary quiz-reveal" type="button" data-quiz-reveal>Verificați răspunsul</button><div class="mini-quiz-scoring" hidden><p>Ați nimerit-o?</p><button type="button" data-score="you">Ați nimerit-o ✓</button><button type="button" data-score="quiz">N-ați nimerit-o</button></div><button class="primary quiz-next-question" type="button" data-quiz-next hidden>${state.player_count >= 10 ? 'Următoarea întrebare' : 'Dă tableta spre stânga →'}</button></div><button class="quiz-skip" type="button" data-quiz-skip>Altă întrebare</button></div></main>`;
   const miniQuizQuestionText = root.querySelector('.quiz-front strong');
   const miniQuizTextClass = responsiveTextClass(question.question) || (question.question.length > 75 ? 'is-text-medium' : '');
   if (miniQuizQuestionText && miniQuizTextClass) miniQuizQuestionText.classList.add(miniQuizTextClass);

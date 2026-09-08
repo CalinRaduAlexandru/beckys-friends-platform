@@ -222,7 +222,7 @@
     "groupSizes": ["small", "large"],
     "energy": "râs",
     "prompt": "Jucați împreună împotriva Quizului: discutați răspunsul, apoi verificați-l și țineți scorul grupului.",
-    "steps": ["Alegeți câți jucați. Pentru 2–9 persoane, începe persoana care are tableta.", "Spuneți răspunsul împreună și apăsați «Vezi răspunsul».", "Alegeți dacă ați nimerit-o sau dacă punctul merge la Quiz. În Cercul, dați tableta spre stânga după fiecare întrebare."],
+    "steps": ["Alegeți câți jucați. Pentru 2–9 persoane, persoana cu tableta coordonează runda și introduce răspunsul grupului.", "Consultați-vă, verificați răspunsul și alegeți punctul final.", "Pentru 2–9, dați tableta spre stânga după fiecare întrebare. La 10+, răspundeți mai organic, împreună."],
     "optionalChildVariation": "Copiii pot pune întrebări despre animale, natură sau desene animate.",
     "tags": ["quiz", "râs", "grup"],
     "illustration": "/assets/ilustratii_aplicatie_parinti/mini-quiz.webp",
