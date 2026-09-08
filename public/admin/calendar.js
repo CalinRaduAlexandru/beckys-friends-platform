@@ -1242,8 +1242,8 @@
             await saveWeek(activeDays);
             modal.remove();
             render();
-          } catch {
-            status("Nu am putut salva modificarea.");
+            } catch (error) {
+            status(error?.message || "Nu am putut salva modificarea.");
           }
         };
       };
@@ -1310,8 +1310,8 @@
             try {
               await saveWeek(activeDays);
               render();
-            } catch {
-              status("Nu am putut salva modificarea.");
+            } catch (error) {
+              status(error?.message || "Nu am putut salva modificarea.");
             }
           }),
       );
@@ -1326,14 +1326,23 @@
             try {
               await saveWeek(activeDays);
               render();
-            } catch {
-              status("Nu am putut salva modificarea.");
+            } catch (error) {
+              status(error?.message || "Nu am putut salva modificarea.");
             }
           }),
       );
       const showPreview = async () => {
         const panel = demo.querySelector("[data-calendar-preview-panel]");
         const canvasHost = demo.querySelector("[data-calendar-canvas]");
+        const statusNode = demo.querySelector("[data-calendar-status]");
+        if (statusNode) statusNode.textContent = "Se salvează modificările…";
+        try {
+          await saveWeek(activeDays);
+        } catch (error) {
+          if (statusNode) statusNode.textContent = error?.message || "Nu am putut salva modificările.";
+          return;
+        }
+        if (statusNode) statusNode.textContent = "Modificările sunt salvate.";
         panel.classList.remove("hidden");
         canvasHost.innerHTML =
           '<div class="calendar-admin-loading">Se pregătește imaginea…</div>';

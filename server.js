@@ -1200,6 +1200,8 @@ const server = http.createServer(async (req, res) => {
         const existing = readCalendarEntries();
         const weekEntries = body.entries.map(entry => normalizeCalendarEntry({ ...entry, date: String(entry.date || '') }));
         if (weekEntries.some(entry => !dates.includes(entry.date))) throw new Error('Calendar entry outside week');
+        // Build and validate the replacement before writing it, so a failed
+        // request cannot leave the local calendar partially cleared.
         const next = [...existing.filter(entry => !dates.includes(entry.date)), ...weekEntries];
         next.sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`));
         writeCalendarEntries(next);

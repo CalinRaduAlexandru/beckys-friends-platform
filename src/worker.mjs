@@ -104,13 +104,23 @@ async function supabaseRequest(env, path, init = {}) {
   headers.set('apikey', env.SUPABASE_SERVICE_ROLE_KEY);
   headers.set('Authorization', `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`);
   if (init.body) headers.set('Content-Type', 'application/json');
-  const response = await fetch(`${env.SUPABASE_URL}${path}`, { ...init, headers });
-  if (!response.ok) {
-    const detail = await response.text();
-    console.error('Supabase request failed', response.status, detail.slice(0, 500));
-    throw Object.assign(new Error('Database request failed'), { status: 502 });
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch(`${env.SUPABASE_URL}${path}`, { ...init, headers });
+      if (response.ok) return response;
+      const detail = await response.text();
+      const transient = [502, 503, 504].includes(response.status);
+      if (!transient || attempt === 2) {
+        console.error('Supabase request failed', response.status, detail.slice(0, 500));
+        throw Object.assign(new Error('Database request failed'), { status: 502 });
+      }
+    } catch (error) {
+      if (error?.status !== 502 && attempt === 2) throw error;
+      if (error?.status !== 502 && !(error instanceof TypeError)) throw error;
+    }
+    await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
   }
-  return response;
+  throw Object.assign(new Error('Database request failed'), { status: 502 });
 }
 
 const ADMIN_TASK_COLUMNS = 'id,area,title,detail,owner,priority,sort_order,created_at,updated_at';
@@ -779,10 +789,16 @@ async function handleAdminCalendar(request, env) {
     if (entries.some(entry => !dates.includes(entry.date))) return json({ error: 'Calendar entry outside week' }, 400);
     const existingResponse = await supabaseRequest(env, `/rest/v1/calendar_becky_entries?select=id&date=gte.${dates[0]}&date=lte.${dates[6]}`);
     const existing = await existingResponse.json();
-    if (existing.length) await supabaseRequest(env, `/rest/v1/calendar_becky_entries?id=in.(${existing.map(entry => encodeURIComponent(entry.id)).join(',')})`, { method: 'DELETE' });
-    if (!entries.length) return json({ entries: [] });
-    const response = await supabaseRequest(env, '/rest/v1/calendar_becky_entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(entries) });
-    const rows = await response.json();
+    // Upsert first and delete obsolete rows only after the replacement is safely
+    // stored. This keeps a transient Supabase failure from erasing the week.
+    let rows = [];
+    if (entries.length) {
+      const response = await supabaseRequest(env, '/rest/v1/calendar_becky_entries?on_conflict=id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(entries) });
+      rows = await response.json();
+    }
+    const desiredIds = new Set(entries.map(entry => entry.id));
+    const staleIds = existing.map(entry => entry.id).filter(id => !desiredIds.has(id));
+    if (staleIds.length) await supabaseRequest(env, `/rest/v1/calendar_becky_entries?id=in.(${staleIds.map(entry => encodeURIComponent(entry)).join(',')})`, { method: 'DELETE' });
     rows.sort((a, b) => `${a.date}T${a.start_time}`.localeCompare(`${b.date}T${b.start_time}`));
     return json({ entries: rows });
   }
