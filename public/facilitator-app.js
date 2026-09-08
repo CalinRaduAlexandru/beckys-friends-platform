@@ -6,6 +6,7 @@ const RECENT_KEY = 'becky-facilitator:recent:v1';
 const VOLUME_KEY = 'becky-facilitator:volume:v1';
 const RATINGS_KEY = 'becky-facilitator:music-ratings:v1';
 const SESSION_KEY = 'becky-facilitator-session';
+const LANDSCAPE_REFERENCE_VIDEO = '/16%20by%209%20aspecet%20ratio%20becky%20animation.mp4';
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const saveJson = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 let facilitatorSession = readJson(SESSION_KEY, null);
@@ -100,7 +101,71 @@ function showLogin() {
 }
 
 function header(title = 'Activități Becky') {
-  return `<header class="app-header"><div class="brand"><span class="brand-mark">✦</span><div><small>BECKY · FACILITATOR</small><strong>${esc(title)}</strong></div></div><button class="header-action" type="button" data-open-sheet="effects" aria-label="Reacții rapide">✨</button></header>`;
+  return `<header class="app-header"><div class="brand"><span class="brand-mark">✦</span><div><small>BECKY · FACILITATOR</small><strong>${esc(title)}</strong></div></div><div class="header-actions"><button class="header-action header-reference-action" type="button" data-open-landscape-reference aria-label="Deschide imaginea landscape 16 la 9">▣<small>16:9</small></button><button class="header-action" type="button" data-open-sheet="effects" aria-label="Reacții rapide">✨</button></div></header>`;
+}
+
+async function openLandscapeReference() {
+  if (document.querySelector('[data-landscape-reference]')) return;
+  const overlay = document.createElement('section');
+  overlay.className = 'landscape-reference-modal';
+  overlay.dataset.landscapeReference = '';
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', 'Imagine landscape 16 la 9');
+  overlay.innerHTML = `<video autoplay muted playsinline preload="auto" aria-label="Animație Becky"></video>`;
+  document.body.appendChild(overlay);
+  const video = overlay.querySelector('video');
+  video.src = LANDSCAPE_REFERENCE_VIDEO;
+  let animationFrame = null;
+  let direction = 1;
+  let previousTime = 0;
+  let started = false;
+  const animateBoomerang = now => {
+    if (!video.duration || !Number.isFinite(video.duration)) { animationFrame = requestAnimationFrame(animateBoomerang); return; }
+    if (!previousTime) previousTime = now;
+    const elapsed = Math.min(.05, (now - previousTime) / 1000);
+    previousTime = now;
+    if (direction === 1) {
+      if (video.currentTime >= video.duration - .04) { video.pause(); video.currentTime = video.duration; direction = -1; previousTime = now; }
+    } else {
+      const nextTime = Math.max(0, video.currentTime - elapsed);
+      video.currentTime = nextTime;
+      if (nextTime <= .01) { video.currentTime = 0; direction = 1; previousTime = now; video.play().catch(() => {}); }
+    }
+    animationFrame = requestAnimationFrame(animateBoomerang);
+  };
+  const startBoomerang = () => {
+    if (started) return;
+    started = true;
+    video.currentTime = 0;
+    video.play().catch(() => {});
+    animationFrame = requestAnimationFrame(animateBoomerang);
+  };
+  video.addEventListener('loadeddata', startBoomerang, { once: true });
+  video.addEventListener('canplay', startBoomerang, { once: true });
+  video.load();
+
+  const close = async () => {
+    if (animationFrame) cancelAnimationFrame(animationFrame);
+    video.pause();
+    if (document.fullscreenElement === overlay) await document.exitFullscreen?.().catch(() => {});
+    try { screen.orientation?.unlock?.(); } catch {}
+    overlay.remove();
+  };
+  let longPressTimer = null;
+  const cancelLongPress = () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } };
+  overlay.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; cancelLongPress(); longPressTimer = setTimeout(() => { longPressTimer = null; close(); }, 900); });
+  overlay.addEventListener('pointerup', cancelLongPress);
+  overlay.addEventListener('pointercancel', cancelLongPress);
+  overlay.addEventListener('pointerleave', cancelLongPress);
+  overlay.addEventListener('contextmenu', event => event.preventDefault());
+  overlay.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
+  overlay.tabIndex = -1;
+  overlay.focus();
+  try {
+    await overlay.requestFullscreen?.({ navigationUI: 'hide' });
+    await screen.orientation?.lock?.('landscape');
+  } catch {}
 }
 
 function bottomNav() {
@@ -128,7 +193,7 @@ function timerBanner() {
 function homeView() {
   const recent = state.recentIds.map(id => state.activities.find(item => item.id === id)).filter(Boolean).slice(0,4);
   const active = state.session?.activity;
-  return shell(`${header('Activități Becky')}<section class="hero-card"><small>${active ? 'JOC ÎN DESFĂȘURARE' : 'TOTUL PREGĂTIT ÎNTR-UN LOC'}</small><h1>${active ? esc(active.title) : 'Tu conduci joaca. Aplicația ține ritmul.'}</h1><p>${active ? `Pasul ${state.session.step + 1} din ${state.session.steps.length}. Muzica și instrumentele rămân la îndemână.` : 'Alege activitatea din Bibliotecă, apoi folosește doar instrumentele de care ai nevoie în acel moment.'}</p><div class="hero-actions"><button class="primary" type="button" ${active ? 'data-resume-session' : 'data-nav="games"'}>${active ? 'Continuă jocul' : 'Alege un joc'}</button>${active ? '<button class="secondary" type="button" data-end-session>Încheie</button>' : '<button class="secondary" type="button" data-open-sheet="music">Alege muzica</button>'}</div></section><section class="section"><div class="section-heading"><div><span class="eyebrow">ACCES RAPID</span><h2>În timpul jocului</h2></div></div><div class="quick-grid"><button class="quick-card" data-open-sheet="music"><span>♫</span><strong>Muzică</strong><small>Playlisturi și volum</small></button><button class="quick-card" data-open-sheet="effects"><span>✨</span><strong>Reacții</strong><small>Sunete dintr-o atingere</small></button><button class="quick-card" data-open-sheet="timer"><span>◷</span><strong>Timer</strong><small>30 sec, 1, 3 sau 5 min</small></button><button class="quick-card" data-open-challenge><span>🫨</span><strong>Provocare</strong><small>Scutură sau alege</small></button></div></section>${recent.length ? `<section class="section"><div class="section-heading"><div><span class="eyebrow">ULTIMELE FOLOSITE</span><h2>Pornește din nou</h2></div><button data-nav="games">Toate</button></div><div class="game-list">${recent.map(gameCard).join('')}</div></section>` : ''}`);
+  return shell(`${header('Activități Becky')}<section class="hero-card"><small>${active ? 'JOC ÎN DESFĂȘURARE' : 'TOTUL PREGĂTIT ÎNTR-UN LOC'}</small><h1>${active ? esc(active.title) : 'Tu conduci joaca. Aplicația ține ritmul.'}</h1><p>${active ? `Pasul ${state.session.step + 1} din ${state.session.steps.length}. Muzica și instrumentele rămân la îndemână.` : 'Alege activitatea din Bibliotecă, apoi folosește doar instrumentele de care ai nevoie în acel moment.'}</p><div class="hero-actions"><button class="primary" type="button" ${active ? 'data-resume-session' : 'data-nav="games"'}>${active ? 'Continuă jocul' : 'Alege un joc'}</button>${active ? '<button class="secondary" type="button" data-end-session>Încheie</button>' : '<button class="secondary" type="button" data-open-sheet="music">Alege muzica</button>'}</div></section><section class="section"><div class="section-heading"><div><span class="eyebrow">ACCES RAPID</span><h2>În timpul jocului</h2></div></div><div class="quick-grid"><button class="quick-card" data-open-sheet="music"><span>♫</span><strong>Muzică</strong><small>Playlisturi și volum</small></button><button class="quick-card" data-open-sheet="effects"><span>✨</span><strong>Reacții</strong><small>Sunete dintr-o atingere</small></button><button class="quick-card" data-open-sheet="timer"><span>◷</span><strong>Timer</strong><small>30 sec, 1, 3 sau 5 min</small></button><button class="quick-card" data-open-landscape-reference><span>▣</span><strong>Imagine 16:9</strong><small>Deschide pe landscape</small></button></div></section>${recent.length ? `<section class="section"><div class="section-heading"><div><span class="eyebrow">ULTIMELE FOLOSITE</span><h2>Pornește din nou</h2></div><button data-nav="games">Toate</button></div><div class="game-list">${recent.map(gameCard).join('')}</div></section>` : ''}`);
 }
 
 function gameCard(activity) {
@@ -175,7 +240,7 @@ function sessionView() {
 }
 
 function musicView() {
-  return shell(`${header('Muzică')}<section class="hero-card"><small>ATMOSFERA JOCULUI</small><h1>Muzica susține momentul, nu îl conduce.</h1><p>Alege un playlist înainte de joc. În timpul activității rămân vizibile doar pauză, reluare și volum.</p></section><section class="section"><div class="section-heading"><div><span class="eyebrow">PLAYLISTURI</span><h2>Pentru diferite momente</h2></div><button type="button" data-new-playlist>＋ Playlist</button></div><div class="playlist-list">${allPlaylists().map(playlistCard).join('') || '<div class="empty">Creează primul playlist.</div>'}</div></section><section class="section"><div class="section-heading"><div><span class="eyebrow">PIESE DISPONIBILE</span><h2>Biblioteca muzicală</h2></div><small class="rating-hint">Notează din mers</small></div>${musicTrackGroups()}</section>`);
+  return shell(`${header('Muzică')}<section class="hero-card"><small>ATMOSFERA JOCULUI</small><h1>Muzica susține momentul, nu îl conduce.</h1><p>Alege un playlist înainte de joc. În timpul activității rămân vizibile doar pauză, reluare și volum.</p><div class="hero-actions"><button class="secondary" type="button" data-open-landscape-reference>Deschide imaginea 16:9</button></div></section><section class="section"><div class="section-heading"><div><span class="eyebrow">PLAYLISTURI</span><h2>Pentru diferite momente</h2></div><button type="button" data-new-playlist>＋ Playlist</button></div><div class="playlist-list">${allPlaylists().map(playlistCard).join('') || '<div class="empty">Creează primul playlist.</div>'}</div></section><section class="section"><div class="section-heading"><div><span class="eyebrow">PIESE DISPONIBILE</span><h2>Biblioteca muzicală</h2></div><small class="rating-hint">Notează din mers</small></div>${musicTrackGroups()}</section>`);
 }
 
 function musicTrackGroups() {
@@ -240,6 +305,7 @@ function bind() {
   root.querySelector('[data-next-step]')?.addEventListener('click', () => state.session.step === state.session.steps.length - 1 ? endSession() : changeStep(1));
   root.querySelector('[data-read-step]')?.addEventListener('click', () => speak(state.session?.steps[state.session.step] || ''));
   root.querySelectorAll('[data-open-sheet]').forEach(button => button.addEventListener('click', () => { state.sheet = button.dataset.openSheet; render(); }));
+  root.querySelectorAll('[data-open-landscape-reference]').forEach(button => button.addEventListener('click', openLandscapeReference));
   root.querySelectorAll('[data-close-sheet]').forEach(element => element.addEventListener('click', event => { if (event.target.closest('[data-sheet]') && !event.target.matches('[data-close-sheet]')) return; state.sheet = ''; render(); }));
   root.querySelectorAll('[data-effect]').forEach(button => button.addEventListener('click', () => playEffect(button.dataset.effect)));
   root.querySelectorAll('[data-set-timer]').forEach(button => button.addEventListener('click', () => setTimer(Number(button.dataset.setTimer))));
