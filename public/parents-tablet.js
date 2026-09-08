@@ -780,7 +780,7 @@ function renderLibrary() {
   });
 }
 
-function activityGuide(item) {
+function activityGuide(item, context = {}) {
   const guides = {
     'ghiceste-expresia': {
       who: 'Jucați împreună: spuneți cu voce tare expresia care vă vine în minte.',
@@ -817,9 +817,13 @@ function activityGuide(item) {
       how: 'Alegeți un dans din listă și începeți când sunteți gata.',
       options: 'Macarena merge și solo; fiecare variantă arată numărul minim de participanți.'
     },
-    'mini-quiz-general': {
-      who: 'Pentru 2–9, persoana cu tableta coordonează runda și introduce răspunsul grupului.',
-      how: 'Grupul se consultă, verificați răspunsul, apoi dați tableta spre stânga. La 10+, răspundeți mai organic, împreună.',
+    'mini-quiz-general': context.playerCount >= 10 ? {
+      who: 'Oricine poate răspunde, iar grupul hotărăște împreună răspunsul final.',
+      how: 'Răspundeți organic, verificați răspunsul și decideți cui merge punctul.',
+      options: 'Jucați ca un singur grup. Voi sau Quizul primiți câte un punct.'
+    } : {
+      who: 'Persoana cu tableta coordonează runda și introduce răspunsul după consultarea grupului.',
+      how: 'Grupul se consultă, verificați răspunsul, apoi dați tableta spre stânga.',
       options: 'Alegeți răspunsul final ca grup. Voi sau Quizul primiți câte un punct.'
     },
     'reproduceti-sunetul': {
@@ -841,25 +845,45 @@ function activityGuide(item) {
   };
 }
 
-function renderActivityIntro(item) {
+function renderActivityIntro(item, context = {}) {
   insights.openVisit(item.id);
   lastInsightScreen = '';
   stopMusicGame();
   active = item;
   root.classList.remove('activity-picker-open');
-  const guide = activityGuide(item);
+  const guide = activityGuide(item, context);
+  const playerLabel = context.playerCount ? ` · ${context.playerCount >= 10 ? '10+ JUCĂTORI' : `${context.playerCount} JUCĂTORI`}` : '';
+  const actionLabel = context.resumed ? 'Continuă activitatea' : 'Începe activitatea';
   track('activity_info_viewed');
-  root.innerHTML = `<main class="activity-info-experience"><button class="question-back" type="button" data-activity-info-back>← Activități</button><section class="activity-info-card"><header>${item.illustration ? `<img src="${esc(item.illustration)}" alt="">` : `<span aria-hidden="true">${esc(item.cardIcon || '✦')}</span>`}<div><small>CUM SE JOACĂ</small><h1>${esc(item.title)}</h1></div></header><div class="activity-info-rules"><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cine%20raspunde.png" alt=""><div><strong>Cine răspunde</strong><p>${esc(guide.who)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/ce%20puteti%20alege.png" alt=""><div><strong>Ce puteți alege</strong><p>${esc(guide.options)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cum%20jucati.png" alt=""><div><strong>Cum jucați</strong><p>${esc(guide.how)}</p></div></div></div><button class="primary activity-info-start" type="button" data-activity-info-start>Începe activitatea</button></section></main>`;
+  root.innerHTML = `<main class="activity-info-experience"><button class="question-back" type="button" data-activity-info-back>← Activități</button><section class="activity-info-card"><header>${item.illustration ? `<img src="${esc(item.illustration)}" alt="">` : `<span aria-hidden="true">${esc(item.cardIcon || '✦')}</span>`}<div><small>CUM SE JOACĂ${playerLabel}</small><h1>${esc(item.title)}</h1></div></header><div class="activity-info-rules"><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cine%20raspunde.png" alt=""><div><strong>Cine răspunde</strong><p>${esc(guide.who)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/ce%20puteti%20alege.png" alt=""><div><strong>Ce puteți alege</strong><p>${esc(guide.options)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cum%20jucati.png" alt=""><div><strong>Cum jucați</strong><p>${esc(guide.how)}</p></div></div></div><button class="primary activity-info-start" type="button" data-activity-info-start>${actionLabel}</button></section></main>`;
   root.querySelector('[data-activity-info-back]').onclick = renderLibrary;
   root.querySelector('[data-activity-info-start]').onclick = () => {
     track('activity_started_from_info');
-    startActivity(item);
+    startActivity(item, context);
   };
+}
+
+function renderMiniQuizParticipantSelect(item) {
+  stopMusicGame();
+  active = item;
+  root.classList.remove('activity-picker-open');
+  root.innerHTML = `<main class="quiz-experience mini-quiz-setup"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-content"><img class="quiz-illustration" src="${esc(item.illustration)}" alt=""><p class="quiz-kicker">ÎNAINTE SĂ ÎNCEPEȚI</p><h1>${esc(item.title || 'MINI-QUIZ de grup')}</h1><p class="quiz-intro">Câți jucați?</p><div class="mini-quiz-player-grid">${[2,3,4,5,6,7,8,9].map(count => `<button type="button" data-mini-count="${count}">${count}</button>`).join('')}<button type="button" data-mini-count="10">10+</button></div><p class="quiz-hint">Alegeți numărul ca să vedeți cum se joacă runda voastră.</p></div></main>`;
+  root.querySelector('[data-quiz-back]').onclick = renderLibrary;
+  root.querySelectorAll('[data-mini-count]').forEach(button => button.onclick = () => {
+    const playerCount = Number(button.dataset.miniCount);
+    renderActivityIntro(item, { playerCount });
+  });
 }
 
 function openActivity(item) {
   if (isActivityLocked(item)) return;
   localStorage.setItem('becky-parents-last-activity:v1', item.id);
+  if (item.id === 'mini-quiz-general') {
+    const saved = miniQuizState(item);
+    if (Number.isInteger(saved.player_count) && Array.isArray(saved.question_ids) && !saved.completed_at) renderActivityIntro(item, { playerCount: saved.player_count, resumed: true });
+    else renderMiniQuizParticipantSelect(item);
+    return;
+  }
   renderActivityIntro(item);
 }
 
@@ -905,7 +929,7 @@ function renderPassAlong(item, initialPhase = 'setup') {
   render();
 }
 
-function startActivity(item) {
+function startActivity(item, options = {}) {
   insights.startVisit(item.id, Boolean(activityProgress()[item.id] && !activityProgress()[item.id].completed_at));
   if (item.id === 'ghiceste-expresia') renderExpressionGuess(item);
   else if (item.id === 'arata-mai-departe') renderPassAlong(item);
@@ -915,7 +939,7 @@ function startActivity(item) {
   else if ((Array.isArray(item.questionSets) && item.questionSets.length) || item.questionPool) renderFunnyQuestions(item);
   else if (Array.isArray(item.questions) && item.questions.length) renderQuestionExperience(item, activityResumeIndex(item.id));
   else if (item.animalSound) renderAnimalExperience(item);
-  else if (item.id === 'mini-quiz-general') renderMiniQuiz(item);
+  else if (item.id === 'mini-quiz-general') renderMiniQuiz(item, 'setup', options.playerCount);
   else if (item.id === 'reproduceti-sunetul') renderReproduceSound(item);
   else renderManualActivity(item);
 }
@@ -1484,12 +1508,17 @@ function miniQuizRound(questionCount, pool) {
   return (plans[questionCount] || plans[10]).filter(index => pool[index]).map(index => pool[index].id);
 }
 function miniQuizState(item) { return activityProgress()[item.id] || {}; }
-function renderMiniQuiz(item, mode = 'setup') {
+function renderMiniQuiz(item, mode = 'setup', selectedPlayerCount = null) {
   stopMusicGame(); active = item; root.classList.remove('activity-picker-open');
   const pool = miniQuizQuestions(item);
   let state = miniQuizState(item);
   if (state.completed_at || completedActivityIds().includes(item.id)) { renderLibrary(); return; }
   if (!Array.isArray(state.question_ids) || !state.question_ids.length || !Number.isInteger(state.player_count)) {
+    if (Number.isInteger(selectedPlayerCount)) {
+      const round = miniQuizRound(selectedPlayerCount, pool);
+      saveActivityProgress(item.id, { version: 1, player_count: selectedPlayerCount, question_ids: round, index: 0, you_score: 0, quiz_score: 0, answered: [], skipped: [], completed_at: null });
+      state = miniQuizState(item);
+    } else {
     root.innerHTML = `<main class="quiz-experience mini-quiz-setup"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-content"><img class="quiz-illustration" src="${esc(item.illustration)}" alt=""><p class="quiz-kicker">VOI vs QUIZ</p><h1>${esc(item.title || 'MINI-QUIZ de grup')}</h1><p class="quiz-intro">Câți jucați?</p><div class="mini-quiz-player-grid">${[2,3,4,5,6,7,8,9].map(count => `<button type="button" data-mini-count="${count}">${count}</button>`).join('')}<button type="button" data-mini-count="10">10+</button></div><p class="quiz-hint">Alegeți răspunsul împreună, apoi verificați-l.</p></div></main>`;
     root.querySelector('[data-quiz-back]').onclick = renderLibrary;
     root.querySelectorAll('[data-mini-count]').forEach(button => button.onclick = () => {
@@ -1498,6 +1527,7 @@ function renderMiniQuiz(item, mode = 'setup') {
       renderMiniQuiz(item, 'play');
     });
     return;
+    }
   }
   const questionsById = new Map(pool.map(question => [question.id, question]));
   const index = Math.min(Math.max(Number(state.index) || 0, 0), state.question_ids.length);
