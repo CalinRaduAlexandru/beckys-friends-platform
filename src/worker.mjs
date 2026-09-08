@@ -7,6 +7,7 @@ import cupGamesSeed from '../data/cup-games.json';
 import facilitatorToolsSeed from '../data/facilitator-tools.json';
 import parentExperiencesSeed from '../data/parent-experiences.json';
 import parentQuestionPoolsSeed from '../data/parent-question-pools.json';
+import { normalizeEvents, buildInsights } from './parent-insights.mjs';
 
 const ROUTES = new Map([
   ['/', '/coming-soon.html'],
@@ -261,9 +262,15 @@ async function handleParentFeedback(request, env) {
     return json((await response.json())[0] || { session_id, activity_id, question_index, question_text, rating, group_size }, 201);
   }
   if (request.method === 'GET') {
-    const response = await supabaseRequest(env, '/rest/v1/parent_question_feedback?select=id,session_id,activity_id,question_index,question_text,rating,group_size,created_at&order=created_at.desc&limit=10000');
-    const feedback = await response.json();
-    const rows = Array.isArray(feedback) ? feedback : [];
+    await requireAdmin(request, env);
+    const rows = [];
+    let truncated = false;
+    for (let offset = 0; offset < 20000; offset += 500) {
+      const response = await supabaseRequest(env, `/rest/v1/parent_question_feedback?select=id,session_id,activity_id,question_index,question_text,rating,group_size,created_at&order=created_at.desc,id.asc&limit=500&offset=${offset}`);
+      const page = await response.json(); rows.push(...page);
+      if (page.length < 500) break;
+      if (offset === 19500) truncated = true;
+    }
     const byQuestion = new Map();
     for (const row of rows) {
       const key = `${row.activity_id}:${row.question_index}`;
@@ -271,9 +278,40 @@ async function handleParentFeedback(request, env) {
       current.ratings[row.rating - 1] += 1; current.total += 1; current.sum += row.rating; byQuestion.set(key, current);
     }
     const questions = [...byQuestion.values()].map(row => ({ ...row, average: row.total ? Number((row.sum / row.total).toFixed(2)) : 0 })).sort((a, b) => b.total - a.total || a.activity_id.localeCompare(b.activity_id));
-    return json({ feedback: rows, questions, totals: { ratings: rows.length, sessions: new Set(rows.map(row => row.session_id)).size, average: rows.length ? Number((rows.reduce((sum, row) => sum + row.rating, 0) / rows.length).toFixed(2)) : 0 } });
+    return json({ feedback: rows, questions, truncated, totals: { ratings: rows.length, sessions: new Set(rows.map(row => row.session_id)).size, average: rows.length ? Number((rows.reduce((sum, row) => sum + row.rating, 0) / rows.length).toFixed(2)) : 0 } });
   }
   return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, DELETE' });
+}
+async function handleParentEvents(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  assertSameOrigin(request);
+  let events;
+  try { events = normalizeEvents(await readJson(request, 60000)); }
+  catch { return json({ error: 'Evenimente invalide' }, 400); }
+  await supabaseRequest(env, '/rest/v1/parent_activity_events?on_conflict=id', {
+    method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=minimal' }, body: JSON.stringify(events)
+  });
+  return json({ accepted: events.length });
+}
+async function handleParentInsights(request, env) {
+  await requireAdmin(request, env);
+  if (request.method !== 'GET') return json({ error: 'Method not allowed' }, 405);
+  const url = new URL(request.url);
+  const days = [7,30,90].includes(Number(url.searchParams.get('days'))) ? Number(url.searchParams.get('days')) : 30;
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const until = new Date().toISOString();
+  const tests = url.searchParams.get('tests') === 'true';
+  const rows = [];
+  let truncated = false;
+  // Explicit pagination: Supabase can cap each response at 1000 rows.
+  for (let offset = 0; offset < 20000; offset += 500) {
+    const response = await supabaseRequest(env, `/rest/v1/parent_activity_events?select=*&occurred_at=gte.${encodeURIComponent(since)}&occurred_at=lte.${encodeURIComponent(until)}${tests ? '' : '&is_test=eq.false'}&order=occurred_at.asc,id.asc&limit=500&offset=${offset}`);
+    const page = await response.json();
+    rows.push(...page);
+    if (page.length < 500) break;
+    if (offset === 19500) truncated = true;
+  }
+  return json({ ...buildInsights(rows), since, until, truncated, includes_tests: tests, titles: Object.fromEntries(parentExperiencesSeed.map(item => [item.id, item.title])) });
 }
 async function handleExperienceRepertoire(request, env) {
   await requireAdmin(request, env); const url = new URL(request.url);
@@ -1376,6 +1414,8 @@ async function handleApi(request, env, pathname) {
   if (pathname === '/api/facilitator/playlists') return handleFacilitatorPlaylists(request, env);
   if (pathname === '/api/parents/experiences') return handleParentExperiences(request);
   if (pathname === '/api/parents/progress') return handleParentProgress(request, env);
+  if (pathname === '/api/parents/events') return handleParentEvents(request, env);
+  if (pathname === '/api/admin/parents-insights') return handleParentInsights(request, env);
   if (pathname === '/api/parents/feedback' || pathname === '/api/admin/parents-feedback') return handleParentFeedback(request, env);
   if (pathname === '/api/calendar') return handlePublicCalendar(request, env);
   if (pathname === '/api/admin/tasks' || pathname.startsWith('/api/admin/tasks/')) return handleAdminTasks(request, env);

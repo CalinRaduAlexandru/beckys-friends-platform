@@ -1487,6 +1487,39 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Disposition': 'attachment; filename="becky-friends-manual.html"' });
     return res.end(html);
   }
+  if (['/api/parents/events', '/api/admin/parents-insights', '/api/parents/feedback', '/api/admin/parents-feedback'].includes(url.pathname)) {
+    // Local development uses isolated files; never mixes test activity with production.
+    try {
+      const { normalizeEvents, buildInsights } = await import('./src/parent-insights.mjs');
+      const folder = path.join(ROOT, '.wrangler', 'parents-local');
+      fs.mkdirSync(folder, { recursive: true });
+      const file = path.join(folder, url.pathname.includes('feedback') ? 'ratings.json' : 'events.json');
+      const stored = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : [];
+      if (req.method === 'POST' && url.pathname === '/api/parents/events') {
+        const incoming = normalizeEvents(await readRequestJsonAsync(req, 60000));
+        const merged = [...new Map([...stored, ...incoming].map(event => [event.id, event])).values()];
+        fs.writeFileSync(file, JSON.stringify(merged));
+        return send(res, 200, { accepted: incoming.length });
+      }
+      if (req.method === 'POST' && url.pathname === '/api/parents/feedback') {
+        const body = await readRequestJsonAsync(req, 20000);
+        if (!Number.isInteger(body.rating) || body.rating < 1 || body.rating > 5 || !body.question_text || !body.activity_id) return send(res, 400, { error: 'Feedback invalid' });
+        const row = { id: crypto.randomUUID(), session_id: String(body.session_id || ''), activity_id: String(body.activity_id), question_text: String(body.question_text), question_index: Number(body.question_index), rating: body.rating, created_at: new Date().toISOString() };
+        fs.writeFileSync(file, JSON.stringify([...stored, row]));
+        return send(res, 201, row);
+      }
+      if (req.method === 'GET' && url.pathname === '/api/admin/parents-feedback') return send(res, 200, { feedback: stored });
+      if (req.method === 'GET' && url.pathname === '/api/admin/parents-insights') {
+        const days = [7,30,90].includes(Number(url.searchParams.get('days'))) ? Number(url.searchParams.get('days')) : 30;
+        const tests = url.searchParams.get('tests') === 'true';
+        const since = new Date(Date.now() - days * 86400000).toISOString();
+        const rows = stored.filter(row => row.occurred_at >= since && (tests || !row.is_test));
+        const experiences = JSON.parse(fs.readFileSync(PARENT_EXPERIENCES_FILE, 'utf8'));
+        return send(res, 200, { ...buildInsights(rows), since, until: new Date().toISOString(), includes_tests: tests, truncated: false, titles: Object.fromEntries(experiences.map(item => [item.id,item.title])) });
+      }
+      return send(res, 405, { error: 'Method not allowed' });
+    } catch (error) { return send(res, 400, { error: 'Date locale indisponibile sau invalide' }); }
+  }
   if (req.method === 'GET' && url.pathname === '/api/parents/experiences') {
     try {
       const experiences = JSON.parse(fs.readFileSync(PARENT_EXPERIENCES_FILE, 'utf8'));

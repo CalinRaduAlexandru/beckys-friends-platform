@@ -1,3 +1,4 @@
+import * as insights from './parents-analytics.js?v=1';
 const root = document.getElementById('parents-app');
 const MODERN_BRAND_LOGO = '/assets/logo/new_logo_horizontal.png';
 function modernizeLegacyLogos() {
@@ -7,6 +8,13 @@ function modernizeLegacyLogos() {
   });
 }
 new MutationObserver(modernizeLegacyLogos).observe(root, { childList: true, subtree: true });
+let lastInsightScreen = '';
+new MutationObserver(() => {
+  const main = root.querySelector('main');
+  const screen = main?.className || '';
+  if (screen && screen !== lastInsightScreen) insights.emit('screen_view', { screen });
+  lastInsightScreen = screen;
+}).observe(root, { childList: true });
 const SESSION_KEY = 'becky-parents-session';
 const EVENTS_KEY = 'becky-parents-events:v2';
 const COMPLETED_ACTIVITIES_KEY = 'becky-parents-completed-activities:v1';
@@ -287,6 +295,9 @@ function renderFunnyQuestions(item) {
   root.innerHTML = `<main class="funny-experience"><button class="question-back" type="button" data-funny-back>← Activități</button><div class="funny-content"><small class="funny-count">${answered} din ${cycleIds.length} întrebări explorate</small><h1>${esc(item.title)}</h1><p class="funny-intro">Alegeți una și povestiți. Dacă niciuna nu vă surâde, apăsați „Pas” și primiți alte trei.</p><div class="funny-options">${current.map(question => `<button type="button" class="funny-option ${responsiveTextClass(question.text)}" data-funny-id="${esc(question.id)}"><small class="funny-option-number">${String(catalog.findIndex(value => value.id === question.id) + 1).padStart(2, '0')}</small><span>${esc(question.text)}</span></button>`).join('')}</div><button type="button" class="funny-skip" data-funny-skip>Pas — alte trei</button></div>${activityDockMarkup(item)}</main>`;
   root.querySelector('[data-funny-back]').onclick = () => { state.current = current.map(question => question.id); saveFunnyState(item, state); renderLibrary(); };
   let funnyAdvancing = false;
+  const setId = makeSessionId();
+  const options = current.map(question => ({ id: question.id, text: question.text, role: question.role || question.level || '' }));
+  insights.emit('choice_view', { set_id: setId, options });
   const advance = selectedId => {
     if (funnyAdvancing) return;
     funnyAdvancing = true;
@@ -294,9 +305,14 @@ function renderFunnyQuestions(item) {
     const currentIds = current.map(question => question.id);
     const buttons = [...root.querySelectorAll('[data-funny-id]')];
     if (selectedId) {
+      const selectedQuestion = byId.get(selectedId);
+      if (selectedQuestion) insights.emit('choice_selected', { set_id: setId, question_id: selectedQuestion.id });
       const selectedIndex = buttons.findIndex(value => value.dataset.funnyId === selectedId);
       buttons.forEach((button, index) => button.classList.add(button.dataset.funnyId === selectedId ? 'is-selected-leaving' : index < selectedIndex ? 'is-fading-left' : 'is-fading-right'));
-    } else buttons.forEach((button, index) => button.classList.add(index % 2 ? 'is-fading-right' : 'is-fading-left'));
+    } else {
+      insights.emit('choice_skip', { set_id: setId });
+      buttons.forEach((button, index) => button.classList.add(index % 2 ? 'is-fading-right' : 'is-fading-left'));
+    }
     setTimeout(() => {
       if (selectedId) nextState.remaining = nextState.remaining.filter(id => id !== selectedId);
       nextState.version = item.questionPool ? 3 : 2;
@@ -320,6 +336,7 @@ function renderFunnyQuestions(item) {
   bindActivityDock(item);
 }
 function markActivityComplete(id) {
+  insights.completeVisit(id);
   const completed = completedActivityIds();
   if (!completed.includes(id)) { localStorage.setItem(COMPLETED_ACTIVITIES_KEY, JSON.stringify([...completed, id])); queueParentProgressSave(); }
 }
@@ -352,6 +369,7 @@ async function deleteParentProgress(username) { const response = await fetch(`/a
 async function restoreSavedParentProgress() { if (!parentProfileUsername) return; try { const row = await getParentProgress(parentProfileUsername); if (row.progress) applyParentProgress(row.progress); } catch { /* local progress remains available */ } }
 
 function track(eventName, extra = {}) {
+  insights.emit(eventName, extra);
   const item = {
     surface: 'parents', session_id: sessionId, event_name: eventName,
     experience_id: active?.id || null,
@@ -576,6 +594,7 @@ function currentGalleryActivities() {
 }
 
 function renderLibrary() {
+  insights.closeVisit();
   stopMusicGame();
   const galleryActivities = currentGalleryActivities();
   const progressMarkup = activityProgressMarkup();
@@ -823,6 +842,8 @@ function activityGuide(item) {
 }
 
 function renderActivityIntro(item) {
+  insights.openVisit(item.id);
+  lastInsightScreen = '';
   stopMusicGame();
   active = item;
   root.classList.remove('activity-picker-open');
@@ -885,6 +906,7 @@ function renderPassAlong(item, initialPhase = 'setup') {
 }
 
 function startActivity(item) {
+  insights.startVisit(item.id, Boolean(activityProgress()[item.id] && !activityProgress()[item.id].completed_at));
   if (item.id === 'ghiceste-expresia') renderExpressionGuess(item);
   else if (item.id === 'arata-mai-departe') renderPassAlong(item);
   else if (item.id === 'intrarea-dramatica') renderDramaticSetup(item);
@@ -1505,6 +1527,7 @@ function renderMiniQuiz(item, mode = 'setup') {
   root.querySelector('[data-quiz-flip]').onclick = flip; root.querySelector('[data-quiz-reveal]').onclick = flip;
   root.querySelectorAll('[data-score]').forEach(button => button.onclick = () => {
     if (root.querySelector('[data-score].is-selected')) return;
+    insights.emit('mini_quiz_result', { question_id: question.id, result: button.dataset.score });
     const result = button.dataset.score; state.you_score = Number(state.you_score) || 0; state.quiz_score = Number(state.quiz_score) || 0; state[result === 'you' ? 'you_score' : 'quiz_score'] += 1; state.answered = [...(state.answered || []), { question_id: question.id, result }]; saveActivityProgress(item.id, state); button.classList.add('is-selected'); root.querySelectorAll('[data-score]').forEach(control => { control.disabled = true; }); root.querySelector('.mini-quiz-score').innerHTML = `<strong>VOI ${state.you_score}</strong><span>—</span><strong>QUIZ ${state.quiz_score}</strong>`; const scoring = root.querySelector('.mini-quiz-scoring'); const next = root.querySelector('[data-quiz-next]'); scoring.classList.add('is-complete'); setTimeout(() => { next.hidden = false; }, 360);
   });
   root.querySelector('[data-quiz-next]').onclick = () => { state.index = index + 1; saveActivityProgress(item.id, state); renderMiniQuiz(item, 'play'); };
