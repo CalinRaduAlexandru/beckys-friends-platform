@@ -16,14 +16,17 @@ const PARENT_PROFILE_KEY = 'becky-parents-profile:v1';
 const PARENT_PROFILES_KEY = 'becky-parents-profiles:v1';
 const TV_INSTALL_DISMISSED_KEY = 'becky-parents-tv-install-dismissed:v1';
 const GROUP_SIZE_KEY = 'becky-parents-group-size:v1';
-const ACTIVE_ACTIVITY_ORDER = ['recunoaste-ti-animalul', 'ai-prefera', 'intrebari-amuzante', 'intrebari-profunde', 'mini-quiz-general', 'reproduceti-sunetul', 'intrarea-dramatica', 'dans-schimbare-lider', 'karaoke', 'dans'];
+const ACTIVE_ACTIVITY_ORDER = ['ghiceste-expresia', 'ai-prefera', 'intrebari-amuzante', 'intrebari-profunde', 'mini-quiz-general', 'reproduceti-sunetul', 'arata-mai-departe', 'dans', 'dans-schimbare-lider', 'karaoke'];
 const LOCKED_ACTIVITY_START = ACTIVE_ACTIVITY_ORDER.indexOf('mini-quiz-general');
-function isActivityLocked(item) { return ACTIVE_ACTIVITY_ORDER.indexOf(item?.id) >= LOCKED_ACTIVITY_START; }
+function isActivityLocked(item) { return !['mini-quiz-general', 'reproduceti-sunetul', 'arata-mai-departe', 'dans'].includes(item?.id) && ACTIVE_ACTIVITY_ORDER.indexOf(item?.id) > LOCKED_ACTIVITY_START; }
 function activityLockMarkup(item) { return isActivityLocked(item) ? '<span class="activity-lock-overlay" aria-hidden="true"><span>🔒</span><small>În curând</small></span>' : ''; }
 function makeSessionId() { return window.crypto?.randomUUID?.() || `session-${Date.now()}-${Math.random().toString(36).slice(2)}`; }
 
 let activities = [];
 let musicTracks = [];
+let dramaticMusicTracks = [];
+let dramaticTrackIndex = 0;
+let dramaticSession = { total: 1, current: 1 };
 let active = null;
 let selectedGroupSize = localStorage.getItem(GROUP_SIZE_KEY) === 'large' ? 'large' : 'small';
 let musicGameAudio = null;
@@ -37,6 +40,7 @@ let animalAudio = null;
 let animalRoundQueue = [];
 let animalQueueActivityId = null;
 let animalScore = { correct: 0, wrong: 0 };
+let soundSecretTimer = null;
 let parentProfileUsername = localStorage.getItem(PARENT_PROFILE_KEY) || '';
 let completionReturnId = null;
 let deferredInstallPrompt = null;
@@ -101,6 +105,7 @@ function bindGroupSizeToggle(container, onChange) {
     if (nextSize === selectedGroupSize) return;
     selectedGroupSize = nextSize;
     localStorage.setItem(GROUP_SIZE_KEY, selectedGroupSize);
+    queueParentProgressSave();
     track('group_size_changed', { group_size: selectedGroupSize });
     onChange?.();
   });
@@ -111,17 +116,19 @@ function readJson(key, fallback) {
 }
 
 function completedActivityIds() { return readJson(COMPLETED_ACTIVITIES_KEY, []); }
-function knownParentProfiles() { return [...new Set([...(readJson(PARENT_PROFILES_KEY, [])), parentProfileUsername].filter(Boolean))]; }
-function rememberParentProfile(username) { localStorage.setItem(PARENT_PROFILES_KEY, JSON.stringify([...new Set([...knownParentProfiles(), username])])); }
+function knownParentProfiles() { const stored = readJson(PARENT_PROFILES_KEY, []); const profiles = Array.isArray(stored) ? stored : []; return [...new Set([...profiles, parentProfileUsername].filter(name => typeof name === 'string' && name.trim()))]; }
+function rememberParentProfile(username) { localStorage.setItem(PARENT_PROFILES_KEY, JSON.stringify([...new Set([...knownParentProfiles(), username].filter(Boolean))])); }
+function renameKnownParentProfile(previous, next) { const stored = readJson(PARENT_PROFILES_KEY, []); const profiles = (Array.isArray(stored) ? stored : []).filter(name => name !== previous); localStorage.setItem(PARENT_PROFILES_KEY, JSON.stringify([...new Set([...profiles, next].filter(Boolean))])); }
+function forgetKnownParentProfile(username) { const stored = readJson(PARENT_PROFILES_KEY, []); const profiles = (Array.isArray(stored) ? stored : []).filter(name => name !== username); localStorage.setItem(PARENT_PROFILES_KEY, JSON.stringify(profiles)); }
 function activityProgress() { return readJson(ACTIVITY_PROGRESS_KEY, {}); }
 function activityResumeIndex(id) { const saved = activityProgress()[id]; const index = Number(saved && typeof saved === 'object' ? saved.batch_index : saved); return Number.isInteger(index) && index >= 0 ? index : 0; }
-function saveActivityResumeIndex(id, index) { localStorage.setItem(ACTIVITY_PROGRESS_KEY, JSON.stringify({ ...activityProgress(), [id]: index })); }
-function clearActivityResumeIndex(id) { const progress = activityProgress(); delete progress[id]; localStorage.setItem(ACTIVITY_PROGRESS_KEY, JSON.stringify(progress)); }
+function saveActivityResumeIndex(id, index) { localStorage.setItem(ACTIVITY_PROGRESS_KEY, JSON.stringify({ ...activityProgress(), [id]: index })); queueParentProgressSave(); }
+function clearActivityResumeIndex(id) { const progress = activityProgress(); delete progress[id]; localStorage.setItem(ACTIVITY_PROGRESS_KEY, JSON.stringify(progress)); queueParentProgressSave(); }
 function animalSavedProgress(id) { const saved = activityProgress()[id]; return saved && typeof saved === 'object' ? saved : {}; }
-function saveAnimalProgress(id, progress) { localStorage.setItem(ACTIVITY_PROGRESS_KEY, JSON.stringify({ ...activityProgress(), [id]: progress })); }
+function saveAnimalProgress(id, progress) { localStorage.setItem(ACTIVITY_PROGRESS_KEY, JSON.stringify({ ...activityProgress(), [id]: progress })); queueParentProgressSave(); }
 const WOULD_YOU_RATHER_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 function shuffleList(list) { const result = [...list]; for (let index = result.length - 1; index > 0; index -= 1) { const swapIndex = Math.floor(Math.random() * (index + 1)); [result[index], result[swapIndex]] = [result[swapIndex], result[index]]; } return result; }
-function saveActivityProgress(id, progress) { localStorage.setItem(ACTIVITY_PROGRESS_KEY, JSON.stringify({ ...activityProgress(), [id]: progress })); }
+function saveActivityProgress(id, progress) { localStorage.setItem(ACTIVITY_PROGRESS_KEY, JSON.stringify({ ...activityProgress(), [id]: progress })); queueParentProgressSave(); }
 function wouldYouRatherBatch(item) {
   const pool = Array.isArray(item.questions) ? item.questions : [];
   const saved = activityProgress()[item.id];
@@ -190,6 +197,54 @@ function funnyState(item) {
   return item.questionPool ? freshFunnyState(item) : { version: 2, remaining: catalog.map(question => question.id), deferred: [], current: [], turn: 0, completed_at: null };
 }
 function saveFunnyState(item, state) { saveActivityProgress(item.id, state); }
+function renderExpressionGuess(item) {
+  stopMusicGame();
+  active = item;
+  root.classList.remove('activity-picker-open');
+  const rounds = Array.isArray(item.expressionRounds) ? item.expressionRounds : [];
+  let roundIndex = 0;
+  let revealDepth = 0;
+  let answerRevealed = false;
+  let busy = false;
+
+  const render = () => {
+    const round = rounds[roundIndex];
+    if (!round) return;
+    const reveal = revealDepth > 0 ? (round.reveals?.[revealDepth - 1] || '') : '';
+    root.innerHTML = `<main class="expression-game">
+      <button class="question-back" type="button" data-expression-back>← Activități</button>
+      <div class="expression-game-content">
+        <div class="expression-progress" aria-label="Progresul activității">${rounds.map((_, index) => `<span class="${index <= roundIndex ? 'is-active' : ''} ${index === roundIndex ? 'is-current' : ''}"></span>`).join('')}</div>
+        <p class="expression-kicker">GHICEȘTE EXPRESIA</p>
+        <h1>Ce expresie e?</h1>
+        <div class="expression-puzzle" aria-label="Emoji-ul expresiei"><span>${esc(round.emoji)}</span>${answerRevealed ? `<strong class="expression-answer"><b aria-hidden="true">✓</b>${esc(round.answer)}</strong>` : reveal ? `<strong class="expression-reveal">${esc(reveal)}</strong>` : ''}</div>
+        <div class="expression-actions">
+          ${answerRevealed ? `<button class="primary expression-next" type="button" data-expression-next>${roundIndex === rounds.length - 1 ? 'Finalizați →' : 'Următoarea →'}</button>` : `<button class="primary" type="button" data-expression-answer>Vezi răspunsul</button>${revealDepth < (round.reveals?.length || 0) ? `<button class="secondary expression-reveal-button" type="button" data-expression-reveal>Dezvăluie o parte →</button>` : ''}`}
+        </div>
+      </div>
+    </main>`;
+    root.querySelector('[data-expression-back]').onclick = () => { if (!busy) renderLibrary(); };
+    root.querySelector('[data-expression-answer]')?.addEventListener('click', () => { if (busy) return; answerRevealed = true; render(); });
+    root.querySelector('[data-expression-reveal]')?.addEventListener('click', () => { if (busy) return; revealDepth = Math.min(revealDepth + 1, round.reveals.length); render(); });
+    root.querySelector('[data-expression-next]')?.addEventListener('click', () => {
+      if (busy) return;
+      busy = true;
+      if (roundIndex === rounds.length - 1) {
+        saveActivityProgress(item.id, { version: 1, completed_at: new Date().toISOString() });
+        markActivityComplete(item.id);
+        completionReturnId = item.id;
+        renderLibrary();
+        return;
+      }
+      roundIndex += 1;
+      revealDepth = 0;
+      answerRevealed = false;
+      busy = false;
+      render();
+    });
+  };
+  render();
+}
 function createFunnySet(item) {
   const catalog = funnyQuestionCatalog(item);
   const byId = new Map(catalog.map(question => [question.id, question]));
@@ -266,7 +321,7 @@ function renderFunnyQuestions(item) {
 }
 function markActivityComplete(id) {
   const completed = completedActivityIds();
-  if (!completed.includes(id)) localStorage.setItem(COMPLETED_ACTIVITIES_KEY, JSON.stringify([...completed, id]));
+  if (!completed.includes(id)) { localStorage.setItem(COMPLETED_ACTIVITIES_KEY, JSON.stringify([...completed, id])); queueParentProgressSave(); }
 }
 function activityCompletionBadge(item) {
   return completedActivityIds().includes(item.id) && !((item.id === 'intrebari-amuzante' || item.questionPool) && !activityCooldownActive(item)) ? '<span class="activity-completed-badge" aria-label="Activitate completată">✓</span>' : '';
@@ -285,6 +340,14 @@ function applyParentProgress(progress) {
 }
 async function getParentProgress(username) { const response = await fetch(`/api/parents/progress?username=${encodeURIComponent(username)}`); if (!response.ok) throw new Error('Progresul nu a putut fi citit'); return response.json(); }
 async function saveParentProgress(username, progress) { const response = await fetch('/api/parents/progress', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, progress }) }); if (!response.ok) throw new Error('Progresul nu a putut fi salvat'); return response.json(); }
+let parentSaveQueue = Promise.resolve();
+function queueParentProgressSave() {
+  if (!parentProfileUsername) return parentSaveQueue;
+  const username = parentProfileUsername;
+  const snapshot = parentProgressSnapshot();
+  parentSaveQueue = parentSaveQueue.catch(() => {}).then(() => saveParentProgress(username, snapshot));
+  return parentSaveQueue;
+}
 async function deleteParentProgress(username) { const response = await fetch(`/api/parents/progress?username=${encodeURIComponent(username)}`, { method: 'DELETE' }); if (!response.ok) throw new Error('Progresul nu a putut fi resetat'); }
 async function restoreSavedParentProgress() { if (!parentProfileUsername) return; try { const row = await getParentProgress(parentProfileUsername); if (row.progress) applyParentProgress(row.progress); } catch { /* local progress remains available */ } }
 
@@ -362,34 +425,168 @@ async function lockParentsLandscape() {
 
 function activityProgressMarkup() {
   const progressStages = selectedGroupSize === 'large'
-    ? [['Dezmăț', '🤩'], ['Provocări', '✨'], ['Relax', '☁️']]
-    : [['Relax', '☁️'], ['Provocări', '✨'], ['Dezmăț', '🤩']];
+    ? [['Dezlănțuire', '🤩'], ['Provocări', '✨'], ['Relax', '☁️']]
+    : [['Relax', '☁️'], ['Provocări', '✨'], ['Dezlănțuire', '🤩']];
   return `<div class="slider-progress" aria-label="Progres de la relaxare spre distracție"><div class="slider-progress-line" data-slider-progress-line data-stage="0"><span class="slider-progress-fill" data-slider-progress-fill><span class="slider-progress-shimmer"></span></span><span class="slider-progress-sparkles" aria-hidden="true">${Array.from({ length: 12 }, (_, index) => `<i style="--spark:${index}">${index % 3 === 0 ? '✦' : index % 3 === 1 ? '·' : '✧'}</i>`).join('')}</span><span class="slider-progress-avatar" data-slider-progress-avatar>😌</span>${progressStages.map(([label, icon], index) => `<span class="slider-milestone" style="left:${index / (progressStages.length - 1) * 100}%" data-milestone="${index}"><i>${icon}<small>${label}</small></i></span>`).join('')}</div></div>`;
 }
 function resetLocalProfileState() { localStorage.removeItem(COMPLETED_ACTIVITIES_KEY); localStorage.removeItem(ACTIVITY_PROGRESS_KEY); localStorage.removeItem(HIDE_COMPLETED_ACTIVITIES_KEY); localStorage.removeItem(GROUP_SIZE_KEY); localStorage.removeItem('becky-parents-last-activity:v1'); active = null; completionReturnId = null; animalQueueActivityId = null; animalRoundQueue = []; animalScore = { correct: 0, wrong: 0 }; selectedGroupSize = 'small'; }
 function showProfilePicker() {
-  const profiles = knownParentProfiles();
+  const fromOnboarding = Boolean(root.querySelector('[data-session-gate]'));
+  return new Promise(async resolve => {
+  let profiles = knownParentProfiles();
+  try {
+    const response = await fetch('/api/parents/progress?list=1');
+    if (response.ok) {
+      const payload = await response.json();
+      if (Array.isArray(payload.profiles)) profiles = [...new Set([...profiles, ...payload.profiles.filter(Boolean)])];
+    }
+  } catch { /* profilurile locale rămân disponibile */ }
   const modal = document.createElement('div');
   modal.className = 'profile-picker-overlay';
-  modal.innerHTML = `<section class="profile-picker" role="dialog" aria-modal="true" aria-label="Încarcă profilul"><button class="profile-picker-close" type="button" data-profile-close aria-label="Închide">×</button><h2>Încarcă profilul</h2><p>Alegeți un profil ca să continuați de unde ați rămas.</p><div class="profile-picker-track">${profiles.map(name => `<button type="button" class="profile-card" data-profile-name="${esc(name)}"><span>👤</span><strong>${esc(name)}</strong><small>Continuă progresul</small></button>`).join('')}<button type="button" class="profile-card profile-card-new" data-profile-new><span>＋</span><strong>Începe un nou profil</strong><small>Pornește de la început</small></button></div></section>`;
+  modal.innerHTML = `<section class="profile-picker" role="dialog" aria-modal="true" aria-label="Schimbă profilul"><button class="profile-picker-close" type="button" data-profile-close aria-label="Închide">×</button><div data-profile-list-view><h2>Schimbă profilul</h2><p>Alegeți un profil ca să continuați de unde ați rămas.</p><div class="profile-picker-track">${profiles.map(name => `<button type="button" class="profile-card" data-profile-name="${esc(name)}"><span>👤</span><strong>${esc(name)}</strong><small>Continuă progresul</small></button>`).join('')}<button type="button" class="profile-card profile-card-new" data-profile-new><span>＋</span><strong>Începe un nou profil</strong><small>Pornește de la început</small></button></div></div><form class="profile-create" data-profile-create-view hidden><span class="profile-create-icon" aria-hidden="true">👤</span><h2>Profil nou</h2><p>Alegeți un nume ușor de recunoscut data viitoare.</p><label for="parent-profile-name">Numele profilului</label><input id="parent-profile-name" name="profile-name" type="text" maxlength="40" autocomplete="off" placeholder="De exemplu: Seara cu prietenii"><small class="profile-create-error" data-profile-create-error aria-live="polite"></small><div class="profile-create-actions"><button type="button" class="secondary" data-profile-create-back>Înapoi</button><button type="submit" class="primary">Creează profilul</button></div></form></section>`;
   root.append(modal);
-  modal.querySelector('[data-profile-close]').onclick = () => modal.remove();
-  modal.querySelectorAll('[data-profile-name]').forEach(button => button.onclick = async () => { modal.remove(); const username = button.dataset.profileName; const previous = parentProfileUsername; try { if (previous && previous !== username) await saveParentProgress(previous, parentProgressSnapshot()); } catch { /* loading the selected profile can continue */ } parentProfileUsername = username; localStorage.setItem(PARENT_PROFILE_KEY, username); try { const row = await getParentProgress(username); if (row.progress) applyParentProgress(row.progress); else resetLocalProfileState(); } catch { /* local state remains available */ } renderLibrary(); });
-  modal.querySelector('[data-profile-new]').onclick = () => { const entered = window.prompt('Cum vrei să se numească noul profil?'); if (!entered?.trim()) return; const username = entered.trim().replace(/\s+/g, ' '); rememberParentProfile(username); parentProfileUsername = username; localStorage.setItem(PARENT_PROFILE_KEY, username); resetLocalProfileState(); renderLibrary(); };
+  const close = () => { modal.remove(); resolve(false); };
+  modal.querySelector('[data-profile-close]').onclick = close;
+  modal.querySelectorAll('[data-profile-name]').forEach(button => button.onclick = async () => {
+    modal.querySelectorAll('button').forEach(control => { control.disabled = true; });
+    const username = button.dataset.profileName;
+    try {
+      await parentSaveQueue.catch(() => {});
+      if (!fromOnboarding && parentProfileUsername && parentProfileUsername !== username) {
+        await saveParentProgress(parentProfileUsername, parentProgressSnapshot());
+      }
+      const row = await getParentProgress(username);
+      resetLocalProfileState();
+      if (row.progress) applyParentProgress(row.progress);
+      parentProfileUsername = username;
+      localStorage.setItem(PARENT_PROFILE_KEY, username);
+      rememberParentProfile(username);
+      if (!row.progress) await saveParentProgress(username, parentProgressSnapshot());
+      modal.remove();
+      if (!fromOnboarding) renderLibrary();
+      resolve(true);
+    } catch {
+      modal.querySelector('[data-profile-list-view]>p').textContent = 'Profilul nu a putut fi încărcat. Încercați din nou.';
+      modal.querySelectorAll('button').forEach(control => { control.disabled = false; });
+    }
+  });
+  const listView = modal.querySelector('[data-profile-list-view]');
+  const createView = modal.querySelector('[data-profile-create-view]');
+  const nameInput = createView.querySelector('input');
+  const createError = createView.querySelector('[data-profile-create-error]');
+  const showList = () => { createView.hidden = true; listView.hidden = false; createError.textContent = ''; };
+  modal.querySelector('[data-profile-new]').onclick = () => { listView.hidden = true; createView.hidden = false; setTimeout(() => nameInput.focus({ preventScroll: true }), 30); };
+  modal.querySelector('[data-profile-create-back]').onclick = showList;
+  createView.onsubmit = async event => {
+    event.preventDefault();
+    const username = nameInput.value.trim().replace(/\s+/g, ' ');
+    if (!username) { createError.textContent = 'Scrieți un nume pentru profil.'; nameInput.focus(); return; }
+    rememberParentProfile(username);
+    parentProfileUsername = username;
+    localStorage.setItem(PARENT_PROFILE_KEY, username);
+    resetLocalProfileState();
+    try { await saveParentProgress(username, parentProgressSnapshot()); } catch { /* profilul rămâne disponibil local și se va sincroniza la prima schimbare */ }
+    modal.remove();
+    if (!fromOnboarding) renderLibrary();
+    resolve(true);
+  };
+  });
+}
+
+function showSessionGate() {
+  const gate = root.querySelector('[data-session-gate]');
+  const opening = root.querySelector('.parents-opening');
+  if (!gate || !opening) return Promise.resolve('new');
+  gate.hidden = false;
+  opening.hidden = true;
+  return new Promise(resolve => {
+    const begin = mode => {
+      const gateLogo = gate.querySelector('.session-gate-logo');
+      const openingLogo = opening.querySelector('.opening-logo');
+      if (gateLogo && openingLogo) {
+        const rect = gateLogo.getBoundingClientRect();
+        openingLogo.getAnimations().forEach(animation => animation.cancel());
+        openingLogo.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;max-height:none;animation:none;opacity:1;transform:translate3d(0,0,0) scale(1);will-change:transform,opacity`;
+      }
+      gate.hidden = true;
+      opening.hidden = false;
+      void opening.offsetWidth;
+      requestAnimationFrame(() => {
+        if (!openingLogo) return;
+        const rise = Math.min(112, Math.max(48, window.innerHeight * .08));
+        const compactLandscape = window.matchMedia('(orientation: landscape) and (min-aspect-ratio: 3/2) and (max-height: 720px)').matches;
+        const keyframes = compactLandscape ? [
+          { opacity: 1, transform: 'translate3d(0,0,0) scale(1)', offset: 0, easing: 'cubic-bezier(.45,0,.55,1)' },
+          { opacity: 1, transform: `translate3d(0,-${rise}px,0) scale(1)`, offset: .58, easing: 'cubic-bezier(.34,1.25,.64,1)' },
+          { opacity: 1, transform: `translate3d(0,-${rise}px,0) scale(1.095)`, offset: .70, easing: 'ease-out' },
+          { opacity: 1, transform: `translate3d(0,-${rise}px,0) scale(.99)`, offset: .78, easing: 'ease-in-out' },
+          { opacity: 1, transform: `translate3d(0,-${rise}px,0) scale(1.035)`, offset: .84, easing: 'ease-in-out' },
+          { opacity: 0, transform: `translate3d(-34px,-${rise + 28}px,0) scale(1.04)`, offset: 1 }
+        ] : [
+          { transform: 'translate3d(0,0,0) scale(1)', offset: 0, easing: 'cubic-bezier(.45,0,.55,1)' },
+          { transform: `translate3d(0,-${rise}px,0) scale(1)`, offset: .68, easing: 'cubic-bezier(.34,1.4,.64,1)' },
+          { transform: `translate3d(0,-${rise}px,0) scale(1.09)`, offset: .82, easing: 'ease-out' },
+          { transform: `translate3d(0,-${rise}px,0) scale(.985)`, offset: .92, easing: 'ease-in-out' },
+          { transform: `translate3d(0,-${rise}px,0) scale(1.035)`, offset: 1 }
+        ];
+        openingLogo.animate(keyframes, { duration: compactLandscape ? 1500 : 1380, fill: 'forwards' });
+      });
+      resolve(mode);
+    };
+    gate.querySelector('[data-start-session]').onclick = () => {
+      resetLocalProfileState();
+      parentProfileUsername = '';
+      localStorage.removeItem(PARENT_PROFILE_KEY);
+      begin('new');
+    };
+    gate.querySelector('[data-continue-profile]').onclick = async () => {
+      gate.hidden = true;
+      const loaded = await showProfilePicker();
+      if (loaded) { gate.hidden = false; begin('profile'); return; }
+      gate.hidden = false;
+    };
+  });
+}
+
+function showProfileNameForm(initialName = '') {
+  return new Promise(resolve => {
+    const editing = Boolean(initialName);
+    const modal = document.createElement('div');
+    modal.className = 'profile-picker-overlay';
+    modal.innerHTML = `<section class="profile-picker profile-name-modal" role="dialog" aria-modal="true" aria-label="Numele profilului"><button class="profile-picker-close" type="button" data-profile-name-close aria-label="Închide">×</button><form class="profile-create" data-profile-name-form><span class="profile-create-icon" aria-hidden="true">👤</span><h2>${editing ? 'Editează numele profilului' : 'Salvează profilul'}</h2><p>${editing ? 'Alegeți numele sub care veți continua data viitoare.' : 'Scrieți un nume ca să puteți continua data viitoare de unde ați rămas.'}</p><label for="save-parent-profile-name">Numele profilului</label><input id="save-parent-profile-name" type="text" maxlength="40" autocomplete="off" value="${esc(initialName)}" placeholder="De exemplu: Seara cu prietenii"><small class="profile-create-error" data-profile-name-error aria-live="polite"></small><div class="profile-create-actions"><button type="button" class="secondary" data-profile-name-cancel>Anulează</button><button type="submit" class="primary">${editing ? 'Salvează schimbarea' : 'Salvează'}</button></div></form></section>`;
+    root.append(modal);
+    const close = () => { modal.remove(); resolve(''); };
+    const input = modal.querySelector('input');
+    const error = modal.querySelector('[data-profile-name-error]');
+    modal.querySelector('[data-profile-name-close]').onclick = close;
+    modal.querySelector('[data-profile-name-cancel]').onclick = close;
+    modal.querySelector('[data-profile-name-form]').onsubmit = event => {
+      event.preventDefault();
+      const username = input.value.trim().replace(/\s+/g, ' ');
+      if (!username) { error.textContent = 'Scrieți un nume pentru profil.'; input.focus(); return; }
+      modal.remove();
+      resolve(username);
+    };
+    setTimeout(() => input.focus({ preventScroll: true }), 30);
+  });
+}
+
+function currentGalleryActivities() {
+  return activities.filter(item => (item.illustration || item.cardIcon) && ACTIVE_ACTIVITY_ORDER.includes(item.id) && supportsGroupSize(item) && (activityIsVisible(item) || item.id === completionReturnId)).sort(compareActivitiesForGroup);
 }
 
 function renderLibrary() {
   stopMusicGame();
-  const galleryActivities = activities.filter(item => (item.illustration || item.cardIcon) && ACTIVE_ACTIVITY_ORDER.includes(item.id) && supportsGroupSize(item) && (activityIsVisible(item) || item.id === completionReturnId)).sort(compareActivitiesForGroup);
+  const galleryActivities = currentGalleryActivities();
   const progressMarkup = activityProgressMarkup();
   const progressStages = selectedGroupSize === 'large'
-    ? [['Dezmăț', '🤩'], ['Provocări', '✨'], ['Relax', '☁️']]
-    : [['Relax', '☁️'], ['Provocări', '✨'], ['Dezmăț', '🤩']];
+    ? [['Dezlănțuire', '🤩'], ['Provocări', '✨'], ['Relax', '☁️']]
+    : [['Relax', '☁️'], ['Provocări', '✨'], ['Dezlănțuire', '🤩']];
   const galleryMarkup = `<section class="activity-slider" aria-label="Alegeți o activitate"><div class="slider-viewport"><div class="slider-track">${galleryActivities.map(item => `<button type="button" class="activity-card${isActivityLocked(item) ? ' is-locked' : ''}" data-id="${esc(item.id)}" ${isActivityLocked(item) ? 'disabled aria-disabled="true"' : ''}>${activityLockMarkup(item)}${activityCompletionBadge(item)}${item.illustration ? `<img class="activity-illustration" src="${esc(item.illustration)}" alt="" loading="lazy">` : `<span class="activity-icon-illustration" aria-hidden="true">${esc(item.cardIcon || '✦')}</span>`}<h2 class="${item.title.trim().includes(' ') ? 'has-multiple-words' : ''}">${cardTitleMarkup(item.title)}</h2></button>`).join('')}</div></div></section>`;
-  root.innerHTML = `<div class="parents-shell"><header class="parents-top"><span class="brand"><img src="/assets/logo_sun.png" alt="Becky’s Garden"></span>${groupSizeToggleMarkup()}<div class="parents-settings"><button class="parents-settings-button" type="button" data-settings-toggle aria-expanded="false" aria-label="Setări">⚙</button><div class="parents-settings-panel" data-settings-panel hidden><div class="settings-profile">${parentProfileUsername ? `Profil: <strong>${esc(parentProfileUsername)}</strong>` : 'Niciun profil salvat'}</div><button type="button" class="settings-action" data-save-progress>Salvează progresul</button><button type="button" class="settings-action" data-load-profile>Încarcă profilul</button><button type="button" class="settings-action settings-reset" data-reset-progress>Resetează progresul</button><label><input type="checkbox" data-hide-completed ${hideCompletedActivities() ? 'checked' : ''}> Ascunde activitățile completate</label><small class="settings-status" data-settings-status></small></div></div></header>${progressMarkup}${galleryMarkup}</div>`;
+  root.innerHTML = `<div class="parents-shell"><header class="parents-top"><span class="brand"><img src="${MODERN_BRAND_LOGO}" alt="Becky’s Garden"></span>${groupSizeToggleMarkup()}<div class="parents-settings"><button class="parents-settings-button" type="button" data-settings-toggle aria-expanded="false" aria-label="Setări">⚙</button><div class="parents-settings-panel" data-settings-panel hidden><div class="settings-profile">${parentProfileUsername ? `Profil: <strong>${esc(parentProfileUsername)}</strong>` : 'Niciun profil salvat'}</div>${parentProfileUsername ? '' : '<button type="button" class="settings-action" data-create-profile>Creează profil</button>'}<button type="button" class="settings-action" data-edit-profile ${parentProfileUsername ? '' : 'disabled'}>Editează numele profilului</button>${parentProfileUsername ? '<button type="button" class="settings-action settings-delete" data-delete-profile>Șterge profilul</button>' : ''}<button type="button" class="settings-action" data-load-profile>Schimbă profilul</button><button type="button" class="settings-action settings-reset" data-reset-progress>Resetează progresul</button><label><input type="checkbox" data-hide-completed ${hideCompletedActivities() ? 'checked' : ''}> Ascunde activitățile completate</label><small class="settings-status" data-settings-status></small></div></div></header>${progressMarkup}${galleryMarkup}</div>`;
   root.querySelectorAll('.parents-shell:not(.voice-shell) .parents-top').forEach((header, index) => { if (index > 0) header.remove(); });
   const brand = root.querySelector('.parents-shell:not(.voice-shell) .parents-top .brand');
-  if (brand) brand.replaceChildren(Object.assign(document.createElement('img'), { src: '/assets/logo_sun.png', alt: 'Becky’s Garden' }));
+  if (brand) brand.replaceChildren(Object.assign(document.createElement('img'), { src: MODERN_BRAND_LOGO, alt: 'Becky’s Garden' }));
   const viewport = root.querySelector('.slider-viewport');
   if (!viewport) return;
   if (completionReturnId) {
@@ -419,16 +616,68 @@ function renderLibrary() {
   bindGroupSizeToggle(root, renderLibrary);
   const settingsToggle = root.querySelector('[data-settings-toggle]');
   const settingsPanel = root.querySelector('[data-settings-panel]');
-  settingsToggle.onclick = () => { const isOpen = settingsPanel.hidden; settingsPanel.hidden = !isOpen; settingsToggle.setAttribute('aria-expanded', String(isOpen)); };
-  root.querySelector('[data-hide-completed]').onchange = event => { localStorage.setItem(HIDE_COMPLETED_ACTIVITIES_KEY, String(event.currentTarget.checked)); renderLibrary(); };
+  const shellElement = root.querySelector('.parents-shell');
+  const setSettingsOpen = isOpen => {
+    settingsPanel.hidden = !isOpen;
+    settingsToggle.textContent = isOpen ? '×' : '⚙';
+    settingsToggle.setAttribute('aria-label', isOpen ? 'Închide setările' : 'Setări');
+    settingsToggle.setAttribute('aria-expanded', String(isOpen));
+    shellElement?.classList.toggle('is-settings-open', isOpen);
+  };
+  settingsToggle.onclick = () => setSettingsOpen(settingsPanel.hidden);
+  const progressSurface = root.querySelector('.parents-shell>.slider-progress');
+  let settingsPressTimer = null;
+  const cancelSettingsPress = () => { if (settingsPressTimer) { clearTimeout(settingsPressTimer); settingsPressTimer = null; } };
+  progressSurface?.addEventListener('pointerdown', event => {
+    event.preventDefault();
+    cancelSettingsPress();
+    settingsPressTimer = setTimeout(() => { settingsPressTimer = null; setSettingsOpen(true); }, 3000);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => progressSurface?.addEventListener(type, cancelSettingsPress));
+  progressSurface?.addEventListener('contextmenu', event => event.preventDefault());
+  root.querySelector('[data-hide-completed]').onchange = event => { localStorage.setItem(HIDE_COMPLETED_ACTIVITIES_KEY, String(event.currentTarget.checked)); queueParentProgressSave(); renderLibrary(); };
   const settingsStatus = root.querySelector('[data-settings-status]');
-  root.querySelector('[data-save-progress]').onclick = async () => {
-    const entered = window.prompt('Cum vrei să se numească acest profil?', parentProfileUsername || '');
-    if (!entered?.trim()) return;
-    parentProfileUsername = entered.trim().replace(/\s+/g, ' '); localStorage.setItem(PARENT_PROFILE_KEY, parentProfileUsername); rememberParentProfile(parentProfileUsername);
-    try { const existing = await getParentProgress(parentProfileUsername); if (existing.progress) applyParentProgress(existing.progress); await saveParentProgress(parentProfileUsername, parentProgressSnapshot()); settingsStatus.textContent = 'Progres salvat.'; renderLibrary(); } catch { settingsStatus.textContent = 'Nu s-a putut salva acum. Progresul local rămâne păstrat.'; }
+  root.querySelector('[data-create-profile]')?.addEventListener('click', async () => {
+    if (!parentProfileUsername) {
+      const entered = await showProfileNameForm();
+      if (!entered) return;
+      parentProfileUsername = entered;
+      localStorage.setItem(PARENT_PROFILE_KEY, parentProfileUsername);
+      rememberParentProfile(parentProfileUsername);
+    }
+    try { await queueParentProgressSave(); renderLibrary(); } catch { settingsStatus.textContent = 'Profilul nu a putut fi creat acum. Progresul local rămâne păstrat.'; }
+  });
+  root.querySelector('[data-edit-profile]').onclick = async () => {
+    const previous = parentProfileUsername;
+    if (!previous) return;
+    const next = await showProfileNameForm(previous);
+    if (!next || next === previous) return;
+    const snapshot = parentProgressSnapshot();
+    try {
+      await saveParentProgress(next, snapshot);
+      try { await deleteParentProgress(previous); } catch { /* noul profil este deja salvat; evităm să pierdem progresul */ }
+      renameKnownParentProfile(previous, next);
+      parentProfileUsername = next;
+      localStorage.setItem(PARENT_PROFILE_KEY, next);
+      const profileLabel = root.querySelector('.settings-profile');
+      if (profileLabel) profileLabel.innerHTML = `Profil: <strong>${esc(next)}</strong>`;
+      settingsStatus.textContent = 'Numele profilului a fost schimbat.';
+    } catch { settingsStatus.textContent = 'Numele nu a putut fi schimbat acum. Profilul vechi rămâne activ.'; }
   };
   root.querySelector('[data-load-profile]').onclick = showProfilePicker;
+  root.querySelector('[data-delete-profile]')?.addEventListener('click', async event => {
+    const username = parentProfileUsername;
+    if (!username || !window.confirm(`Ștergeți profilul „${username}” și tot progresul lui?`)) return;
+    event.currentTarget.disabled = true;
+    try {
+      await deleteParentProgress(username);
+      forgetKnownParentProfile(username);
+      resetLocalProfileState();
+      localStorage.removeItem(PARENT_PROFILE_KEY);
+      parentProfileUsername = '';
+      renderLibrary();
+    } catch { event.currentTarget.disabled = false; settingsStatus.textContent = 'Profilul nu a putut fi șters acum. Progresul rămâne păstrat.'; }
+  });
   root.querySelector('[data-reset-progress]').onclick = async () => {
     if (!window.confirm('Ștergem tot progresul și revenim la începutul fiecărei activități?')) return;
     if (parentProfileUsername) { try { await deleteParentProgress(parentProfileUsername); } catch { /* continue with local reset */ } }
@@ -514,6 +763,11 @@ function renderLibrary() {
 
 function activityGuide(item) {
   const guides = {
+    'ghiceste-expresia': {
+      who: 'Jucați împreună: spuneți cu voce tare expresia care vă vine în minte.',
+      how: 'Priviți emoji-urile și încercați să recunoașteți expresia românească.',
+      options: 'Verificați răspunsul sau dezvăluiți o parte, apoi continuați cu următoarea.'
+    },
     'recunoaste-ti-animalul': {
       who: 'Alegeți împreună sau lăsați fiecare persoană să răspundă pe rând.',
       how: 'Ascultați sunetul, apoi alegeți animalul corect dintre trei variante.',
@@ -530,9 +784,34 @@ function activityGuide(item) {
       options: 'Alegeți una sau apăsați „Pas” pentru alte trei. Întrebările nealese pot reveni mai târziu.'
     },
     'intrebari-profunde': {
-      who: 'Pe rând, fiecare persoană alege o întrebare și răspunde fără grabă.',
-      how: 'Apar trei întrebări: una ușoară, una medie și una care invită la mai multă reflecție.',
-      options: 'Alegeți una sau apăsați „Pas” pentru alte trei. Nu este nevoie să răspundeți la ceva prea personal.'
+      who: 'Pe rând, fiecare persoană alege una dintre cele trei întrebări.',
+      how: 'Răspundeți în ritmul vostru sau apăsați „Pas” pentru alte trei.',
+      options: 'O întrebare bună nu cere răspuns pe loc: îi puteți face o fotografie și puteți reveni la ea mai târziu.'
+    },
+    'intrarea-dramatica': {
+      who: 'Un participant iese puțin din aria vizuală a grupului.',
+      how: 'Când începe muzica, aplaudați-l până ajunge înapoi la voi. 👏',
+      options: 'Pentru câteva secunde, scena este a lui. Revine exact așa cum îi vine natural.'
+    },
+    'dans': {
+      who: 'Poate dansa o singură persoană sau puteți dansa împreună.',
+      how: 'Alegeți un dans din listă și începeți când sunteți gata.',
+      options: 'Macarena merge și solo; fiecare variantă arată numărul minim de participanți.'
+    },
+    'mini-quiz-general': {
+      who: 'Oricine poate răspunde; grupul se poate consulta înainte de alegerea finală.',
+      how: 'Alegeți câți jucați. Pentru 2–9, tableta merge spre stânga după fiecare întrebare.',
+      options: 'Hotărâți-vă împreună, verificați răspunsul, apoi voi sau Quizul primiți câte un punct.'
+    },
+    'reproduceti-sunetul': {
+      who: 'Cine are tableta memorează secretul și îl reproduce fără cuvinte.',
+      how: 'Pentru 2–9 persoane, fiecare primește un sunet. La 10+, grupul decide natural cine urmează.',
+      options: 'Începeți doar cu sunetul. Deblocați mima și indiciile până când grupul ghicește.'
+    },
+    'arata-mai-departe': {
+      who: 'Stați în șir, cu spatele la ecran. Primul vede scena și o arată următoarei persoane.',
+      how: 'Fără cuvinte și o singură dată. Fiecare dă mai departe ce a înțeles.',
+      options: 'La final, ultima persoană arată ce a ajuns, apoi primul arată scena originală.'
     }
   };
   if (guides[item.id]) return guides[item.id];
@@ -549,7 +828,7 @@ function renderActivityIntro(item) {
   root.classList.remove('activity-picker-open');
   const guide = activityGuide(item);
   track('activity_info_viewed');
-  root.innerHTML = `<main class="activity-info-experience"><button class="question-back" type="button" data-activity-info-back>← Activități</button><section class="activity-info-card"><header>${item.illustration ? `<img src="${esc(item.illustration)}" alt="">` : `<span aria-hidden="true">${esc(item.cardIcon || '✦')}</span>`}<div><small>CUM SE JOACĂ</small><h1>${esc(item.title)}</h1></div></header><div class="activity-info-rules"><div><strong>Cine răspunde</strong><p>${esc(guide.who)}</p></div><div><strong>Cum jucați</strong><p>${esc(guide.how)}</p></div><div><strong>Ce puteți alege</strong><p>${esc(guide.options)}</p></div></div><button class="primary activity-info-start" type="button" data-activity-info-start>Începe activitatea</button></section></main>`;
+  root.innerHTML = `<main class="activity-info-experience"><button class="question-back" type="button" data-activity-info-back>← Activități</button><section class="activity-info-card"><header>${item.illustration ? `<img src="${esc(item.illustration)}" alt="">` : `<span aria-hidden="true">${esc(item.cardIcon || '✦')}</span>`}<div><small>CUM SE JOACĂ</small><h1>${esc(item.title)}</h1></div></header><div class="activity-info-rules"><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cine%20raspunde.png" alt=""><div><strong>Cine răspunde</strong><p>${esc(guide.who)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/ce%20puteti%20alege.png" alt=""><div><strong>Ce puteți alege</strong><p>${esc(guide.options)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cum%20jucati.png" alt=""><div><strong>Cum jucați</strong><p>${esc(guide.how)}</p></div></div></div><button class="primary activity-info-start" type="button" data-activity-info-start>Începe activitatea</button></section></main>`;
   root.querySelector('[data-activity-info-back]').onclick = renderLibrary;
   root.querySelector('[data-activity-info-start]').onclick = () => {
     track('activity_started_from_info');
@@ -563,13 +842,122 @@ function openActivity(item) {
   renderActivityIntro(item);
 }
 
+function renderPassAlong(item, initialPhase = 'setup') {
+  stopMusicGame();
+  active = item;
+  root.classList.remove('activity-picker-open');
+  const scene = Array.isArray(item.passAlongScene?.steps) ? item.passAlongScene.steps : [];
+  let phase = initialPhase;
+  let busy = false;
+  const sceneMarkup = () => `<div class="pass-along-scene">${scene.map((step, index) => `<div class="pass-along-scene-step"><span class="pass-along-emoji">${esc(step.emoji)}</span><div><strong>${esc(step.text)}</strong><small>${esc(step.caption)}</small></div>${index < scene.length - 1 ? '<span class="pass-along-arrow" aria-hidden="true">↓</span>' : ''}</div>`).join('')}</div>`;
+  const shell = (body, className = '') => `<main class="pass-along-experience ${className}"><button class="question-back" type="button" data-pass-back>← Activități</button><section class="pass-along-stage">${body}</section></main>`;
+  const render = () => {
+    let body = '';
+    if (phase === 'setup') body = `<span class="music-game-kicker">ARATĂ MAI DEPARTE</span><h1>Telefonul fără fir.<br>Dar fără cuvinte.</h1><p>Stați în șir, cu spatele la ecran.</p><p>Primul vede o scenă și o arată următorului. Apoi fiecare dă mai departe ce a înțeles.</p><span class="pass-along-people">3+ persoane</span><button class="primary pass-along-cta" type="button" data-pass-next>Ne-am așezat →</button>`;
+    if (phase === 'rules') body = `<span class="music-game-kicker">ARATĂ MAI DEPARTE</span><h1>Țineți minte trei lucruri.</h1><div class="pass-along-rules"><div><strong>FĂRĂ CUVINTE</strong><small>Doar gesturi.</small></div><div><strong>O SINGURĂ DATĂ</strong><small>Arată scena o dată.</small></div><div><strong>NU TE UITA ÎNAPOI</strong><small>Fiecare dă mai departe ce a înțeles.</small></div></div><button class="primary pass-along-cta" type="button" data-pass-next>Ne-am așezat →</button>`;
+    if (phase === 'privacy' || phase === 'peek-privacy') body = `<p class="pass-along-privacy-emoji">🙈</p><span class="music-game-kicker">${phase === 'peek-privacy' ? 'CEILALȚI CU SPATELE LA ECRAN' : 'DOAR PRIMUL SE UITĂ'}</span><h1>${phase === 'peek-privacy' ? 'Ceilalți rămân cu spatele la ecran.' : 'Doar primul se uită la ecran.'}</h1><p>Primul participant vede scena și o memorează.</p><button class="primary pass-along-cta" type="button" data-pass-next>Mă uit doar eu →</button>`;
+    if (phase === 'secret') body = `<span class="music-game-kicker">SITUAȚIA TA</span>${sceneMarkup()}<p class="pass-along-no-words">Fără cuvinte.</p><button class="primary pass-along-cta" type="button" data-pass-next>Am ținut-o minte →</button>`;
+    if (phase === 'chain') body = `<span class="music-game-kicker">ARATĂ MAI DEPARTE</span><h1>Arată scena următoarei persoane.</h1><p>O singură dată.<br>Fără cuvinte.</p><p class="pass-along-chain-note">Apoi întoarce-te.</p><strong class="pass-along-resting">TRIMITEȚI-O PÂNĂ LA CAPĂT 😏</strong><button class="primary pass-along-cta" type="button" data-pass-next>A ajuns →</button><button class="pass-along-forgot pass-along-chain-forgot" type="button" data-pass-forgot>👀 Am uitat ce să reproduc</button>`;
+    if (phase === 'arrived') body = `<span class="music-game-kicker">ASTA A AJUNS</span><h1>Ultima persoană se întoarce acum cu fața spre tot grupul.</h1><p>Arată tuturor scena care a ajuns la tine.</p><button class="primary pass-along-cta" type="button" data-pass-next>A arătat-o →</button>`;
+    if (phase === 'original') body = `<span class="music-game-kicker">ASTA A PLECAT</span>${sceneMarkup()}<p class="pass-along-original-instruction"><strong>PRIMA PERSOANĂ:</strong><br>Arată acum tuturor scena originală.</p><div class="pass-along-final-line">ASTA A AJUNS.<br>ASTA A PLECAT.</div><button class="primary pass-along-cta" type="button" data-pass-complete>Înapoi la activități →</button>`;
+    if (phase === 'complete') body = `<div class="pass-along-complete-mark" aria-hidden="true">✨</div><h1>ASTA A PLECAT.<br>ASTA A AJUNS.</h1><button class="primary pass-along-cta" type="button" data-pass-complete>Înapoi la activități →</button>`;
+    root.innerHTML = shell(body, `is-pass-${phase}`);
+    root.querySelector('[data-pass-back]').onclick = () => { if (!busy) renderLibrary(); };
+    root.querySelector('[data-pass-forgot]')?.addEventListener('click', () => { if (!busy) { phase = 'peek-privacy'; render(); } });
+    root.querySelector('[data-pass-next]')?.addEventListener('click', () => {
+      if (busy) return;
+      busy = true;
+      const next = { setup: 'rules', rules: 'privacy', privacy: 'secret', 'peek-privacy': 'secret', secret: 'chain', chain: 'arrived', arrived: 'original', original: 'complete' }[phase];
+      phase = next || phase;
+      busy = false;
+      render();
+    });
+    root.querySelector('[data-pass-complete]')?.addEventListener('click', () => {
+      if (busy) return;
+      busy = true;
+      saveActivityProgress(item.id, { version: 1, completed_at: new Date().toISOString() });
+      markActivityComplete(item.id);
+      completionReturnId = item.id;
+      renderLibrary();
+    });
+  };
+  render();
+}
+
 function startActivity(item) {
-  if (item.musicGame) renderMusicGame(item);
+  if (item.id === 'ghiceste-expresia') renderExpressionGuess(item);
+  else if (item.id === 'arata-mai-departe') renderPassAlong(item);
+  else if (item.id === 'intrarea-dramatica') renderDramaticSetup(item);
+  else if (item.id === 'dans') renderDanceOptions(item);
+  else if (item.musicGame) renderMusicGame(item);
   else if ((Array.isArray(item.questionSets) && item.questionSets.length) || item.questionPool) renderFunnyQuestions(item);
   else if (Array.isArray(item.questions) && item.questions.length) renderQuestionExperience(item, activityResumeIndex(item.id));
   else if (item.animalSound) renderAnimalExperience(item);
   else if (item.id === 'mini-quiz-general') renderMiniQuiz(item);
+  else if (item.id === 'reproduceti-sunetul') renderReproduceSound(item);
   else renderManualActivity(item);
+}
+
+function reproduceSoundState(item) { return activityProgress()[item.id] || {}; }
+function reproduceSoundRound(item, count) {
+  const plans = { 2: [0, 6], 3: [0, 2, 4], 4: [0, 1, 4, 6], 5: [0, 1, 2, 4, 6], 6: [0, 1, 2, 4, 5, 6], 7: [0, 1, 2, 3, 4, 5, 6], 8: [0, 1, 2, 3, 4, 5, 6, 7], 9: [0, 1, 2, 3, 4, 5, 6, 7, 8], 10: [0, 1, 2, 4, 5, 6] };
+  const pool = Array.isArray(item.soundRounds) ? item.soundRounds : [];
+  return (plans[count] || plans[10]).map(index => pool[index]).filter(Boolean).map(round => round.id);
+}
+function renderReproduceSoundReady(item, phase = 'sound') {
+  clearTimeout(soundSecretTimer);
+  const state = { ...reproduceSoundState(item), phase };
+  saveActivityProgress(item.id, state);
+  renderReproduceSound({ ...item, __peek: false, __peekPhase: undefined });
+}
+function renderReproduceSound(item) {
+  stopMusicGame(); active = item; root.classList.remove('activity-picker-open'); clearTimeout(soundSecretTimer);
+  const pool = Array.isArray(item.soundRounds) ? item.soundRounds : [];
+  let state = reproduceSoundState(item);
+  if (item.__peek) state = { ...state, phase: 'peek' };
+  if (state.completed_at || completedActivityIds().includes(item.id)) { renderLibrary(); return; }
+  if (!Array.isArray(state.round_ids) || !state.round_ids.length || !Number.isInteger(state.player_count)) {
+    root.innerHTML = `<main class="sound-game sound-game-setup"><button class="question-back" type="button" data-sound-back>← Activități</button><div class="sound-game-content"><img class="sound-game-illustration" src="${esc(item.illustration)}" alt=""><p class="sound-game-kicker">GHICIȚI ÎMPREUNĂ</p><h1>${esc(item.title || 'Grupul ghicește sunetul')}</h1><p class="sound-game-question">Câți jucați?</p><div class="sound-player-grid">${[2,3,4,5,6,7,8,9].map(count => `<button type="button" data-sound-count="${count}">${count}</button>`).join('')}<button type="button" data-sound-count="10">10+</button></div></div></main>`;
+    root.querySelector('[data-sound-back]').onclick = renderLibrary;
+    root.querySelectorAll('[data-sound-count]').forEach(button => button.onclick = () => { const count = Number(button.dataset.soundCount); saveActivityProgress(item.id, { version: 1, player_count: count, round_ids: reproduceSoundRound(item, count), index: 0, phase: 'secret', completed_rounds: [], completed_at: null }); renderReproduceSound(item); });
+    return;
+  }
+  const roundsById = new Map(pool.map(round => [round.id, round]));
+  const index = Math.min(Math.max(Number(state.index) || 0, 0), state.round_ids.length);
+  if (index >= state.round_ids.length) {
+    state.completed_at = new Date().toISOString(); saveActivityProgress(item.id, state); markActivityComplete(item.id); completionReturnId = item.id;
+    root.innerHTML = `<main class="sound-game sound-game-complete"><div class="sound-game-content"><div class="sound-celebration" aria-hidden="true">🎉</div><h1>Le-ați ghicit pe toate!</h1><p>${state.player_count < 10 ? 'Fiecare a avut momentul lui.' : 'Ați reușit împreună.'}</p><button class="primary" type="button" data-sound-complete-back>Înapoi la activități</button></div></main>`;
+    root.querySelector('[data-sound-complete-back]').onclick = renderLibrary; return;
+  }
+  const round = roundsById.get(state.round_ids[index]);
+  if (!round) { state.index = index + 1; saveActivityProgress(item.id, state); renderReproduceSound(item); return; }
+  const phase = state.phase || 'secret';
+  const phaseContent = phase === 'mime'
+    ? '<p class="sound-phase-title">🎭 ACUM POȚI ȘI MIMA</p><p>Sunet + mimă. Fără cuvinte.</p>'
+    : phase === 'hint1'
+      ? `<p class="sound-phase-title">💡 INDICIU</p><strong class="sound-hint">${esc(round.hint1)}</strong><p>Sunet + mimă. Fără cuvinte.</p>`
+      : phase === 'hint2'
+        ? `<p class="sound-phase-title">💡 ÎNCĂ UN INDICIU</p><strong class="sound-hint">${esc(round.hint2)}</strong><p>Sunet + mimă. Fără cuvinte.</p>`
+        : '<p class="sound-phase-title">🎙️ FĂ-I SĂ GHICEASCĂ</p><p>Doar din sunet. Fără cuvinte.</p>';
+  if (phase === 'secret' || phase === 'peek') {
+    const duration = phase === 'peek' ? 2000 : 4000;
+    root.innerHTML = `<main class="sound-game sound-secret"><button class="question-back" type="button" data-sound-back>← Activități</button><div class="sound-game-content"><p class="sound-secret-eyebrow">🙈 OCHII DE LA ECRAN</p><h1>Doar cel cu tableta se uită la ecran.</h1><p>Confirmați când sunteți gata.</p><button class="primary sound-secret-confirm" type="button" data-sound-secret-confirm>Sunt gata →</button></div></main>`;
+    root.querySelector('[data-sound-back]').onclick = () => { clearTimeout(soundSecretTimer); renderLibrary(); };
+    root.querySelector('[data-sound-secret-confirm]').onclick = () => {
+      root.innerHTML = `<main class="sound-game sound-secret sound-secret-reveal"><div class="sound-game-content"><p class="sound-secret-eyebrow">SUNETUL TĂU ESTE</p><h1>${esc(round.label)}</h1><p>Memorează-l.</p></div></main>`;
+      soundSecretTimer = setTimeout(() => renderReproduceSoundReady(item, item.__peekPhase || 'sound'), duration);
+    };
+    return;
+  }
+  root.innerHTML = `<main class="sound-game sound-round"><button class="question-back" type="button" data-sound-back>← Activități</button><div class="sound-game-content"><p class="sound-round-count">${index + 1} din ${state.round_ids.length}</p><p class="sound-round-audience">${state.player_count >= 10 ? 'Grup organic' : 'Cercul'}</p><section class="sound-phase-card">${phaseContent}</section><button class="primary sound-guessed" type="button" data-sound-guessed>✓ Au ghicit!</button><div class="sound-help-actions">${phase === 'sound' ? '<button type="button" data-sound-mime>Ajută-mă puțin →</button>' : phase === 'mime' ? '<button type="button" data-sound-hint1>Dă-ne un indiciu →</button>' : phase === 'hint1' ? '<button type="button" data-sound-hint2>Încă un indiciu →</button>' : ''}<button type="button" class="sound-forgot" data-sound-forgot>👀 Am uitat sunetul</button></div></div></main>`;
+  root.querySelector('[data-sound-back]').onclick = () => { clearTimeout(soundSecretTimer); renderLibrary(); };
+  const advancePhase = nextPhase => { state.phase = nextPhase; saveActivityProgress(item.id, state); renderReproduceSound(item); };
+  root.querySelector('[data-sound-mime]')?.addEventListener('click', () => advancePhase('mime'));
+  root.querySelector('[data-sound-hint1]')?.addEventListener('click', () => advancePhase('hint1'));
+  root.querySelector('[data-sound-hint2]')?.addEventListener('click', () => advancePhase('hint2'));
+  root.querySelector('[data-sound-forgot]').onclick = () => { state.phase = phase; saveActivityProgress(item.id, state); renderReproduceSound({ ...item, __peek: true, __peekPhase: phase }); };
+  root.querySelector('[data-sound-guessed]').onclick = () => { state.completed_rounds = [...(state.completed_rounds || []), round.id]; state.index = index + 1; state.phase = 'secret'; saveActivityProgress(item.id, state); if (state.index >= state.round_ids.length) renderReproduceSound(item); else { root.innerHTML = `<main class="sound-game sound-next"><div class="sound-game-content"><p class="sound-secret-eyebrow">✓ AU GHICIT!</p><h1>${state.player_count < 10 ? 'Dă tableta spre stânga →' : 'Următorul sunet →'}</h1><button class="primary" type="button" data-sound-next>Continuă</button></div></main>`; root.querySelector('[data-sound-next]').onclick = () => renderReproduceSound(item); } };
+  if (item.__peek) { state.phase = phase; root.querySelector('[data-sound-forgot]').click = null; renderReproduceSound({ ...item, __peek: false }); }
 }
 
 function renderAnimalExperience(item) {
@@ -756,7 +1144,7 @@ function renderQuestionExperience(item, questionIndex = 0, transition = null) {
 
 function activityDockMarkup(currentItem) {
   const items = activities.filter(item => (item.illustration || item.cardIcon) && ACTIVE_ACTIVITY_ORDER.includes(item.id) && activityIsVisible(item)).sort(compareActivitiesForGroup);
-  return `<aside class="activity-dock" data-activity-dock><button class="activity-dock-toggle" type="button" data-open-activity-dock aria-expanded="false">Alegeți altă activitate <span>⌃</span></button><div class="activity-dock-panel"><span class="activity-picker-brand"><img src="/assets/logo_sun.png" alt="Becky’s Garden"></span>${activityProgressMarkup()}<div class="activity-dock-track">${items.map(item => `<button type="button" class="activity-dock-card${isActivityLocked(item) ? ' is-locked' : ''}" data-dock-id="${esc(item.id)}" data-group-sizes="${esc((item.groupSizes || ['small','large']).join(','))}" ${supportsGroupSize(item) ? '' : 'hidden'} ${isActivityLocked(item) ? 'disabled aria-disabled="true"' : ''}>${activityLockMarkup(item)}${activityCompletionBadge(item)}${item.illustration ? `<img src="${esc(item.illustration)}" alt="" loading="lazy">` : `<span>${esc(item.cardIcon || '✦')}</span>`}<strong class="${item.title.trim().includes(' ') ? 'has-multiple-words' : ''}">${cardTitleMarkup(item.title)}</strong></button>`).join('')}</div>${groupSizeToggleMarkup()}</div></aside>`;
+  return `<aside class="activity-dock" data-activity-dock><button class="activity-dock-toggle" type="button" data-open-activity-dock aria-expanded="false">Alegeți altă activitate <span>⌃</span></button><div class="activity-dock-panel"><span class="activity-picker-brand"><img src="${MODERN_BRAND_LOGO}" alt="Becky’s Garden"></span>${activityProgressMarkup()}<div class="activity-dock-track">${items.map(item => `<button type="button" class="activity-dock-card${isActivityLocked(item) ? ' is-locked' : ''}" data-dock-id="${esc(item.id)}" data-group-sizes="${esc((item.groupSizes || ['small','large']).join(','))}" ${supportsGroupSize(item) ? '' : 'hidden'} ${isActivityLocked(item) ? 'disabled aria-disabled="true"' : ''}>${activityLockMarkup(item)}${activityCompletionBadge(item)}${item.illustration ? `<img src="${esc(item.illustration)}" alt="" loading="lazy">` : `<span>${esc(item.cardIcon || '✦')}</span>`}<strong class="${item.title.trim().includes(' ') ? 'has-multiple-words' : ''}">${cardTitleMarkup(item.title)}</strong></button>`).join('')}</div>${groupSizeToggleMarkup()}</div></aside>`;
 }
 
 function bindActivityDock(currentItem) {
@@ -805,7 +1193,7 @@ function bindActivityDock(currentItem) {
       button.hidden = !button.dataset.groupSizes.split(',').includes(selectedGroupSize);
     });
     dockTrack.scrollLeft = 0;
-    const stages = selectedGroupSize === 'large' ? [['Dezmăț', '🤩'], ['Provocări', '✨'], ['Relax', '☁️']] : [['Relax', '☁️'], ['Provocări', '✨'], ['Dezmăț', '🤩']];
+    const stages = selectedGroupSize === 'large' ? [['Dezlănțuire', '🤩'], ['Provocări', '✨'], ['Relax', '☁️']] : [['Relax', '☁️'], ['Provocări', '✨'], ['Dezlănțuire', '🤩']];
     milestones.forEach((milestone, index) => {
       milestone.querySelector('i').textContent = stages[index][1];
       milestone.querySelector('small').textContent = stages[index][0];
@@ -854,6 +1242,103 @@ function nextMusicTrack() {
   const trackItem = musicGameQueue.shift();
   lastMusicTrackId = trackItem?.id || null;
   return trackItem;
+}
+
+function renderDanceOptions(item) {
+  stopMusicGame(); active = item; root.classList.remove('activity-picker-open');
+  const options = Array.isArray(item.danceOptions) ? item.danceOptions : [];
+  root.innerHTML = `<main class="music-game-experience dance-options-experience"><button class="question-back" type="button" data-dance-back>← Activități</button><section class="music-game-stage"><span class="music-game-kicker">DANSURI DE GRUP</span><h1>Alegeți dansul.</h1><p>Unele merg și solo. Alegeți unul și începeți când sunteți gata.</p><div class="dance-options-grid">${options.map(option => option.youtubeVideoId ? `<button type="button" class="dance-option" data-dance-name="${esc(option.name)}"><strong>${esc(option.name)}</strong><small>${esc(option.participants)}</small></button>` : `<button type="button" class="dance-option dance-option-locked" disabled aria-disabled="true"><span class="dance-option-lock" aria-hidden="true">🔒</span><strong>${esc(option.name)}</strong><small>În curând</small></button>`).join('')}</div><p class="dance-selection" data-dance-selection>Alegeți o variantă.</p></section></main>`;
+  root.querySelector('[data-dance-back]').onclick = renderLibrary;
+  root.querySelectorAll('[data-dance-name]').forEach(button => button.onclick = () => {
+    const option = options.find(value => value.name === button.dataset.danceName);
+    if (option?.youtubeVideoId) renderDanceVideo(item, option);
+  });
+}
+function renderDanceVideo(item, option) {
+  const origin = encodeURIComponent(window.location.origin);
+  const videoUrl = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(option.youtubeVideoId)}?autoplay=1&start=10&controls=1&rel=0&playsinline=1&origin=${origin}`;
+  root.innerHTML = `<main class="music-game-experience dance-video-experience"><button class="question-back" type="button" data-dance-video-back>← Activități</button><section class="music-game-stage"><div class="dance-video-frame"><iframe src="${videoUrl}" title="${esc(option.name)}" allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe></div></section></main>`;
+  root.querySelector('[data-dance-video-back]').onclick = () => renderDanceOptions(item);
+}
+
+function renderDramaticSetup(item) {
+  stopMusicGame(); active = item; dramaticTrackIndex = 0; dramaticSession = { total: 1, current: 1 };
+  root.innerHTML = `<main class="music-game-experience dramatic-entry-experience dramatic-setup"><button class="question-back" type="button" data-dramatic-back>← Activități</button><section class="music-game-stage"><span class="music-game-kicker">MOMENTUL TĂU</span><h1>Câți participanți intră pe rând?</h1><p>Alegeți între 2 și 9 persoane. Fiecare își pregătește scena și este primit în aplauze.</p><div class="dramatic-participant-grid">${Array.from({ length: 8 }, (_, index) => `<button type="button" data-dramatic-participants="${index + 2}">${index + 2}</button>`).join('')}</div><button class="primary music-game-start" type="button" data-dramatic-setup-start>Pregătiți scena</button></section></main>`;
+  root.querySelector('[data-dramatic-back]').onclick = renderLibrary;
+  root.querySelectorAll('[data-dramatic-participants]').forEach(button => button.onclick = () => { root.querySelectorAll('[data-dramatic-participants]').forEach(option => option.classList.remove('is-selected')); button.classList.add('is-selected'); dramaticSession.total = Number(button.dataset.dramaticParticipants); });
+  root.querySelector('[data-dramatic-participants="2"]').click();
+  root.querySelector('[data-dramatic-setup-start]').onclick = () => renderDramaticEntry(item);
+}
+
+function renderDramaticEntry(item, advanceTrack = false) {
+  stopMusicGame(); active = item; root.classList.remove('activity-picker-open');
+  if (advanceTrack && dramaticMusicTracks.length) dramaticTrackIndex = (dramaticTrackIndex + 1) % dramaticMusicTracks.length;
+  const trackItem = dramaticMusicTracks[dramaticTrackIndex % Math.max(1, dramaticMusicTracks.length)];
+  if (!trackItem) {
+    root.innerHTML = `<main class="music-game-experience dramatic-entry-experience"><button class="question-back" type="button" data-dramatic-back>← Activități</button><section class="music-game-stage"><span class="music-game-kicker">MOMENTUL TĂU</span><h1>Momentan nu avem o melodie pregătită.</h1><p>Adăugați un fragment audio în folderul activităților pentru părinți.</p></section></main>`;
+    root.querySelector('[data-dramatic-back]').onclick = renderLibrary;
+    return;
+  }
+  track('dramatic_entry_viewed');
+    root.innerHTML = `<main class="music-game-experience dramatic-entry-experience"><button class="question-back" type="button" data-dramatic-back>← Activități</button><section class="music-game-stage"><span class="music-game-kicker">MOMENTUL TĂU</span><h1>Pentru câteva secunde, scena e a ta.</h1><p>Ieși puțin din aria vizuală. Când începe muzica, revino la grup.<br>Atât. Restul vine de la sine.</p><strong class="music-game-status" data-dramatic-status>Când începe muzica, aplaudați-l până ajunge înapoi la voi. 👏</strong><button class="primary music-game-start" type="button" data-dramatic-start>E gata. Dă-i drumul →</button></section></main>`;
+  const startButton = root.querySelector('[data-dramatic-start]');
+  const status = root.querySelector('[data-dramatic-status]');
+  const audio = new Audio(trackItem.src); audio.preload = 'auto';
+  const crowdAudio = new Audio('/assets/mp3s/Activitati%20parinti%20mp3s/Podium%20walk%20songs/clips/crowd-cheer-start.mp3'); crowdAudio.preload = 'auto'; crowdAudio.volume = 0.72;
+  let started = false;
+  const stopCrowd = () => { crowdAudio.pause(); crowdAudio.currentTime = 0; };
+  const leave = () => { audio.pause(); stopCrowd(); audio.removeAttribute('src'); audio.load(); renderLibrary(); };
+  root.querySelector('[data-dramatic-back]').onclick = leave;
+  startButton.onclick = async () => {
+    if (started) return;
+    started = true; startButton.disabled = true; status.textContent = 'Aplaudați până ajunge înapoi la voi. 👏'; root.querySelector('.music-game-stage h1').textContent = '👏 APLAUZE, APLAUZE!'; root.querySelector('.music-game-stage p').textContent = 'Până ajunge înapoi la voi.';
+    const token = ++musicGameRunToken;
+    try {
+      if (audio.readyState < 1) await new Promise((resolve, reject) => { const timeout = setTimeout(() => reject(new Error('Audio metadata timeout')), 4000); audio.addEventListener('loadedmetadata', () => { clearTimeout(timeout); resolve(); }, { once: true }); audio.addEventListener('error', () => { clearTimeout(timeout); reject(new Error('Audio load error')); }, { once: true }); });
+      if (!Number.isFinite(audio.duration) || trackItem.start < 0 || trackItem.end <= trackItem.start || trackItem.end > audio.duration + .15) throw new Error('Interval audio invalid');
+      audio.pause();
+      audio.currentTime = trackItem.start;
+      if (trackItem.start > 0 && Math.abs(audio.currentTime - trackItem.start) > 0.25) {
+        await new Promise(resolve => {
+          const finishSeek = () => { audio.removeEventListener('seeked', finishSeek); resolve(); };
+          audio.addEventListener('seeked', finishSeek, { once: true });
+          setTimeout(finishSeek, 1200);
+        });
+      }
+      await audio.play();
+      crowdAudio.currentTime = 0; crowdAudio.play().catch(() => {});
+      startButton.outerHTML = '<div class="dramatic-playing" data-dramatic-playing role="status" aria-live="polite"><div class="dramatic-now-playing"><span class="dramatic-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><strong>Muzica rulează…</strong></div><div class="dramatic-time-left"><b data-dramatic-countdown>23</b><small>secunde rămase</small></div><button class="secondary dramatic-stop" type="button" data-dramatic-stop>Oprește muzica</button></div>';
+      const playingIndicator = root.querySelector('[data-dramatic-playing]');
+      saveActivityProgress(item.id, { version: 1, track_id: trackItem.id, started_at: new Date().toISOString(), completed_at: null });
+      const stopAtEnd = () => {
+        if (token !== musicGameRunToken || !started) return;
+        const countdown = playingIndicator?.querySelector('[data-dramatic-countdown]');
+        if (countdown) countdown.textContent = Math.max(0, Math.ceil(trackItem.end - audio.currentTime));
+        if (audio.ended && audio.currentTime < trackItem.end) { clearInterval(musicGameTimer); started = false; stopCrowd(); status.textContent = 'Fragmentul audio nu are intervalul complet.'; playingIndicator?.remove(); return; }
+        if (audio.currentTime < trackItem.end) return;
+        clearInterval(musicGameTimer); audio.pause(); stopCrowd(); started = false; status.textContent = '👏 Bine ai venit înapoi!';
+        saveActivityProgress(item.id, { version: 1, track_id: trackItem.id, participant: dramaticSession.current, participant_count: dramaticSession.total, completed_at: new Date().toISOString() });
+        playingIndicator?.remove();
+        if (dramaticSession.current < dramaticSession.total) {
+          status.textContent = `👏 Participantul ${dramaticSession.current} a revenit. Pregătiți scena pentru următorul.`;
+          const nextButton = document.createElement('button'); nextButton.className = 'primary music-game-start'; nextButton.type = 'button'; nextButton.textContent = `Următorul participant · ${dramaticSession.current + 1}/${dramaticSession.total}`; nextButton.onclick = () => { dramaticSession.current += 1; renderDramaticEntry(item, true); }; root.querySelector('.music-game-stage').append(nextButton);
+        } else {
+          markActivityComplete(item.id); completionReturnId = item.id;
+          const returnButton = document.createElement('button'); returnButton.className = 'primary music-game-start'; returnButton.type = 'button'; returnButton.textContent = 'Înapoi la activități'; returnButton.onclick = renderLibrary; root.querySelector('.music-game-stage').append(returnButton);
+        }
+      };
+      const wireStopControl = () => {
+        playingIndicator.querySelector('[data-dramatic-stop]')?.addEventListener('click', () => {
+          clearInterval(musicGameTimer); audio.pause(); stopCrowd(); started = false; status.textContent = 'Poate intra următorul participant.';
+          playingIndicator.innerHTML = '<strong>Muzica este oprită.</strong><div class="dramatic-paused-actions"><button class="primary music-game-start" type="button" data-dramatic-resume>Continuă muzica</button><button class="secondary music-game-start" type="button" data-dramatic-next>Următorul participant</button></div>';
+          playingIndicator.querySelector('[data-dramatic-resume]').onclick = async () => { started = true; status.textContent = 'Aplaudați până ajunge înapoi la voi. 👏'; playingIndicator.innerHTML = '<div class="dramatic-now-playing"><span class="dramatic-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><strong>Muzica rulează…</strong></div><div class="dramatic-time-left"><b data-dramatic-countdown>23</b><small>secunde rămase</small></div><button class="secondary dramatic-stop" type="button" data-dramatic-stop>Oprește muzica</button>'; wireStopControl(); await audio.play(); musicGameTimer = setInterval(stopAtEnd, 50); stopAtEnd(); };
+          playingIndicator.querySelector('[data-dramatic-next]').onclick = () => { dramaticSession.current = Math.min(dramaticSession.total, dramaticSession.current + 1); renderDramaticEntry(item, true); };
+        });
+      };
+      wireStopControl();
+      musicGameTimer = setInterval(stopAtEnd, 50); stopAtEnd();
+    } catch { started = false; startButton.disabled = false; status.textContent = 'Melodia nu a putut fi pornită. Încercați din nou.'; }
+  };
 }
 
 function renderMusicGame(item) {
@@ -967,57 +1452,263 @@ function renderManualActivity(item) {
   root.querySelector('[data-start]').onclick = buttonEvent => { track('activity_engaged_manual'); buttonEvent.currentTarget.textContent = 'Continuați în ritmul vostru'; buttonEvent.currentTarget.disabled = true; };
 }
 
-function renderMiniQuiz(item, audience = 'general', categoryId = null, questionIndex = 0) {
-  stopMusicGame();
-  active = item;
-  root.classList.remove('activity-picker-open');
-  const audiences = item.quizAudiences || {};
-  const audienceEntries = Object.entries(audiences);
-  const audienceData = audiences[audience] || audienceEntries[0]?.[1];
-  const categories = audienceData?.categories || [];
-  const category = categories.find(value => value.id === categoryId);
-  const tabsMarkup = `<div class="quiz-audience-switch" role="tablist" aria-label="Alegeți pentru cine este quizul">${audienceEntries.map(([value, data]) => `<button type="button" role="tab" aria-selected="${value === audience}" class="${value === audience ? 'is-active' : ''}" data-quiz-audience="${esc(value)}">${esc(data.label)}</button>`).join('')}</div>`;
-  track(category ? 'quiz_question_viewed' : 'quiz_view_manual', { audience, category: category?.id, question_index: questionIndex });
-  if (category) {
-    const questions = category.questions || [];
-    const index = ((questionIndex % questions.length) + questions.length) % questions.length;
-    const question = questions[index];
-    root.innerHTML = `<main class="quiz-experience quiz-play"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-player"><button class="quiz-category-back" type="button" data-quiz-categories>← Categorii</button><div class="quiz-player-heading"><span>${esc(category.icon)}</span><strong>${esc(category.title)}</strong><small>${index + 1} / ${questions.length}</small></div><button class="quiz-flip-card" type="button" data-quiz-flip aria-label="Vezi răspunsul"><span class="quiz-flip-inner"><span class="quiz-face quiz-front"><small>ÎNTREBAREA ${index + 1}</small><strong>${esc(question.question)}</strong></span><span class="quiz-face quiz-back"><small>RĂSPUNS</small><strong>${esc(question.answer)}</strong></span></span></button><div class="quiz-player-actions"><button class="primary quiz-reveal" type="button" data-quiz-reveal>Vezi răspunsul</button><button class="primary quiz-next-question" type="button" data-quiz-next hidden>Următoarea</button></div></div>${activityDockMarkup(item)}</main>`;
-    root.querySelector('[data-quiz-back]').onclick = () => { track('quiz_exit'); renderLibrary(); };
-    root.querySelector('[data-quiz-categories]').onclick = () => renderMiniQuiz(item, audience);
-    const flip = () => {
-      const card = root.querySelector('[data-quiz-flip]');
-      if (card.classList.contains('is-flipped')) return;
-      card.classList.add('is-flipped');
-      root.querySelector('[data-quiz-reveal]').hidden = true;
-      root.querySelector('[data-quiz-next]').hidden = false;
-      track('quiz_answer_revealed', { audience, category: category.id, question_index: index });
-    };
-    root.querySelector('[data-quiz-flip]').onclick = flip;
-    root.querySelector('[data-quiz-reveal]').onclick = flip;
-    root.querySelector('[data-quiz-next]').onclick = () => renderMiniQuiz(item, audience, category.id, index + 1);
-    bindActivityDock(item);
+function miniQuizQuestions(item) { return Array.isArray(item.miniQuizQuestions) ? item.miniQuizQuestions : []; }
+function miniQuizRound(questionCount, pool) {
+  const plans = {
+    2: [0, 7], 3: [0, 5, 7], 4: [0, 1, 5, 7], 5: [0, 1, 2, 5, 7],
+    6: [0, 1, 2, 3, 5, 7], 7: [0, 1, 2, 3, 4, 5, 7], 8: [0, 1, 2, 3, 4, 5, 7, 8],
+    9: [0, 1, 2, 3, 4, 5, 6, 7, 8], 10: [0, 1, 2, 3, 4, 5]
+  };
+  return (plans[questionCount] || plans[10]).filter(index => pool[index]).map(index => pool[index].id);
+}
+function miniQuizState(item) { return activityProgress()[item.id] || {}; }
+function renderMiniQuiz(item, mode = 'setup') {
+  stopMusicGame(); active = item; root.classList.remove('activity-picker-open');
+  const pool = miniQuizQuestions(item);
+  let state = miniQuizState(item);
+  if (state.completed_at || completedActivityIds().includes(item.id)) { renderLibrary(); return; }
+  if (!Array.isArray(state.question_ids) || !state.question_ids.length || !Number.isInteger(state.player_count)) {
+    root.innerHTML = `<main class="quiz-experience mini-quiz-setup"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-content"><img class="quiz-illustration" src="${esc(item.illustration)}" alt=""><p class="quiz-kicker">VOI vs QUIZ</p><h1>${esc(item.title || 'MINI-QUIZ de grup')}</h1><p class="quiz-intro">Câți jucați?</p><div class="mini-quiz-player-grid">${[2,3,4,5,6,7,8,9].map(count => `<button type="button" data-mini-count="${count}">${count}</button>`).join('')}<button type="button" data-mini-count="10">10+</button></div><p class="quiz-hint">Alegeți răspunsul împreună, apoi verificați-l.</p></div></main>`;
+    root.querySelector('[data-quiz-back]').onclick = renderLibrary;
+    root.querySelectorAll('[data-mini-count]').forEach(button => button.onclick = () => {
+      const count = Number(button.dataset.miniCount); const round = miniQuizRound(count, pool);
+      saveActivityProgress(item.id, { version: 1, player_count: count, question_ids: round, index: 0, you_score: 0, quiz_score: 0, answered: [], skipped: [], completed_at: null });
+      renderMiniQuiz(item, 'play');
+    });
     return;
   }
-  root.innerHTML = `<main class="quiz-experience"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-content"><img class="quiz-illustration" src="${esc(item.illustration)}" alt=""><h1>${esc(item.title)}</h1>${tabsMarkup}<p class="quiz-hint">Alegeți o categorie</p><div class="quiz-category-grid">${categories.map(value => `<button type="button" class="quiz-category" data-quiz-category="${esc(value.id)}"><span>${esc(value.icon)}</span><strong>${esc(value.title)}</strong><small>10 întrebări</small></button>`).join('')}</div></div>${activityDockMarkup(item)}</main>`;
-  root.querySelector('[data-quiz-back]').onclick = () => { track('quiz_exit'); renderLibrary(); };
-  root.querySelectorAll('[data-quiz-audience]').forEach(button => button.onclick = () => renderMiniQuiz(item, button.dataset.quizAudience));
-  root.querySelectorAll('[data-quiz-category]').forEach(button => button.onclick = () => renderMiniQuiz(item, audience, button.dataset.quizCategory));
-  bindActivityDock(item);
+  const questionsById = new Map(pool.map(question => [question.id, question]));
+  const index = Math.min(Math.max(Number(state.index) || 0, 0), state.question_ids.length);
+  if (index >= state.question_ids.length) {
+    state.completed_at = new Date().toISOString(); saveActivityProgress(item.id, state); markActivityComplete(item.id); completionReturnId = item.id;
+    const you = Number(state.you_score) || 0; const quiz = Number(state.quiz_score) || 0;
+    const result = you > quiz ? 'Ați bătut Quizul.' : you === quiz ? 'Egalitate. Quizul cere revanșa.' : 'Quizul a luat runda.';
+    root.innerHTML = `<main class="quiz-experience mini-quiz-complete"><div class="quiz-content"><p class="quiz-kicker">RUNDĂ COMPLETATĂ</p><h1>VOI ${you} — QUIZ ${quiz}</h1><p class="quiz-complete-result">${result}</p><button class="primary" type="button" data-quiz-complete-back>Înapoi la activități</button></div></main>`;
+    root.querySelector('[data-quiz-complete-back]').onclick = renderLibrary; return;
+  }
+  const question = questionsById.get(state.question_ids[index]);
+  if (!question) { state.index = index + 1; saveActivityProgress(item.id, state); renderMiniQuiz(item, 'play'); return; }
+  track('mini_quiz_question_viewed', { question_id: question.id, question_index: index, player_count: state.player_count });
+  const miniQuizGroupNote = state.player_count >= 10 && index === 0 ? '<div class="mini-quiz-group-note">Oricine poate răspunde. Hotărâți-vă împreună, apoi verificați răspunsul.</div>' : '';
+  root.innerHTML = `<main class="quiz-experience quiz-play mini-quiz-play"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-player"><div class="mini-quiz-score"><strong>VOI ${state.you_score || 0}</strong><span>—</span><strong>QUIZ ${state.quiz_score || 0}</strong></div><div class="quiz-player-heading"><strong>${index + 1} / ${state.question_ids.length}</strong><small>${state.player_count >= 10 ? 'Grup organic' : 'Cercul'}</small></div><div class="mini-quiz-turn">${state.player_count >= 10 ? 'Oricine poate răspunde. Jucați ca un singur grup.' : index === 0 ? 'Cine are tableta începe.' : 'După răspuns, dă tableta spre stânga →'}</div>${miniQuizGroupNote}<button class="quiz-flip-card" type="button" data-quiz-flip aria-label="Vezi răspunsul"><span class="quiz-flip-inner"><span class="quiz-face quiz-front"><small>ÎNTREBAREA</small><strong>${esc(question.question)}</strong></span><span class="quiz-face quiz-back"><small>${esc(question.answer)}</small><strong>${esc(question.funFact)}</strong></span></span></button><div class="quiz-player-actions"><button class="primary quiz-reveal" type="button" data-quiz-reveal>Verificați răspunsul</button><div class="mini-quiz-scoring" hidden><p>Ați nimerit-o?</p><button type="button" data-score="you">Ați nimerit-o ✓</button><button type="button" data-score="quiz">N-ați nimerit-o</button></div><button class="primary quiz-next-question" type="button" data-quiz-next hidden>${state.player_count >= 10 ? 'Următoarea întrebare' : 'Dă tableta spre stânga →'}</button></div><button class="quiz-skip" type="button" data-quiz-skip>Altă întrebare</button></div></main>`;
+  const miniQuizQuestionText = root.querySelector('.quiz-front strong');
+  const miniQuizTextClass = responsiveTextClass(question.question) || (question.question.length > 75 ? 'is-text-medium' : '');
+  if (miniQuizQuestionText && miniQuizTextClass) miniQuizQuestionText.classList.add(miniQuizTextClass);
+  root.querySelector('[data-quiz-back]').onclick = () => { track('mini_quiz_exit'); renderLibrary(); };
+  root.querySelector('[data-quiz-skip]').onclick = () => {
+    const replacement = pool.find(candidate => !state.question_ids.includes(candidate.id) && !(state.skipped || []).includes(candidate.id));
+    track('mini_quiz_question_skipped', { question_id: question.id, question_index: index });
+    if (!replacement) { root.querySelector('[data-quiz-skip]').textContent = 'Nu mai există o întrebare de rezervă'; root.querySelector('[data-quiz-skip]').disabled = true; return; }
+    state.question_ids[index] = replacement.id; state.skipped = [...(state.skipped || []), question.id]; saveActivityProgress(item.id, state); renderMiniQuiz(item, 'play');
+  };
+  const flip = () => { const card = root.querySelector('[data-quiz-flip]'); if (card.classList.contains('is-flipped')) return; card.classList.add('is-flipped'); root.querySelector('[data-quiz-reveal]').hidden = true; root.querySelector('[data-quiz-skip]').hidden = true; root.querySelector('.mini-quiz-scoring').hidden = false; track('mini_quiz_answer_revealed', { question_id: question.id, question_index: index }); };
+  root.querySelector('[data-quiz-flip]').onclick = flip; root.querySelector('[data-quiz-reveal]').onclick = flip;
+  root.querySelectorAll('[data-score]').forEach(button => button.onclick = () => {
+    if (root.querySelector('[data-score].is-selected')) return;
+    const result = button.dataset.score; state.you_score = Number(state.you_score) || 0; state.quiz_score = Number(state.quiz_score) || 0; state[result === 'you' ? 'you_score' : 'quiz_score'] += 1; state.answered = [...(state.answered || []), { question_id: question.id, result }]; saveActivityProgress(item.id, state); button.classList.add('is-selected'); root.querySelectorAll('[data-score]').forEach(control => { control.disabled = true; }); root.querySelector('.mini-quiz-score').innerHTML = `<strong>VOI ${state.you_score}</strong><span>—</span><strong>QUIZ ${state.quiz_score}</strong>`; const scoring = root.querySelector('.mini-quiz-scoring'); const next = root.querySelector('[data-quiz-next]'); scoring.classList.add('is-complete'); setTimeout(() => { next.hidden = false; }, 360);
+  });
+  root.querySelector('[data-quiz-next]').onclick = () => { state.index = index + 1; saveActivityProgress(item.id, state); renderMiniQuiz(item, 'play'); };
 }
 
 window.addEventListener('pagehide', () => track('session_end'));
 
+async function revealInitialLibrary(sessionMode = 'new') {
+  const opening = root.querySelector('.parents-opening');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const openingItems = currentGalleryActivities().slice(0, 3);
+  const openingDeck = opening?.querySelector('.opening-deck');
+  if (openingDeck) {
+    const portrait = window.matchMedia('(orientation: portrait)').matches;
+    const positions = openingItems.length === 1 ? [-50] : openingItems.length === 2 ? [-100, 0] : portrait ? [-108, -50, 8] : [-142, -50, 42];
+    openingItems.forEach((item, index) => {
+      const card = document.createElement('article');
+      card.className = 'opening-card opening-card-dynamic';
+      card.dataset.openingId = item.id;
+      card.style.setProperty('--opening-x', `${positions[index]}%`);
+      card.style.setProperty('--opening-rotation', `${openingItems.length === 1 ? 0 : (index - (openingItems.length - 1) / 2) * 5}deg`);
+      card.style.setProperty('--opening-delay', `${sessionMode === 'profile' ? 0 : .4 + index * .08}s`);
+      card.style.zIndex = index === Math.floor(openingItems.length / 2) ? '2' : '1';
+      card.innerHTML = item.illustration ? `<img src="${esc(item.illustration)}" alt="">` : `<span class="opening-card-icon">${esc(item.cardIcon || '✦')}</span>`;
+      openingDeck.append(card);
+    });
+    opening.classList.add('has-dynamic-cards');
+  }
+  if (!reduceMotion && sessionMode !== 'profile') await new Promise(resolve => setTimeout(resolve, 1420));
+  opening?.classList.add('is-opening-settled');
+  if (!reduceMotion) await new Promise(resolve => setTimeout(resolve, 32));
+  const openingCards = opening ? [...opening.querySelectorAll('.opening-card')] : [];
+  const sourceCards = openingCards.map(card => {
+    const visual = card.querySelector('img, .opening-card-icon');
+    return { id: card.dataset.openingId, rect: card.getBoundingClientRect(), visual: visual?.cloneNode(true), visualRect: visual?.getBoundingClientRect() };
+  });
+  const openingLogo = opening?.querySelector('.opening-logo');
+  const sourceLogo = openingLogo ? { node: openingLogo.cloneNode(true), rect: openingLogo.getBoundingClientRect() } : null;
+  opening?.remove();
+  renderLibrary();
+  const shell = root.querySelector('.parents-shell');
+  if (!opening || !shell) return;
+  shell.classList.add('is-opening-hidden');
+  root.append(opening);
+  if (reduceMotion) {
+    shell.classList.remove('is-opening-hidden');
+    root.append(opening);
+    opening.classList.add('is-leaving');
+    await new Promise(resolve => setTimeout(resolve, 80));
+    opening.remove();
+    return;
+  }
+  const targetCards = sourceCards.map(source => root.querySelector(`.activity-card[data-id="${CSS.escape(source.id)}"]`));
+  const targetLogo = root.querySelector('.parents-top .brand img');
+  if (targetLogo && !targetLogo.complete) await targetLogo.decode().catch(() => {});
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  const canBridge = sourceCards.length > 0 && targetCards.every(Boolean) && sourceCards.every(source => source.visual && source.visualRect);
+  if (!canBridge) {
+    shell.classList.remove('is-opening-hidden');
+    shell.classList.add('is-opening-reveal');
+    root.append(opening);
+    setTimeout(() => { shell.classList.add('is-visible'); opening.classList.add('is-leaving'); }, 32);
+    await new Promise(resolve => setTimeout(resolve, 820));
+    opening.remove();
+    shell.classList.remove('is-opening-reveal', 'is-visible');
+    return;
+  }
+  const targetRects = targetCards.map(card => card.getBoundingClientRect());
+  const targetLogoRect = targetLogo?.getBoundingClientRect();
+  const targetCardSet = new Set(targetCards);
+  const openingTitles = targetCards.map(card => card.querySelector('h2')).filter(Boolean);
+  const remainingCards = [...shell.querySelectorAll('.activity-card')].filter(card => !targetCardSet.has(card));
+  const progressElement = shell.querySelector(':scope > .slider-progress');
+  openingTitles.forEach(title => { title.style.opacity = '0'; });
+  remainingCards.forEach(card => {
+    card.style.opacity = '0';
+    card.style.transform = 'translate3d(18px,0,0)';
+  });
+  if (progressElement) {
+    progressElement.style.opacity = '0';
+    progressElement.style.transform = 'translate3d(10px,0,0)';
+  }
+  opening.classList.add('is-bridging');
+  const bridgeNodes = [];
+  sourceCards.forEach(({ rect, visual, visualRect }, index) => {
+    const cardBridge = document.createElement('span');
+    cardBridge.className = 'opening-bridge-card';
+    const targetCardStyle = getComputedStyle(targetCards[index]);
+    cardBridge.style.cssText = `left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;background:${targetCardStyle.background};border:${targetCardStyle.border};box-shadow:${targetCardStyle.boxShadow}`;
+    opening.append(cardBridge);
+    const target = targetRects[index];
+    bridgeNodes.push(cardBridge.animate([
+      { left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, borderRadius: '26px' },
+      { left: `${target.left}px`, top: `${target.top}px`, width: `${target.width}px`, height: `${target.height}px`, borderRadius: getComputedStyle(targetCards[index]).borderRadius }
+    ], { duration: 920, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'forwards' }));
+    const targetVisual = targetCards[index].querySelector('.activity-illustration, .activity-icon-illustration');
+    const targetVisualRect = targetVisual.getBoundingClientRect();
+    visual.className = visual.tagName === 'IMG' ? 'opening-bridge-illustration' : 'opening-bridge-illustration is-icon';
+    visual.style.cssText = `left:${visualRect.left}px;top:${visualRect.top}px;width:${visualRect.width}px;height:${visualRect.height}px`;
+    opening.append(visual);
+    bridgeNodes.push(visual.animate([
+      { left: `${visualRect.left}px`, top: `${visualRect.top}px`, width: `${visualRect.width}px`, height: `${visualRect.height}px` },
+      { left: `${targetVisualRect.left}px`, top: `${targetVisualRect.top}px`, width: `${targetVisualRect.width}px`, height: `${targetVisualRect.height}px` }
+    ], { duration: 920, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'forwards' }));
+  });
+  const hasVisibleTargetLogo = targetLogoRect && targetLogoRect.width > 1 && targetLogoRect.height > 1;
+  if (sourceLogo && hasVisibleTargetLogo) {
+    sourceLogo.node.className = 'opening-bridge-logo';
+    sourceLogo.node.style.cssText = `left:${sourceLogo.rect.left}px;top:${sourceLogo.rect.top}px;width:${sourceLogo.rect.width}px;height:${sourceLogo.rect.height}px`;
+    opening.append(sourceLogo.node);
+    bridgeNodes.push(sourceLogo.node.animate([
+      { left: `${sourceLogo.rect.left}px`, top: `${sourceLogo.rect.top}px`, width: `${sourceLogo.rect.width}px`, height: `${sourceLogo.rect.height}px`, opacity: 1 },
+      { left: `${targetLogoRect.left}px`, top: `${targetLogoRect.top}px`, width: `${targetLogoRect.width}px`, height: `${targetLogoRect.height}px`, opacity: 1 }
+    ], { duration: 820, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'forwards' }));
+  }
+  opening.querySelector('.opening-world').style.opacity = '0';
+  await Promise.race([
+    Promise.allSettled(bridgeNodes.map(animation => animation.finished)),
+    new Promise(resolve => setTimeout(resolve, 1100))
+  ]);
+  shell.classList.add('is-opening-handoff-ready');
+  shell.classList.remove('is-opening-hidden');
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  opening.querySelectorAll('.opening-bridge-card').forEach(card => { card.style.visibility = 'hidden'; });
+  const revealAnimations = [];
+  openingTitles.forEach(title => {
+    const animation = title.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 300,
+      delay: 45,
+      easing: 'ease-out',
+      fill: 'forwards'
+    });
+    revealAnimations.push(animation);
+    animation.finished.then(() => {
+      title.style.opacity = '';
+      animation.cancel();
+    });
+  });
+  remainingCards.forEach((card, index) => {
+    const animation = card.animate([
+      { opacity: 0, transform: 'translate3d(18px,0,0)' },
+      { opacity: 1, transform: 'translate3d(0,0,0)' }
+    ], {
+      duration: 420,
+      delay: 100 + Math.min(index, 5) * 35,
+      easing: 'cubic-bezier(.16,1,.3,1)',
+      fill: 'forwards'
+    });
+    revealAnimations.push(animation);
+    animation.finished.then(() => {
+      card.style.opacity = '';
+      card.style.transform = '';
+      animation.cancel();
+    });
+  });
+  if (progressElement) {
+    const animation = progressElement.animate([
+      { opacity: 0, transform: 'translate3d(10px,0,0)' },
+      { opacity: 1, transform: 'translate3d(0,0,0)' }
+    ], {
+      duration: 420,
+      delay: 150,
+      easing: 'cubic-bezier(.16,1,.3,1)',
+      fill: 'forwards'
+    });
+    revealAnimations.push(animation);
+    animation.finished.then(() => {
+      progressElement.style.opacity = '';
+      progressElement.style.transform = '';
+      animation.cancel();
+    });
+  }
+  const visualHandoffs = [...opening.querySelectorAll('.opening-bridge-illustration, .opening-bridge-logo')].map(node => node.animate([
+    { opacity: 1 },
+    { opacity: 0 }
+  ], { duration: 180, easing: 'ease-out', fill: 'forwards' }));
+  await Promise.allSettled(visualHandoffs.map(animation => animation.finished));
+  opening.remove();
+  shell.classList.remove('is-opening-reveal', 'is-visible', 'is-opening-handoff-ready');
+  await Promise.allSettled(revealAnimations.map(animation => animation.finished));
+}
+
 (async () => {
   registerParentsPwa();
   try {
+    if (document.fonts?.load) {
+      await Promise.race([
+        Promise.all([
+          document.fonts.load('700 24px Quicksand'),
+          document.fonts.load('600 24px DynaPuff')
+        ]),
+        new Promise(resolve => setTimeout(resolve, 2500))
+      ]).catch(() => {});
+    }
+    document.documentElement.classList.remove('fonts-loading');
+    document.documentElement.classList.add('fonts-ready');
     const response = await fetch('/api/parents/experiences');
     const payload = await response.json();
     activities = payload.experiences || [];
     musicTracks = payload.musicTracks || [];
-    await restoreSavedParentProgress();
+    dramaticMusicTracks = payload.dramaticMusicTracks || [];
     track('session_start', { mode: 'manual' });
-    renderLibrary();
+    const sessionMode = await showSessionGate();
+    await revealInitialLibrary(sessionMode);
     lockParentsLandscape();
     setTimeout(showInstallModal, 650);
   } catch {

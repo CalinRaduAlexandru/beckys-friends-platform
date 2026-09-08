@@ -39,6 +39,7 @@ const ADMIN_BECKY_BRIEF_FILE = process.env.BECKY_BRIEF_STORE_FILE || path.join(R
 const ADMIN_BECKY_MEMORY_FILE = process.env.BECKY_MEMORY_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-memory-signals.json');
 const ADMIN_BECKY_ATTENTION_FILE = process.env.BECKY_ATTENTION_STORE_FILE || path.join(ROOT, 'data', 'admin-becky-attention-candidates.json');
 const PUBLIC = path.join(ROOT, 'public');
+const PARENT_DRAMATIC_MUSIC_DIR = path.join(PUBLIC, 'assets', 'mp3s', 'Activitati parinti mp3s');
 const BECKY_SYMBOLIC_STYLE_REFERENCE = path.join(PUBLIC, 'becky-symbolic-style-reference.png');
 const beckyInboxCorePromise = import('./src/becky-inbox/core.mjs');
 const beckyInboxAnalyzePromise = import('./src/becky-inbox/analyze.mjs');
@@ -306,6 +307,37 @@ function send(res, status, body, type = 'application/json; charset=utf-8') {
   const shouldSerialize = type.includes('json') && !Buffer.isBuffer(body) && typeof body !== 'string';
   res.end(shouldSerialize ? JSON.stringify(body) : body);
 }
+function parseDramaticTrackFilename(filename, relativePath = filename) {
+  const match = String(filename || '').match(/^(\d+)\.(\d{2})\s*-\s*(\d+)\.(\d{2})\s*-\s*(.+)\.mp3$/i);
+  if (!match) return null;
+  const start = Number(match[1]) * 60 + Number(match[2]);
+  const end = Number(match[3]) * 60 + Number(match[4]);
+  if (Number(match[2]) > 59 || Number(match[4]) > 59 || end <= start) return null;
+  const encodedPath = String(relativePath).split(path.sep).map(encodeURIComponent).join('/');
+  return { id: relativePath, src: `/assets/mp3s/Activitati%20parinti%20mp3s/${encodedPath}`, start, end, title: match[5] };
+}
+function readDramaticMusicTracks() {
+  if (!fs.existsSync(PARENT_DRAMATIC_MUSIC_DIR)) return [];
+  const tracks = [];
+  const obsoleteClipNames = new Set([
+    'Podium walk songs/clips/0.00 - 0.21 - Mission Impossible Theme (fragment).mp3',
+    'Podium walk songs/clips/0.00 - 0.23 - Right Said Fred - I\'m Too Sexy (fragment).mp3'
+  ]);
+  const visit = (directory, relativeDirectory = '') => {
+    fs.readdirSync(directory, { withFileTypes: true }).forEach(entry => {
+      const relativePath = relativeDirectory ? path.join(relativeDirectory, entry.name) : entry.name;
+      const absolutePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(absolutePath, relativePath);
+      else if (entry.isFile() && !obsoleteClipNames.has(relativePath)) {
+        const track = parseDramaticTrackFilename(entry.name, relativePath);
+        if (track) tracks.push(track);
+      }
+    });
+  };
+  const clipDirectory = path.join(PARENT_DRAMATIC_MUSIC_DIR, 'Podium walk songs', 'clips');
+  visit(fs.existsSync(clipDirectory) ? clipDirectory : PARENT_DRAMATIC_MUSIC_DIR, fs.existsSync(clipDirectory) ? path.relative(PARENT_DRAMATIC_MUSIC_DIR, clipDirectory) : '');
+  return tracks.sort((first, second) => second.end - first.end);
+}
 
 function normalizeParentUsername(value) {
   const username = String(value || '').normalize('NFKC').trim().replace(/\s+/g, ' ');
@@ -321,6 +353,10 @@ function writeParentProgressStore(store) {
 }
 async function handleParentProgressLocal(req, res, url) {
   if (req.method === 'GET') {
+    if (url.searchParams.get('list') === '1') {
+      const profiles = Object.values(readParentProgressStore()).map(row => row?.username).filter(Boolean);
+      return send(res, 200, { profiles });
+    }
     const { username_key } = normalizeParentUsername(url.searchParams.get('username'));
     const row = readParentProgressStore()[username_key];
     return send(res, 200, row || { username: null, progress: null });
@@ -1457,7 +1493,7 @@ const server = http.createServer(async (req, res) => {
       const questionPools = JSON.parse(fs.readFileSync(PARENT_QUESTION_POOLS_FILE, 'utf8'));
       const facilitatorTools = JSON.parse(fs.readFileSync(FACILITATOR_TOOLS_FILE, 'utf8'));
       const musicTracks = (facilitatorTools.musicTracks || []).filter(track => track.audience === 'adulti' && ['Dans', 'Energie'].includes(track.mood));
-      return send(res, 200, { surface: 'parents', experiences: experiences.map(item => item.questionPoolId && questionPools[item.questionPoolId] ? { ...item, questionPool: questionPools[item.questionPoolId] } : item), musicTracks });
+      return send(res, 200, { surface: 'parents', experiences: experiences.map(item => item.questionPoolId && questionPools[item.questionPoolId] ? { ...item, questionPool: questionPools[item.questionPoolId] } : item), musicTracks, dramaticMusicTracks: readDramaticMusicTracks() });
     } catch { return send(res, 500, { error: 'Experiențele pentru părinți nu sunt disponibile' }); }
   }
   if (url.pathname === '/api/parents/progress') {

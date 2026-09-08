@@ -6,23 +6,24 @@ Filtrarea după numărul de participanți este definită în `data/parent-experi
 
 Toggle-ul de grup din bara de sus este ascuns temporar deoarece repertoriul activ este încă prea restrâns pentru ca diferențierea să aducă valoare. Logica și clasificarea rămân păstrate; feature-ul va fi reactivat când lista va avea suficiente activități distincte pentru 2–3 și 4+ persoane.
 
-Clasificarea confirmată: **A / small** — Întrebări amuzante și Întrebări profunde. **B / large** — Dansuri de grup. **C / ambele** — Recunoaște animalul, Ai prefera...?, Reproduceți sunetul, Mini-quiz general, Karaoke, Dans cu schimbare de lider, Intrarea dramatică. Ultimele două sunt compatibile cu 2–3 persoane, dar preferă grupul extins. În filtrul `large`, activitățile B și apoi cele C preferate pentru grup sunt afișate primele, iar fiecare grup este ordonat invers, de la energie mare spre energie mică.
+Clasificarea confirmată pentru activitățile active: **A / small** — Întrebări amuzante și Întrebări profunde. **B / large** — Dansuri de grup. **C / ambele** — Ai prefera...?, Grupul ghicește sunetul, Mini-quiz general, Karaoke și Dans cu schimbare de lider. **D / 3+ persoane** — Arată mai departe. În filtrul `large`, activitățile B și apoi cele C preferate pentru grup sunt afișate primele, iar fiecare grup este ordonat invers, de la energie mare spre energie mică. „Recunoaște animalul” și „Momentul tău” sunt arhivate temporar în `Maybe later`.
 
 ## Păstrate
 
-- **Recunoaște animalul** — Activitate cu sunet și dezvăluire prin card. În prima versiune sunt active doar șase sunete: Aligator, Arici, Cămilă, Cangur, Căprioară și Flamingo. Restul sunt păstrate în `animalRoundsReserve` în `data/parent-experiences.json` și nu apar până la o decizie ulterioară.
 - **Ai prefera...?** — Activitate păstrată ca joc de conversație deschisă.
 - **Întrebări amuzante** — Activitate păstrată; întrebări deschise, fără presupuneri despre loc.
 - **Întrebări profunde** — Adaptată din „Întrebarea serii”.
-- **Reproduceți sunetul** — Activitate păstrată ca joc de imitație a sunetelor.
+- **Grupul ghicește sunetul** — Activitate păstrată ca joc de imitație a sunetelor.
 - **Karaoke** — Activitate păstrată ca prag de energie.
 - **Dansuri de grup** — Activitate păstrată ca ultim prag de energie, cu Macarena, Cotton Eye Joe, horă și alte dansuri cu pași coordonați.
 - **Mini-quiz general** — Experiență cu trei audiențe (General, Femei, Bărbați), câte trei categorii specifice și câte zece întrebări cu răspuns prin flip pentru fiecare categorie (90 în total).
 - **Dans cu schimbare de lider** — Toată lumea stă în cerc; fiecare conduce pe rând un dans de 20 de secunde, iar ceilalți îi copiază stilul. Folosește un colaj aleatoriu de melodii din aplicație. Disponibil pentru 2–3, preferat pentru 4+.
-- **Intrarea dramatică** — O persoană iese din aria vizuală și revine la masă în energia unei secvențe muzicale surpriză. Disponibilă pentru 2–3, preferată pentru 4+.
+- **Arată mai departe** — Telefonul fără fir fără cuvinte: o scenă cu gesturi trece din om în om, iar grupul vede ce a plecat și ce a ajuns.
 
 ## Maybe later
 
+- **Recunoaște animalul** — arhivată temporar; valoarea jocului trebuie testată înainte de reactivare. Implementarea și sunetele rămân păstrate în `data/parent-experiences.json`.
+- **Momentul tău** — arhivat temporar; implementarea și muzica rămân păstrate pentru o reluare ulterioară.
 - **Ghicește melodia** — păstrată pentru o etapă ulterioară; nu apare în caruselul activ acum.
 - **Ce avem în comun?** — păstrată pentru o etapă ulterioară; nu apare în caruselul activ acum.
 - **Compliment anonim** — păstrată pentru o etapă ulterioară; nu apare în caruselul activ acum.

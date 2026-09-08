@@ -212,6 +212,11 @@ function normalizeParentUsername(value) {
 async function handleParentProgress(request, env) {
   const url = new URL(request.url);
   if (request.method === 'GET') {
+    if (url.searchParams.get('list') === '1') {
+      const response = await supabaseRequest(env, '/rest/v1/parent_progress_profiles?select=username&order=updated_at.desc');
+      const rows = await response.json();
+      return json({ profiles: Array.isArray(rows) ? rows.map(row => row?.username).filter(Boolean) : [] });
+    }
     const { username_key } = normalizeParentUsername(url.searchParams.get('username'));
     const response = await supabaseRequest(env, `/rest/v1/parent_progress_profiles?username_key=eq.${encodeURIComponent(username_key)}&select=username,username_key,progress,updated_at`);
     return json((await response.json())[0] || { username: null, progress: null });

@@ -1,5 +1,25 @@
 [
   {
+    "id": "ghiceste-expresia",
+    "title": "Ghicește zicala din emoji",
+    "category": "Ghicește",
+    "duration": "5–10 min",
+    "participants": "2+ adulți",
+    "groupSizes": ["small", "large"],
+    "energy": "râs",
+    "prompt": "Emoji-urile ascund o expresie românească. Spuneți expresia completă.",
+    "steps": ["Priviți emoji-urile și spuneți expresia.", "Dacă aveți nevoie, dezvăluiți o parte.", "Verificați răspunsul și continuați cu următoarea expresie."],
+    "tags": ["râs", "ghicit", "conversație"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/recunoaste-expresia-cu-emoji.webp",
+    "expressionRounds": [
+      {"emoji":"👁️ 👁️   🦷 🦷","answer":"Ochi pentru ochi, dinte pentru dinte.","reveals":["Ochi pentru...","Ochi pentru ochi, dinte..."]},
+      {"emoji":"🧂 🩹","answer":"A pune sare pe rană.","reveals":["A pune...","A pune sare..."]},
+      {"emoji":"👂 → 👂","answer":"Intră pe o ureche și iese pe alta.","reveals":["Intră pe...","Intră pe o ureche..."]},
+      {"emoji":"👃 ☁️","answer":"Cu nasul pe sus.","reveals":["Cu nasul..."]},
+      {"emoji":"🪡 🔍 🌾","answer":"A căuta acul în carul cu fân.","reveals":["A căuta...","A căuta acul...","A căuta acul în..."]}
+    ]
+  },
+  {
     "id": "intrebari-profunde",
     "title": "Întrebări profunde",
     "category": "Conversație",
@@ -56,17 +76,48 @@
   },
   {
     "id": "reproduceti-sunetul",
-    "title": "Reproduceți sunetul",
+    "title": "Grupul ghicește sunetul",
     "category": "Ghicește",
     "duration": "5–10 min",
     "participants": "2+ adulți",
     "groupSizes": ["small", "large"],
     "energy": "râs",
-    "prompt": "Gândiți-vă la un obiect, un animal sau o situație și reproduceți sunetul fără cuvinte. Ceilalți încearcă să ghicească.",
-    "steps": ["Alegeți în secret ce sunet veți reproduce.", "Reproduceți-l cât mai convingător, fără să vorbiți.", "Cine ghicește primul alege următorul sunet."],
+    "prompt": "O persoană vede în secret ce trebuie să reproducă doar prin sunete. Grupul o ajută până când spune cuvântul exact.",
+    "steps": ["Un participant iese din aria vizuală a grupului.", "Cineva de la masă apasă «E gata → pornește muzica».", "Participantul revine în energia melodiei. Nu există o mișcare corectă."],
     "optionalChildVariation": "Copiii pot propune sunetele sau pot face echipă cu un adult.",
     "tags": ["râs", "ghicit", "fără mișcare"],
-    "illustration": "/assets/ilustratii_aplicatie_parinti/vocal_commands.webp"
+    "illustration": "/assets/ilustratii_aplicatie_parinti/ghiceste_sunetul.png",
+    "soundRounds": [
+      {"id":"tantar","label":"ȚÂNȚAR","hint1":"NOAPTEA","hint2":"NU TE LASĂ SĂ DORMI"},
+      {"id":"motocicleta","label":"MOTOCICLETĂ","hint1":"PE ȘOSEA","hint2":"ARE DOUĂ ROȚI"},
+      {"id":"ceas-alarmă","label":"CEAS CU ALARMĂ","hint1":"DIMINEAȚA","hint2":"TE TREZEȘTE"},
+      {"id":"usa-scartaie","label":"UȘĂ CARE SCÂRȚÂIE","hint1":"ÎN CASĂ","hint2":"ARE NEVOIE DE PUȚIN ULEI"},
+      {"id":"tren","label":"TREN","hint1":"CĂLĂTORIE","hint2":"MERGE PE ȘINE"},
+      {"id":"telefon-vibratii","label":"TELEFON PE VIBRAȚII","hint1":"ÎN BUZUNAR","hint2":"TE CAUTĂ CINEVA"},
+      {"id":"foc-artificii","label":"FOC DE ARTIFICII","hint1":"SĂRBĂTOARE","hint2":"PRIVEȘTE CERUL"},
+      {"id":"mitraliera","label":"MITRALIERĂ","hint1":"FILM DE ACȚIUNE","hint2":"TRAGE FOARTE REPEDE"},
+      {"id":"masina-cursa","label":"MAȘINĂ DE CURSE","hint1":"PE CIRCUIT","hint2":"VITEZĂ MAXIMĂ"}
+    ]
+  },
+  {
+    "id": "arata-mai-departe",
+    "title": "Arată mai departe",
+    "category": "Mișcare și ghicit",
+    "duration": "5–10 min",
+    "participants": "3+ persoane",
+    "groupSizes": ["small", "large"],
+    "energy": "râs",
+    "prompt": "Telefonul fără fir, dar fără cuvinte. O scenă trece din om în om doar prin gesturi.",
+    "steps": ["Așezați-vă în șir, cu spatele la ecran.", "Primul vede scena și o arată următoarei persoane.", "La final, comparați ce a plecat cu ce a ajuns."],
+    "tags": ["mișcare", "ghicit", "grup"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/arata_mai_departe.webp",
+    "passAlongScene": {
+      "steps": [
+        {"emoji":"🙏","text":"Te rogi de cineva să te ajute...","caption":"mâinile împreunate — «te rog...»"},
+        {"emoji":"🙆","text":"Dar te refuză...","caption":"mâinile pe cap — «of, serios?!»"},
+        {"emoji":"☝️","text":"Și te revolți.","caption":"degetul ridicat — «a, da?! stai așa!»"}
+      ]
+    }
   },
   {
     "id": "recunoaste-ti-animalul",
@@ -164,17 +215,28 @@
   },
   {
     "id": "mini-quiz-general",
-    "title": "Mini-quiz general",
+    "title": "MINI-QUIZ de grup",
     "category": "Quiz",
     "duration": "5–10 min",
     "participants": "2+ adulți",
     "groupSizes": ["small", "large"],
     "energy": "râs",
-    "prompt": "Puneți-vă întrebări scurte din domenii diferite și răspundeți înainte să vă răzgândiți.",
-    "steps": ["Alegeți o temă sau amestecați întrebările.", "Răspundeți fără să căutați pe telefon.", "Păstrați scorul doar dacă vă face plăcere."],
+    "prompt": "Jucați împreună împotriva Quizului: discutați răspunsul, apoi verificați-l și țineți scorul grupului.",
+    "steps": ["Alegeți câți jucați. Pentru 2–9 persoane, începe persoana care are tableta.", "Spuneți răspunsul împreună și apăsați «Vezi răspunsul».", "Alegeți dacă ați nimerit-o sau dacă punctul merge la Quiz. În Cercul, dați tableta spre stânga după fiecare întrebare."],
     "optionalChildVariation": "Copiii pot pune întrebări despre animale, natură sau desene animate.",
     "tags": ["quiz", "râs", "grup"],
     "illustration": "/assets/ilustratii_aplicatie_parinti/mini-quiz.webp",
+    "miniQuizQuestions": [
+      {"id":"mini-quiz-01","question":"Care este cea mai mare insulă din lume, dacă Australia este considerată continent?","answer":"Groenlanda.","funFact":"Aproximativ 80% din Groenlanda este acoperită de gheață."},
+      {"id":"mini-quiz-02","question":"Care este cel mai rapid animal terestru?","answer":"Ghepardul.","funFact":"Poate depăși 100 km/h, dar își poate menține viteza maximă doar pe distanțe scurte."},
+      {"id":"mini-quiz-03","question":"Care este cel mai mare organ al corpului uman?","answer":"Pielea.","funFact":"La un adult, pielea acoperă aproximativ 1,5–2 metri pătrați."},
+      {"id":"mini-quiz-04","question":"Care este singurul mamifer care poate zbura cu adevărat, nu doar plana?","answer":"Liliacul.","funFact":"Veverițele zburătoare, de exemplu, nu zboară cu adevărat, ci planează."},
+      {"id":"mini-quiz-05","question":"Cine are mai multe oase: un bebeluș sau un adult?","answer":"Bebelușul.","funFact":"Pe măsură ce creștem, mai multe oase se unesc între ele."},
+      {"id":"mini-quiz-06","question":"Care animal are trei inimi?","answer":"Caracatița.","funFact":"Două dintre inimi trimit sângele spre branhii, iar una spre restul corpului."},
+      {"id":"mini-quiz-07","question":"Cine are sarcina mai lungă: omul sau elefantul?","answer":"Elefantul.","funFact":"Sarcina unui elefant durează aproximativ 22 de luni."},
+      {"id":"mini-quiz-08","question":"Pe Lună, dacă dai drumul în același timp unei pene și unui ciocan, care ajunge prima la sol?","answer":"Ajung în același timp.","funFact":"Fără atmosferă care să încetinească pana, ambele cad cu aceeași accelerație gravitațională."},
+      {"id":"mini-quiz-09","question":"Dacă ai putea împături o coală de hârtie de 42 de ori, grosimea teoretică ar ajunge aproximativ până unde: un zgârie-nori, Everest sau Lună?","answer":"Până la Lună.","funFact":"Grosimea se dublează la fiecare împăturire, de aceea crește atât de repede."}
+    ],
     "quizAudiences": {
       "general": {
         "label": "General",
@@ -347,6 +409,28 @@
     }
   },
   {
+    "id": "dans",
+    "title": "Dansuri de grup",
+    "category": "Mișcare",
+    "duration": "5–15 min",
+    "participants": "1+ persoane",
+    "groupSizes": ["small", "large"],
+    "energy": "mai energic",
+    "prompt": "Alegeți un dans și încercați-l împreună sau chiar solo: unele variante au nevoie de mai mulți participanți.",
+    "steps": ["Alegeți dansul și verificați numărul minim de participanți.", "Urmăriți pașii și țineți ritmul împreună.", "Schimbați dansul când vreți o nouă provocare."],
+    "optionalChildVariation": "Copiii pot propune prima mișcare sau pot dansa împreună cu adulții.",
+    "tags": ["muzică", "mișcare", "mai energic"],
+    "illustration": "/assets/ilustratii_aplicatie_parinti/dans_de_grup.webp",
+    "danceOptions": [
+      {"name":"Macarena","participants":"1+ persoane","minimumParticipants":1,"youtubeVideoId":"CRSGmA69TY8"},
+      {"name":"Cotton Eye Joe","participants":"2+ persoane","minimumParticipants":2},
+      {"name":"Hora","participants":"3+ persoane","minimumParticipants":3},
+      {"name":"YMCA","participants":"2+ persoane","minimumParticipants":2},
+      {"name":"Cha Cha Slide","participants":"3+ persoane","minimumParticipants":3},
+      {"name":"Jerusalema","participants":"2+ persoane","minimumParticipants":2}
+    ]
+  },
+  {
     "id": "karaoke",
     "title": "Karaoke",
     "category": "Muzică",
@@ -377,32 +461,18 @@
   },
   {
     "id": "intrarea-dramatica",
-    "title": "Intrarea dramatică",
+    "title": "Momentul tău",
     "category": "Muzică și improvizație",
     "duration": "5–15 min",
     "participants": "2+ adulți · ideal 4+",
     "groupSizes": ["small", "large"],
     "preferredGroupSize": "large",
     "energy": "dezmăț",
-    "prompt": "Toată lumea rămâne la masă, iar o persoană iese din aria vizuală. Când pornește muzica, revine la masă cu mersul, expresia și energia sugerate de melodie.",
-    "steps": ["Alegeți cine face prima intrare și lăsați persoana să iasă din aria vizuală.", "Apăsați «Dă muzica». Persoana revine în energia secvenței surpriză.", "Treceți la următoarea persoană și porniți o altă secvență."],
+    "prompt": "Pentru câteva secunde, scena este a persoanei care revine la grup. Muzica începe, iar grupul o primește cu aplauze.",
+    "steps": ["Alegeți cine face prima intrare și lăsați persoana să iasă din aria vizuală.", "Când începe muzica, aplaudați până ajunge înapoi la voi.", "Treceți la următoarea persoană și porniți o altă secvență."],
     "tags": ["muzică", "improvizație", "grup", "dezmăț"],
     "illustration": "/assets/ilustratii_aplicatie_parinti/intrare_spectaculoasa.webp",
-    "musicGame": {"type": "dramatic-entry", "clipSeconds": 16, "autoAdvance": false}
-  },
-  {
-    "id": "dans",
-    "title": "Dansuri de grup",
-    "category": "Mișcare",
-    "duration": "5–15 min",
-    "participants": "2+ adulți",
-    "groupSizes": ["large"],
-    "energy": "mai energic",
-    "prompt": "Alegeți un dans cu pași cunoscuți și încercați să îl faceți împreună: Macarena, Cotton Eye Joe, horă sau orice alt dans cu mișcări coordonate.",
-    "steps": ["Alegeți dansul și melodia.", "Urmăriți pașii și țineți ritmul împreună.", "Schimbați dansul când vreți o nouă provocare."],
-    "optionalChildVariation": "Copiii pot propune prima mișcare sau pot dansa împreună cu adulții.",
-    "tags": ["muzică", "mișcare", "mai energic"],
-    "illustration": "/assets/ilustratii_aplicatie_parinti/dans_de_grup.webp"
+    "musicGame": {"type": "dramatic-entry", "trackFolder": "Activitati parinti mp3s"}
   },
   {
     "id": "ghiceste-raspunsul-prietenei",

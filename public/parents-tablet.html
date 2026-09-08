@@ -4,15 +4,37 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#f6efe5">
+  <script>document.documentElement.classList.add('fonts-loading')</script>
   <link rel="manifest" href="/parents.webmanifest">
   <title>Timp pentru voi · Becky</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DynaPuff:wght@500;600;700&family=Quicksand:wght@500;600;700&display=swap">
-  <link rel="stylesheet" href="/parents-tablet.css?v=122">
+  <link rel="stylesheet" href="/parents-tablet.css?v=183">
 </head>
 <body>
-  <main id="parents-app"><div class="parents-loading">Pregătim ideile pentru voi…</div></main>
-  <script type="module" src="/parents-tablet.js?v=120"></script>
+  <main id="parents-app">
+    <div class="parents-session-gate" data-session-gate>
+      <div class="session-gate-content">
+        <img class="session-gate-logo" src="/assets/logo/new_logo_horizontal.png" alt="Becky’s Garden">
+        <div class="session-gate-actions">
+        <button type="button" class="session-gate-primary" data-start-session>Începe o nouă sesiune</button>
+        <button type="button" class="session-gate-secondary" data-continue-profile>Continuă pe un profil existent</button>
+        </div>
+      </div>
+    </div>
+    <div class="parents-opening" aria-label="Becky’s Garden se deschide" hidden>
+      <span class="opening-curtain" aria-hidden="true"></span>
+      <span class="opening-aurora" aria-hidden="true"></span>
+      <div class="opening-world">
+        <img class="opening-logo" src="/assets/logo/new_logo_horizontal.png" alt="Becky’s Garden">
+        <div class="opening-deck" aria-hidden="true">
+          <span class="opening-orbit"></span>
+          <span class="opening-spark opening-spark-one">✦</span><span class="opening-spark opening-spark-two">✧</span><span class="opening-spark opening-spark-three">✦</span>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="/parents-tablet.js?v=187"></script>
 </body>
 </html>
