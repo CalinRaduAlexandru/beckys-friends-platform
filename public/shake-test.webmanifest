@@ -6,8 +6,8 @@
   "lang": "ro",
   "start_url": "/shake-test",
   "scope": "/shake-test",
-  "display": "standalone",
-  "orientation": "portrait",
+  "display": "fullscreen",
+  "orientation": "landscape",
   "background_color": "#f6f1e8",
   "theme_color": "#f6f1e8",
   "icons": [

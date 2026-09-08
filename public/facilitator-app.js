@@ -6,7 +6,8 @@ const RECENT_KEY = 'becky-facilitator:recent:v1';
 const VOLUME_KEY = 'becky-facilitator:volume:v1';
 const RATINGS_KEY = 'becky-facilitator:music-ratings:v1';
 const SESSION_KEY = 'becky-facilitator-session';
-const LANDSCAPE_REFERENCE_VIDEO = '/16%20by%209%20aspecet%20ratio%20becky%20animation.mp4';
+const INSTALL_ACK_KEY = 'becky-facilitator-installed:v1';
+const LANDSCAPE_REFERENCE_VIDEO = '/16%20by%209%20aspecet%20ratio%20becky%20animation%20boomerang.mp4';
 const readJson = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const saveJson = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 let facilitatorSession = readJson(SESSION_KEY, null);
@@ -15,6 +16,7 @@ let voiceUrl = '';
 const colorVoiceClips = new Map();
 let deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstallPrompt = event; });
+window.addEventListener('appinstalled', () => localStorage.setItem(INSTALL_ACK_KEY, '1'));
 
 const state = {
   library: null,
@@ -116,48 +118,31 @@ async function openLandscapeReference() {
   document.body.appendChild(overlay);
   const video = overlay.querySelector('video');
   video.src = LANDSCAPE_REFERENCE_VIDEO;
-  let animationFrame = null;
-  let direction = 1;
-  let previousTime = 0;
-  let started = false;
-  const animateBoomerang = now => {
-    if (!video.duration || !Number.isFinite(video.duration)) { animationFrame = requestAnimationFrame(animateBoomerang); return; }
-    if (!previousTime) previousTime = now;
-    const elapsed = Math.min(.05, (now - previousTime) / 1000);
-    previousTime = now;
-    if (direction === 1) {
-      if (video.currentTime >= video.duration - .04) { video.pause(); video.currentTime = video.duration; direction = -1; previousTime = now; }
-    } else {
-      const nextTime = Math.max(0, video.currentTime - elapsed);
-      video.currentTime = nextTime;
-      if (nextTime <= .01) { video.currentTime = 0; direction = 1; previousTime = now; video.play().catch(() => {}); }
-    }
-    animationFrame = requestAnimationFrame(animateBoomerang);
-  };
-  const startBoomerang = () => {
-    if (started) return;
-    started = true;
+  let restartTimer = null;
+  video.addEventListener('ended', () => {
     video.currentTime = 0;
-    video.play().catch(() => {});
-    animationFrame = requestAnimationFrame(animateBoomerang);
-  };
-  video.addEventListener('loadeddata', startBoomerang, { once: true });
-  video.addEventListener('canplay', startBoomerang, { once: true });
+    video.pause();
+    restartTimer = setTimeout(() => { restartTimer = null; video.play().catch(() => {}); }, 10000);
+  });
   video.load();
 
   const close = async () => {
-    if (animationFrame) cancelAnimationFrame(animationFrame);
+    if (restartTimer) clearTimeout(restartTimer);
     video.pause();
     if (document.fullscreenElement === overlay) await document.exitFullscreen?.().catch(() => {});
     try { screen.orientation?.unlock?.(); } catch {}
     overlay.remove();
   };
   let longPressTimer = null;
+  let pressX = 0;
+  let pressY = 0;
   const cancelLongPress = () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } };
-  overlay.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; cancelLongPress(); longPressTimer = setTimeout(() => { longPressTimer = null; close(); }, 900); });
-  overlay.addEventListener('pointerup', cancelLongPress);
+  overlay.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; event.preventDefault(); pressX = event.clientX; pressY = event.clientY; cancelLongPress(); longPressTimer = setTimeout(() => { longPressTimer = null; window.location.assign('/parinti'); }, 900); });
+  overlay.addEventListener('pointermove', event => { if (Math.hypot(event.clientX - pressX, event.clientY - pressY) > 12) cancelLongPress(); });
+  overlay.addEventListener('pointerup', event => { const distance = Math.hypot(event.clientX - pressX, event.clientY - pressY); cancelLongPress(); if (distance > 80) close(); });
   overlay.addEventListener('pointercancel', cancelLongPress);
   overlay.addEventListener('pointerleave', cancelLongPress);
+  overlay.addEventListener('dragstart', event => event.preventDefault());
   overlay.addEventListener('contextmenu', event => event.preventDefault());
   overlay.addEventListener('keydown', event => { if (event.key === 'Escape') close(); });
   overlay.tabIndex = -1;
@@ -429,12 +414,12 @@ async function speak(value){
 function toast(message, action){document.querySelector('.toast')?.remove();const element=document.createElement(action?'button':'div');element.className='toast';element.type='button';element.innerHTML=`<span>${esc(message)}</span>${action?'<b>Adăugată ✓</b>':''}`;if(action)element.addEventListener('click',()=>{element.remove();action();});document.body.appendChild(element);setTimeout(()=>element.remove(),4500);}
 
 function showInstallPrompt(){
-  const standalone=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
-  if(standalone||sessionStorage.getItem('becky-install-prompt-dismissed'))return;
+  const installed=window.matchMedia('(display-mode: standalone)').matches||window.matchMedia('(display-mode: fullscreen)').matches||window.navigator.standalone===true||localStorage.getItem(INSTALL_ACK_KEY)==='1';
+  if(installed||!deferredInstallPrompt||sessionStorage.getItem('becky-install-prompt-dismissed'))return;
   const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
   const overlay=document.createElement('div');overlay.className='install-overlay';overlay.innerHTML=`<section class="install-card" role="dialog" aria-modal="true"><button class="install-close" type="button" aria-label="Închide">×</button><div class="install-mark">✦</div><span class="eyebrow">ACTIVITĂȚI BECKY</span><h2>Instalează aplicația</h2><p>Ai toate activitățile, muzica și instrumentele Becky la îndemână, direct de pe telefon.</p>${ios?'<div class="install-ios-steps"><b>Pe iPhone:</b><span>1. Apasă butonul Share din Safari</span><span>2. Alege „Add to Home Screen”</span><span>3. Apasă „Add”</span></div>':'<button class="primary install-action" type="button">Instalează Activități Becky</button>'}<button class="install-later" type="button">Mai târziu</button></section>`;document.body.appendChild(overlay);
   const close=()=>{sessionStorage.setItem('becky-install-prompt-dismissed','1');overlay.remove();};overlay.querySelector('.install-close').onclick=close;overlay.querySelector('.install-later').onclick=close;
-  overlay.querySelector('.install-action')?.addEventListener('click',async()=>{if(!deferredInstallPrompt){toast('În Chrome, deschide meniul ⋮ și alege „Install app”.');return;}deferredInstallPrompt.prompt();await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;close();});
+  overlay.querySelector('.install-action')?.addEventListener('click',async()=>{if(!deferredInstallPrompt)return;deferredInstallPrompt.prompt();const choice=await deferredInstallPrompt.userChoice;deferredInstallPrompt=null;if(choice.outcome==='accepted')localStorage.setItem(INSTALL_ACK_KEY,'1');close();});
 }
 
 async function init(){

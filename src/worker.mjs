@@ -842,8 +842,12 @@ async function getDocument(env, key) {
   }
   const energySeed = (facilitatorToolsSeed.playlists || []).find(item => item?.id === 'energie-copii');
   const energyPlaylist = (targetChildren.playlists || []).find(item => item?.id === 'energie-copii');
+  const birthdayPlaylist = (targetChildren.playlists || []).find(item => item?.id === 'birthday-moment');
   if (energySeed && energyPlaylist) {
-    energyPlaylist.trackIds = [...new Set((targetChildren.musicTracks || []).filter(item => item?.audience === 'copii').map(item => item.id))];
+    const birthdayTrackIds = new Set(birthdayPlaylist?.trackIds || ['birthday-1', 'birthday-2', 'birthday-3']);
+    const availableTrackIds = new Set((targetChildren.musicTracks || []).filter(item => item?.audience === 'copii').map(item => item.id));
+    const sourceTrackIds = energyPlaylist.trackIds?.length ? energyPlaylist.trackIds : energySeed.trackIds || [];
+    energyPlaylist.trackIds = [...new Set(sourceTrackIds)].filter(id => availableTrackIds.has(id) && !birthdayTrackIds.has(id));
   }
   return payload;
 }
