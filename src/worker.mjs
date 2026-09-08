@@ -240,6 +240,13 @@ async function handleParentProgress(request, env) {
 }
 async function handleParentFeedback(request, env) {
   const url = new URL(request.url);
+  if (request.method === 'DELETE') {
+    await requireAdmin(request, env);
+    const id = String(url.searchParams.get('id') || '').trim();
+    if (!id) return json({ error: 'Feedback id invalid' }, 400);
+    await supabaseRequest(env, `/rest/v1/parent_question_feedback?id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+    return json({ ok: true });
+  }
   if (request.method === 'POST') {
     assertSameOrigin(request);
     const body = await readJson(request, 20_000);
@@ -266,7 +273,7 @@ async function handleParentFeedback(request, env) {
     const questions = [...byQuestion.values()].map(row => ({ ...row, average: row.total ? Number((row.sum / row.total).toFixed(2)) : 0 })).sort((a, b) => b.total - a.total || a.activity_id.localeCompare(b.activity_id));
     return json({ feedback: rows, questions, totals: { ratings: rows.length, sessions: new Set(rows.map(row => row.session_id)).size, average: rows.length ? Number((rows.reduce((sum, row) => sum + row.rating, 0) / rows.length).toFixed(2)) : 0 } });
   }
-  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST' });
+  return json({ error: 'Method not allowed' }, 405, { Allow: 'GET, POST, DELETE' });
 }
 async function handleExperienceRepertoire(request, env) {
   await requireAdmin(request, env); const url = new URL(request.url);

@@ -350,3 +350,15 @@ renderOverviewHub = async function renderOverviewWithCommunityInterest() {
     card.innerHTML = `<header><span class="overview-final-icon">♡</span><div><small>COMUNITATE</small><h3>Interes comunitate</h3></div></header><p class="overview-no-data">Datele nu au putut fi încărcate.</p>`;
   }
 };
+
+const beckyOverviewRenderWithParentFeedback = renderOverviewHub;
+renderOverviewHub = async function renderOverviewWithParentFeedback() {
+  await beckyOverviewRenderWithParentFeedback();
+  const grid = document.querySelector('.overview-final-grid');
+  if (!grid || grid.querySelector('.overview-feedback-card')) return;
+  const card = document.createElement('a');
+  card.className = 'overview-final-card overview-feedback-card';
+  card.href = '/admin/parents-feedback.html';
+  card.innerHTML = '<header><span class="overview-final-icon">★</span><div><small>APLICAȚIA PĂRINȚI</small><h3>Feedback întrebări</h3></div><b>→</b></header><p>Vezi notările cu stele, media și răspunsurile pe fiecare întrebare.</p><footer>Deschide feedbackul părinților</footer>';
+  grid.appendChild(card);
+};
