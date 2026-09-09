@@ -225,7 +225,7 @@ function renderExpressionGuess(item) {
         <h1>Ce expresie e?</h1>
         <div class="expression-puzzle" aria-label="Emoji-ul expresiei"><span>${esc(round.emoji)}</span>${answerRevealed ? `<strong class="expression-answer"><b aria-hidden="true">✓</b>${esc(round.answer)}</strong>` : reveal ? `<strong class="expression-reveal">${esc(reveal)}</strong>` : ''}</div>
         <div class="expression-actions">
-          ${answerRevealed ? `<button class="primary expression-next" type="button" data-expression-next>${roundIndex === rounds.length - 1 ? 'Finalizați →' : 'Următoarea →'}</button>` : `<button class="primary" type="button" data-expression-answer>Vezi răspunsul</button>${revealDepth < (round.reveals?.length || 0) ? `<button class="secondary expression-reveal-button" type="button" data-expression-reveal>Dezvăluie o parte →</button>` : ''}`}
+          ${answerRevealed ? `<button class="primary expression-next" type="button" data-expression-next>${roundIndex === rounds.length - 1 ? 'Încheiați activitatea →' : 'Vezi următoarea expresie →'}</button>` : `<button class="primary" type="button" data-expression-answer>Vezi răspunsul</button>${revealDepth < (round.reveals?.length || 0) ? `<button class="secondary expression-reveal-button" type="button" data-expression-reveal>Dezvăluie o parte →</button>` : ''}`}
         </div>
       </div>
     </main>`;
@@ -754,7 +754,7 @@ function activityGuide(item, context = {}) {
     'ghiceste-expresia': {
       who: 'Jucați împreună: spuneți cu voce tare expresia care vă vine în minte.',
       how: 'Priviți emoji-urile și încercați să recunoașteți expresia românească.',
-      options: 'Verificați răspunsul sau dezvăluiți o parte, apoi continuați cu următoarea.'
+      options: 'Verificați răspunsul sau dezvăluiți o parte, apoi treceți la următoarea expresie.'
     },
     'recunoaste-ti-animalul': {
       who: 'Alegeți împreună sau lăsați fiecare persoană să răspundă pe rând.',
@@ -971,7 +971,7 @@ function renderReproduceSound(item) {
   root.querySelector('[data-sound-hint1]')?.addEventListener('click', () => advancePhase('hint1'));
   root.querySelector('[data-sound-hint2]')?.addEventListener('click', () => advancePhase('hint2'));
   root.querySelector('[data-sound-forgot]').onclick = () => { state.phase = phase; saveActivityProgress(item.id, state); renderReproduceSound({ ...item, __peek: true, __peekPhase: phase }); };
-  root.querySelector('[data-sound-guessed]').onclick = () => { state.completed_rounds = [...(state.completed_rounds || []), round.id]; state.index = index + 1; state.phase = 'secret'; saveActivityProgress(item.id, state); if (state.index >= state.round_ids.length) renderReproduceSound(item); else { root.innerHTML = `<main class="sound-game sound-next"><div class="sound-game-content"><p class="sound-secret-eyebrow">✓ AU GHICIT!</p><h1>${state.player_count < 10 ? 'Dă tableta spre stânga →' : 'Următorul sunet →'}</h1><button class="primary" type="button" data-sound-next>Continuă</button></div></main>`; root.querySelector('[data-sound-next]').onclick = () => renderReproduceSound(item); } };
+  root.querySelector('[data-sound-guessed]').onclick = () => { state.completed_rounds = [...(state.completed_rounds || []), round.id]; state.index = index + 1; state.phase = 'secret'; saveActivityProgress(item.id, state); if (state.index >= state.round_ids.length) renderReproduceSound(item); else { root.innerHTML = `<main class="sound-game sound-next"><div class="sound-game-content"><p class="sound-secret-eyebrow">✓ AU GHICIT!</p><h1>${state.player_count < 10 ? 'Dă tableta spre stânga →' : 'Pregătiți următorul sunet →'}</h1><button class="primary" type="button" data-sound-next>Continuă cu următorul sunet →</button></div></main>`; root.querySelector('[data-sound-next]').onclick = () => renderReproduceSound(item); } };
   if (item.__peek) { state.phase = phase; root.querySelector('[data-sound-forgot]').click = null; renderReproduceSound({ ...item, __peek: false }); }
 }
 
@@ -1019,7 +1019,8 @@ function renderAnimalExperience(item) {
     ? `<img class="animal-option-image" src="${esc(option.image)}" alt="">`
     : `<span class="animal-option-emoji" aria-hidden="true">${esc(option.emoji || '🐾')}</span>`;
   track('animal_sound_view_manual', { animal_round: round.label });
-  root.innerHTML = `<main class="animal-experience"><button class="question-back" type="button" data-animal-back>← Activități</button><div class="animal-instruction">Ascultați și ghiciți pe rând</div><button class="animal-flip" type="button" data-animal-flip aria-label="Redă din nou sunetul"><span class="animal-card-inner"><span class="animal-card-face animal-card-front"><img class="animal-speaker" src="/assets/Iconuri/volume.png" alt=""><strong>Ce animal este?</strong></span><span class="animal-card-face animal-card-back">${answerVisual}<strong data-animal-result></strong><small>${esc(round.type)} · ${esc(round.habitat)}</small></span></span></button><div class="animal-score" data-animal-score><span class="is-correct">✓ ${animalScore.correct} corecte</span><span class="is-wrong">✕ ${animalScore.wrong} greșite</span><span class="is-remaining">• ${animalRoundQueue.length} rămase</span></div><div class="animal-actions" data-animal-actions><div class="animal-options" data-animal-options hidden>${optionLabels.map(option => `<button type="button" class="animal-option" data-animal-option="${esc(option.label)}">${optionVisual(option)}<strong>${esc(option.label)}</strong></button>`).join('')}</div></div><button class="primary animal-next" type="button" data-animal-next hidden>Următorul</button>${activityDockMarkup(item)}</main>`;
+  const animalNextLabel = animalRoundQueue.length ? 'Vezi următorul animal →' : 'Vezi rezultatul →';
+  root.innerHTML = `<main class="animal-experience"><button class="question-back" type="button" data-animal-back>← Activități</button><div class="animal-instruction">Ascultați și ghiciți pe rând</div><button class="animal-flip" type="button" data-animal-flip aria-label="Redă din nou sunetul"><span class="animal-card-inner"><span class="animal-card-face animal-card-front"><img class="animal-speaker" src="/assets/Iconuri/volume.png" alt=""><strong>Ce animal este?</strong></span><span class="animal-card-face animal-card-back">${answerVisual}<strong data-animal-result></strong><small>${esc(round.type)} · ${esc(round.habitat)}</small></span></span></button><div class="animal-score" data-animal-score><span class="is-correct">✓ ${animalScore.correct} corecte</span><span class="is-wrong">✕ ${animalScore.wrong} greșite</span><span class="is-remaining">• ${animalRoundQueue.length} rămase</span></div><div class="animal-actions" data-animal-actions><div class="animal-options" data-animal-options hidden>${optionLabels.map(option => `<button type="button" class="animal-option" data-animal-option="${esc(option.label)}">${optionVisual(option)}<strong>${esc(option.label)}</strong></button>`).join('')}</div></div><button class="primary animal-next" type="button" data-animal-next hidden>${animalNextLabel}</button>${activityDockMarkup(item)}</main>`;
   const savedAnswered = new Set(Array.isArray(animalSavedProgress(item.id).answered_rounds) ? animalSavedProgress(item.id).answered_rounds : []);
   root.querySelector('[data-animal-back]').onclick = () => { track('animal_sound_exit'); animalQueueActivityId = null; animalRoundQueue = []; renderLibrary(); };
   bindActivityDock(item);
@@ -1108,7 +1109,8 @@ function renderQuestionExperience(item, questionIndex = 0, transition = null) {
   if (isWouldYouRather) { const saved = activityProgress()[item.id] || {}; saveActivityProgress(item.id, { ...saved, batch_index: index, completed_at: null }); } else saveActivityResumeIndex(item.id, index);
   track('question_view_manual', { question_index: index });
   const enterClass = transition?.from ? ` is-entering-from-${transition.from}` : '';
-  root.innerHTML = `<main class="question-experience" tabindex="0" aria-label="${esc(item.title)}"><button class="question-back" type="button" data-question-back>← Activități</button><div class="question-content${enterClass}"><small class="question-count">${index + 1} din ${questionLimit}</small><div class="question-copy ${responsiveTextClass(questions[index])}">${esc(questions[index])}</div><div class="question-rating" role="group" aria-label="Cât de mult v-a plăcut întrebarea?"><span class="question-rating-label">V-a plăcut?</span><div class="question-stars">${[1,2,3,4,5].map(value => `<button type="button" class="question-star" data-question-rating="${value}" aria-label="${value} din 5 stele">☆</button>`).join('')}</div></div><button class="question-next" type="button" data-question-next>Următoarea</button></div>${activityDockMarkup(item)}</main>`;
+  const questionNextLabel = index >= questionLimit - 1 ? 'Încheiați activitatea →' : isWouldYouRather ? 'Vezi următoarea dilemă →' : 'Vezi următoarea întrebare →';
+  root.innerHTML = `<main class="question-experience" tabindex="0" aria-label="${esc(item.title)}"><button class="question-back" type="button" data-question-back>← Activități</button><div class="question-content${enterClass}"><small class="question-count">${index + 1} din ${questionLimit}</small><div class="question-copy ${responsiveTextClass(questions[index])}">${esc(questions[index])}</div><div class="question-rating" role="group" aria-label="Cât de mult v-a plăcut întrebarea?"><span class="question-rating-label">V-a plăcut?</span><div class="question-stars">${[1,2,3,4,5].map(value => `<button type="button" class="question-star" data-question-rating="${value}" aria-label="${value} din 5 stele">☆</button>`).join('')}</div></div><button class="question-next" type="button" data-question-next>${questionNextLabel}</button></div>${activityDockMarkup(item)}</main>`;
   root.querySelector('[data-question-back]').onclick = () => { track('question_exit_manual'); renderLibrary(); };
   requestAnimationFrame(() => fitQuestionText(root.querySelector('.question-copy')));
   bindActivityDock(item);
@@ -1336,7 +1338,7 @@ function renderDramaticEntry(item, advanceTrack = false) {
         playingIndicator?.remove();
         if (dramaticSession.current < dramaticSession.total) {
           status.textContent = `👏 Participantul ${dramaticSession.current} a revenit. Pregătiți scena pentru următorul.`;
-          const nextButton = document.createElement('button'); nextButton.className = 'primary music-game-start'; nextButton.type = 'button'; nextButton.textContent = `Următorul participant · ${dramaticSession.current + 1}/${dramaticSession.total}`; nextButton.onclick = () => { dramaticSession.current += 1; renderDramaticEntry(item, true); }; root.querySelector('.music-game-stage').append(nextButton);
+          const nextButton = document.createElement('button'); nextButton.className = 'primary music-game-start'; nextButton.type = 'button'; nextButton.textContent = `Pregătiți următorul participant · ${dramaticSession.current + 1}/${dramaticSession.total}`; nextButton.onclick = () => { dramaticSession.current += 1; renderDramaticEntry(item, true); }; root.querySelector('.music-game-stage').append(nextButton);
         } else {
           markActivityComplete(item.id); completionReturnId = item.id;
           const returnButton = document.createElement('button'); returnButton.className = 'primary music-game-start'; returnButton.type = 'button'; returnButton.textContent = 'Înapoi la activități'; returnButton.onclick = renderLibrary; root.querySelector('.music-game-stage').append(returnButton);
@@ -1345,9 +1347,9 @@ function renderDramaticEntry(item, advanceTrack = false) {
       const wireStopControl = () => {
         playingIndicator.querySelector('[data-dramatic-stop]')?.addEventListener('click', () => {
           clearInterval(musicGameTimer); audio.pause(); stopCrowd(); started = false; status.textContent = 'Poate intra următorul participant.';
-          playingIndicator.innerHTML = '<strong>Muzica este oprită.</strong><div class="dramatic-paused-actions"><button class="primary music-game-start" type="button" data-dramatic-resume>Continuă muzica</button><button class="secondary music-game-start" type="button" data-dramatic-next>Următorul participant</button></div>';
+          playingIndicator.innerHTML = `<strong>Muzica este oprită.</strong><div class="dramatic-paused-actions"><button class="primary music-game-start" type="button" data-dramatic-resume>Continuă muzica</button><button class="secondary music-game-start" type="button" data-dramatic-next>${dramaticSession.current >= dramaticSession.total ? 'Încheiați activitatea' : 'Pregătiți următorul participant'}</button></div>`;
           playingIndicator.querySelector('[data-dramatic-resume]').onclick = async () => { started = true; status.textContent = 'Aplaudați până ajunge înapoi la voi. 👏'; playingIndicator.innerHTML = '<div class="dramatic-now-playing"><span class="dramatic-wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><strong>Muzica rulează…</strong></div><div class="dramatic-time-left"><b data-dramatic-countdown>23</b><small>secunde rămase</small></div><button class="secondary dramatic-stop" type="button" data-dramatic-stop>Oprește muzica</button>'; wireStopControl(); await audio.play(); musicGameTimer = setInterval(stopAtEnd, 50); stopAtEnd(); };
-          playingIndicator.querySelector('[data-dramatic-next]').onclick = () => { dramaticSession.current = Math.min(dramaticSession.total, dramaticSession.current + 1); renderDramaticEntry(item, true); };
+          playingIndicator.querySelector('[data-dramatic-next]').onclick = () => { if (dramaticSession.current >= dramaticSession.total) { markActivityComplete(item.id); completionReturnId = item.id; renderLibrary(); return; } dramaticSession.current += 1; renderDramaticEntry(item, true); };
         });
       };
       wireStopControl();
@@ -1430,9 +1432,9 @@ function renderMusicGame(item) {
         status.textContent = 'Schimb de lider!';
         musicGameTransition = setTimeout(playRound, 900);
       } else {
-        status.textContent = 'Intrare reușită. Următoarea persoană!';
+        status.textContent = 'Intrare reușită. Pregătiți următoarea persoană!';
         startButton.disabled = false;
-        startButton.textContent = 'Dă următoarea muzică';
+        startButton.textContent = 'Pornește următoarea intrare';
       }
     };
     updateRound();
@@ -1511,12 +1513,14 @@ function renderMiniQuiz(item, mode = 'setup', selectedPlayerCount = null) {
   if (!question) { state.index = index + 1; saveActivityProgress(item.id, state); renderMiniQuiz(item, 'play'); return; }
   track('mini_quiz_question_viewed', { question_id: question.id, question_index: index, player_count: state.player_count });
   const miniQuizGroupNote = state.player_count >= 10 && index === 0 ? '<div class="mini-quiz-group-note">Oricine poate răspunde. Hotărâți-vă împreună, apoi verificați răspunsul.</div>' : '';
+  const miniQuizIsLast = index >= state.question_ids.length - 1;
+  const miniQuizNextLabel = miniQuizIsLast ? 'Vezi rezultatul →' : state.player_count >= 10 ? 'Vezi următoarea întrebare →' : 'Dă tableta spre stânga →';
     const turnMessage = state.player_count >= 10
       ? 'Oricine poate răspunde. Hotărâți împreună răspunsul final.'
       : index === 0
         ? 'Cine are tableta coordonează prima întrebare.'
         : 'După răspuns, dă tableta spre stânga →';
-    root.innerHTML = `<main class="quiz-experience quiz-play mini-quiz-play"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-player"><div class="mini-quiz-score"><strong>VOI ${state.you_score || 0}</strong><span>—</span><strong>QUIZ ${state.quiz_score || 0}</strong></div><div class="quiz-player-heading"><strong>${index + 1} / ${state.question_ids.length}</strong><small>${state.player_count >= 10 ? 'Grup organic' : 'Cercul'}</small></div><div class="mini-quiz-turn">${turnMessage}</div>${miniQuizGroupNote}<button class="quiz-flip-card" type="button" data-quiz-flip aria-label="Vezi răspunsul"><span class="quiz-flip-inner"><span class="quiz-face quiz-front"><small>ÎNTREBAREA</small><strong>${esc(question.question)}</strong></span><span class="quiz-face quiz-back"><small>${esc(question.answer)}</small><strong>${esc(question.funFact)}</strong></span></span></button><div class="quiz-player-actions"><button class="primary quiz-reveal" type="button" data-quiz-reveal>Verificați răspunsul</button><div class="mini-quiz-scoring" hidden><p>Ați nimerit-o?</p><button type="button" data-score="you">Ați nimerit-o ✓</button><button type="button" data-score="quiz">N-ați nimerit-o</button></div><button class="primary quiz-next-question" type="button" data-quiz-next hidden>${state.player_count >= 10 ? 'Următoarea întrebare' : 'Dă tableta spre stânga →'}</button></div><button class="quiz-skip" type="button" data-quiz-skip>Altă întrebare</button></div></main>`;
+    root.innerHTML = `<main class="quiz-experience quiz-play mini-quiz-play"><button class="question-back" type="button" data-quiz-back>← Activități</button><div class="quiz-player"><div class="mini-quiz-score"><strong>VOI ${state.you_score || 0}</strong><span>—</span><strong>QUIZ ${state.quiz_score || 0}</strong></div><div class="quiz-player-heading"><strong>${index + 1} / ${state.question_ids.length}</strong><small>${state.player_count >= 10 ? 'Grup organic' : 'Cercul'}</small></div><div class="mini-quiz-turn">${turnMessage}</div>${miniQuizGroupNote}<button class="quiz-flip-card" type="button" data-quiz-flip aria-label="Vezi răspunsul"><span class="quiz-flip-inner"><span class="quiz-face quiz-front"><small>ÎNTREBAREA</small><strong>${esc(question.question)}</strong></span><span class="quiz-face quiz-back"><small>${esc(question.answer)}</small><strong>${esc(question.funFact)}</strong></span></span></button><div class="quiz-player-actions"><button class="primary quiz-reveal" type="button" data-quiz-reveal>Verificați răspunsul</button><div class="mini-quiz-scoring" hidden><p>Ați nimerit-o?</p><button type="button" data-score="you">Ați nimerit-o ✓</button><button type="button" data-score="quiz">N-ați nimerit-o</button></div><button class="primary quiz-next-question" type="button" data-quiz-next hidden>${miniQuizNextLabel}</button></div><button class="quiz-skip" type="button" data-quiz-skip>Altă întrebare</button></div></main>`;
   const miniQuizQuestionText = root.querySelector('.quiz-front strong');
   const miniQuizTextClass = responsiveTextClass(question.question) || (question.question.length > 75 ? 'is-text-medium' : '');
   if (miniQuizQuestionText && miniQuizTextClass) miniQuizQuestionText.classList.add(miniQuizTextClass);
