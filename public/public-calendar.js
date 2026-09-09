@@ -51,25 +51,39 @@
   };
 
   let lastCalendarSignature = "";
+  let loading = false;
+  let refreshPending = false;
 
   const load = async () => {
+    if (loading) { refreshPending = true; return; }
+    loading = true;
+    try {
     let entries = [];
     try {
       const response = await fetch(`/api/calendar?_=${Date.now()}`, {
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: AbortSignal.timeout(15000),
       });
       if (!response.ok) throw new Error("Calendar unavailable");
-      entries = (await response.json()).entries || [];
+      entries = (await response.json()).entries;
+      if (!Array.isArray(entries)) throw new Error("Invalid calendar");
     } catch {
       document.querySelector("[data-public-calendar]")?.classList.add("is-fallback");
+      if (!lastCalendarSignature) {
+        const message = '<p class="public-calendar-error">Programul nu este disponibil momentan. Reîncercăm automat…</p>';
+        desktopHost.innerHTML = message;
+        mobileHost.innerHTML = message;
+      }
+      return;
     }
 
-    const signature = JSON.stringify(entries);
+    document.querySelector("[data-public-calendar]")?.classList.remove("is-fallback");
+    const bucharestDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Bucharest", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+    const week = renderer.getWeek(entries, new Date(`${bucharestDate}T12:00:00`));
+    const signature = JSON.stringify([week.days, week.label]);
     if (signature === lastCalendarSignature) return;
-    lastCalendarSignature = signature;
 
-    const week = renderer.getWeek(entries, new Date());
     rangeNodes.forEach((node) => (node.textContent = week.label));
     renderMobile(week.days);
 
@@ -79,8 +93,13 @@
       canvas.setAttribute("role", "img");
       canvas.setAttribute("aria-label", `Programul Becky’s Garden, ${week.label}`);
       desktopHost.replaceChildren(canvas);
+      lastCalendarSignature = signature;
     } catch {
       desktopHost.innerHTML = '<p class="public-calendar-error">Programul nu a putut fi afișat momentan.</p>';
+    }
+    } finally {
+      loading = false;
+      if (refreshPending) { refreshPending = false; load(); }
     }
   };
 
@@ -88,5 +107,9 @@
   window.addEventListener("storage", (event) => {
     if (event.key === "becky-calendar-updated") load();
   });
-  window.setInterval(load, 30000);
+  window.addEventListener("focus", load);
+  window.addEventListener("pageshow", load);
+  window.addEventListener("online", load);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+  window.setInterval(() => { if (!document.hidden) load(); }, 5000);
 })();

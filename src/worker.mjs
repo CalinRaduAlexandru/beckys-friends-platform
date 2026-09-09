@@ -786,7 +786,10 @@ async function handleAdminCalendar(request, env) {
     const start = new Date(`${weekStart}T12:00:00`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart) || Number.isNaN(start.getTime()) || start.getDay() !== 1 || !Array.isArray(body?.entries) || body.entries.length > 50) return json({ error: 'Calendar week invalid' }, 400);
     const dates = Array.from({ length: 7 }, (_, index) => { const date = new Date(start); date.setDate(start.getDate() + index); return date.toISOString().slice(0, 10); });
-    const entries = body.entries.map(entry => normalizeCalendarEntryInput(entry));
+    const entries = body.entries.map(entry => ({
+      ...normalizeCalendarEntryInput(entry),
+      created_at: entry.created_at || new Date().toISOString()
+    }));
     if (entries.some(entry => !dates.includes(entry.date))) return json({ error: 'Calendar entry outside week' }, 400);
     const existingResponse = await supabaseRequest(env, `/rest/v1/calendar_becky_entries?select=id&date=gte.${dates[0]}&date=lte.${dates[6]}`);
     const existing = await existingResponse.json();
