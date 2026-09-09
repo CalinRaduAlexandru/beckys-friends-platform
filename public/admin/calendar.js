@@ -1177,6 +1177,11 @@
         ),
         ...((await response.json()).entries || []),
       ];
+      try {
+        localStorage.setItem("becky-calendar-updated", String(Date.now()));
+      } catch {
+        // Calendar refresh still works through the public page polling fallback.
+      }
     };
     const render = () => {
       const dates = weekDates(weekStart);

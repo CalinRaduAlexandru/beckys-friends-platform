@@ -50,17 +50,24 @@
       .join("");
   };
 
+  let lastCalendarSignature = "";
+
   const load = async () => {
     let entries = [];
     try {
-      const response = await fetch("/api/calendar", {
+      const response = await fetch(`/api/calendar?_=${Date.now()}`, {
         headers: { Accept: "application/json" },
+        cache: "no-store",
       });
       if (!response.ok) throw new Error("Calendar unavailable");
       entries = (await response.json()).entries || [];
     } catch {
       document.querySelector("[data-public-calendar]")?.classList.add("is-fallback");
     }
+
+    const signature = JSON.stringify(entries);
+    if (signature === lastCalendarSignature) return;
+    lastCalendarSignature = signature;
 
     const week = renderer.getWeek(entries, new Date());
     rangeNodes.forEach((node) => (node.textContent = week.label));
@@ -78,4 +85,8 @@
   };
 
   load();
+  window.addEventListener("storage", (event) => {
+    if (event.key === "becky-calendar-updated") load();
+  });
+  window.setInterval(load, 30000);
 })();
