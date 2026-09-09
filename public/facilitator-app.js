@@ -149,6 +149,9 @@ async function openLandscapeReference() {
   overlay.focus();
   try {
     await overlay.requestFullscreen?.({ navigationUI: 'hide' });
+    // The facilitator app stays portrait; only this 16:9 viewing surface
+    // rotates to landscape. A long-press keeps that orientation for /parinti.
+    await screen.orientation?.lock?.('landscape');
   } catch {}
 }
 

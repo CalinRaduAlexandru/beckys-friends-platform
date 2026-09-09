@@ -437,7 +437,7 @@ function showInstallModal() {
 }
 
 async function lockParentsLandscape() {
-  if (!window.matchMedia('(display-mode: standalone)').matches || !screen.orientation?.lock) return;
+  if (!screen.orientation?.lock) return;
   try { await screen.orientation.lock('landscape'); } catch { /* manifestul rămâne fallback-ul nativ */ }
 }
 
@@ -1747,6 +1747,9 @@ async function revealInitialLibrary(sessionMode = 'new') {
 
 (async () => {
   registerParentsPwa();
+  // Request it before the session gate is shown, so the first visible parent
+  // screen is already in the intended orientation after the long-press handoff.
+  await lockParentsLandscape();
   try {
     if (document.fonts?.load) {
       await Promise.race([
@@ -1767,7 +1770,6 @@ async function revealInitialLibrary(sessionMode = 'new') {
     track('session_start', { mode: 'manual' });
     const sessionMode = await showSessionGate();
     await revealInitialLibrary(sessionMode);
-    lockParentsLandscape();
     setTimeout(showInstallModal, 650);
   } catch {
     root.innerHTML = '<div class="parents-loading">Nu am putut încărca experiența. Reîncercați.</div>';
