@@ -436,10 +436,19 @@ function showInstallModal() {
   });
 }
 
-async function lockParentsLandscape() {
+async function lockParentsLandscape(fromGesture = false) {
   if (!screen.orientation?.lock) return;
+  if (fromGesture && !document.fullscreenElement && window.self === window.top) {
+    try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch {}
+  }
   try { await screen.orientation.lock('landscape'); } catch { /* manifestul rămâne fallback-ul nativ */ }
 }
+document.addEventListener('click', () => {
+  if (!screen.orientation?.type?.startsWith('landscape') || (!document.fullscreenElement && window.self === window.top)) lockParentsLandscape(true);
+}, { capture: true });
+document.addEventListener('fullscreenchange', () => lockParentsLandscape());
+document.addEventListener('visibilitychange', () => { if (!document.hidden) lockParentsLandscape(); });
+window.addEventListener('pageshow', () => lockParentsLandscape());
 
 function activityProgressMarkup() {
   const progressStages = selectedGroupSize === 'large'

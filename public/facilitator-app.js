@@ -137,9 +137,23 @@ async function openLandscapeReference() {
   let pressX = 0;
   let pressY = 0;
   const cancelLongPress = () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } };
-  overlay.addEventListener('pointerdown', event => { if (event.pointerType === 'mouse' && event.button !== 0) return; event.preventDefault(); pressX = event.clientX; pressY = event.clientY; cancelLongPress(); longPressTimer = setTimeout(() => { longPressTimer = null; window.location.assign('/parinti'); }, 900); });
+  overlay.addEventListener('pointerdown', event => { if (overlay.dataset.parentsOpen || (event.pointerType === 'mouse' && event.button !== 0)) return; event.preventDefault(); pressX = event.clientX; pressY = event.clientY; cancelLongPress(); longPressTimer = setTimeout(() => {
+    longPressTimer = null;
+    overlay.dataset.parentsOpen = 'true';
+    if (restartTimer) clearTimeout(restartTimer);
+    video.pause();
+    // Keep the fullscreen document alive: navigating it releases Android's lock.
+    const parentsFrame = document.createElement('iframe');
+    parentsFrame.title = 'Activități pentru părinți';
+    parentsFrame.allow = 'fullscreen; autoplay; microphone';
+    parentsFrame.allowFullscreen = true;
+    parentsFrame.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#f6efe5';
+    parentsFrame.src = '/parinti?from=joaca';
+    overlay.replaceChildren(parentsFrame);
+    screen.orientation?.lock?.('landscape').catch(() => {});
+  }, 900); });
   overlay.addEventListener('pointermove', event => { if (Math.hypot(event.clientX - pressX, event.clientY - pressY) > 12) cancelLongPress(); });
-  overlay.addEventListener('pointerup', event => { const distance = Math.hypot(event.clientX - pressX, event.clientY - pressY); cancelLongPress(); if (distance > 80) close(); });
+  overlay.addEventListener('pointerup', event => { if (overlay.dataset.parentsOpen) return; const distance = Math.hypot(event.clientX - pressX, event.clientY - pressY); cancelLongPress(); if (distance > 80) close(); });
   overlay.addEventListener('pointercancel', cancelLongPress);
   overlay.addEventListener('pointerleave', cancelLongPress);
   overlay.addEventListener('dragstart', event => event.preventDefault());
