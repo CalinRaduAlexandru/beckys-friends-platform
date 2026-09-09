@@ -111,8 +111,9 @@ async function supabaseRequest(env, path, init = {}) {
       const detail = await response.text();
       const transient = [502, 503, 504].includes(response.status);
       if (!transient || attempt === 2) {
-        console.error('Supabase request failed', response.status, detail.slice(0, 500));
-        throw Object.assign(new Error('Database request failed'), { status: 502 });
+        const diagnostic = detail.replace(/\s+/g, ' ').trim().slice(0, 500);
+        console.error('Supabase request failed', response.status, path, diagnostic);
+        throw Object.assign(new Error(`Database request failed: ${diagnostic || `HTTP ${response.status}`}`), { status: 502 });
       }
     } catch (error) {
       if (error?.status !== 502 && attempt === 2) throw error;
