@@ -22,7 +22,6 @@ const ACTIVITY_PROGRESS_KEY = 'becky-parents-activity-progress:v1';
 const HIDE_COMPLETED_ACTIVITIES_KEY = 'becky-parents-hide-completed:v1';
 const PARENT_PROFILE_KEY = 'becky-parents-profile:v1';
 const PARENT_PROFILES_KEY = 'becky-parents-profiles:v1';
-const TV_INSTALL_DISMISSED_KEY = 'becky-parents-tv-install-dismissed:v1';
 const GROUP_SIZE_KEY = 'becky-parents-group-size:v1';
 const ACTIVE_ACTIVITY_ORDER = ['ghiceste-expresia', 'ai-prefera', 'intrebari-amuzante', 'intrebari-profunde', 'mini-quiz-general', 'reproduceti-sunetul', 'arata-mai-departe', 'dans', 'dans-schimbare-lider', 'karaoke'];
 const LOCKED_ACTIVITY_START = ACTIVE_ACTIVITY_ORDER.indexOf('mini-quiz-general');
@@ -51,7 +50,6 @@ let animalScore = { correct: 0, wrong: 0 };
 let soundSecretTimer = null;
 let parentProfileUsername = localStorage.getItem(PARENT_PROFILE_KEY) || '';
 let completionReturnId = null;
-let deferredInstallPrompt = null;
 const sessionId = sessionStorage.getItem(SESSION_KEY) || makeSessionId();
 sessionStorage.setItem(SESSION_KEY, sessionId);
 
@@ -394,47 +392,9 @@ function registerParentsPwa() {
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/parents-sw.js', { scope: '/parinti' }).catch(() => {});
   window.addEventListener('beforeinstallprompt', event => {
     event.preventDefault();
-    deferredInstallPrompt = event;
   });
 }
 
-function showInstallModal() {
-  const isInstalledPwa = window.matchMedia('(display-mode: standalone)').matches
-    || window.matchMedia('(display-mode: fullscreen)').matches
-    || window.navigator.standalone === true;
-  if (isInstalledPwa || sessionStorage.getItem(TV_INSTALL_DISMISSED_KEY)) return;
-  const androidTv = /android|google tv|googletv|aft|crkey/i.test(navigator.userAgent);
-  const directInstall = Boolean(deferredInstallPrompt);
-  const instructions = directInstall
-    ? 'Apăsați butonul de mai jos. Becky se va adăuga pe ecranul principal al televizorului.'
-    : androidTv
-      ? 'Din meniul browserului alegeți „Install app” sau „Add to Home screen”. Dacă opțiunea nu apare, televizorul nu permite instalarea PWA din acest browser.'
-      : 'Din meniul browserului televizorului alegeți „Adaugă la ecranul principal” / „Add to Home screen”. Disponibilitatea depinde de modelul televizorului.';
-  const modal = document.createElement('div');
-  modal.className = 'tv-install-overlay';
-  modal.innerHTML = `<section class="tv-install-modal" role="dialog" aria-modal="true" aria-labelledby="tv-install-title"><img src="/assets/logo_sun_square.png" alt=""><span class="eyebrow">BECKY’S GARDEN</span><h2 id="tv-install-title">Instalează Becky pe TV</h2><p data-tv-install-copy>${instructions}</p><ol class="tv-install-steps" data-tv-install-steps hidden><li>Deschideți meniul browserului cu butonul ⋮.</li><li>Alegeți „Install app” sau „Add to Home screen”.</li><li>Confirmați cu OK și porniți Becky din ecranul principal.</li></ol><div class="tv-install-actions">${directInstall ? '<button class="primary" data-tv-install>Instalează aplicația</button>' : '<button class="primary" data-tv-install-help>Arată pașii</button>'}<button class="tv-install-later" type="button" data-tv-install-close>Continuă în browser</button></div></section>`;
-  document.body.appendChild(modal);
-  modal.querySelector('h2').textContent = 'Instalează Becky';
-  modal.querySelector('[data-tv-install-copy]').textContent = directInstall
-    ? 'Adăugați Becky pe ecranul principal pentru o experiență fără bara browserului.'
-    : 'Din meniul browserului alegeți „Install app” sau „Add to Home screen”.';
-  const close = () => { sessionStorage.setItem(TV_INSTALL_DISMISSED_KEY, '1'); modal.remove(); };
-  modal.querySelector('[data-tv-install-close]').onclick = close;
-  modal.querySelector('[data-tv-install-help]')?.addEventListener('click', () => {
-    modal.querySelector('[data-tv-install-copy]').textContent = 'Urmați pașii de mai jos pentru a o păstra pe ecranul principal:';
-    modal.querySelector('[data-tv-install-steps]').hidden = false;
-    const button = modal.querySelector('[data-tv-install-help]');
-    button.textContent = 'Am înțeles';
-    button.onclick = close;
-  });
-  modal.querySelector('[data-tv-install]')?.addEventListener('click', async () => {
-    if (!deferredInstallPrompt) return;
-    deferredInstallPrompt.prompt();
-    await deferredInstallPrompt.userChoice;
-    deferredInstallPrompt = null;
-    close();
-  });
-}
 
 async function lockParentsLandscape(fromGesture = false) {
   if (!screen.orientation?.lock) return;
@@ -1779,7 +1739,6 @@ async function revealInitialLibrary(sessionMode = 'new') {
     track('session_start', { mode: 'manual' });
     const sessionMode = await showSessionGate();
     await revealInitialLibrary(sessionMode);
-    setTimeout(showInstallModal, 650);
   } catch {
     root.innerHTML = '<div class="parents-loading">Nu am putut încărca experiența. Reîncercați.</div>';
   }
