@@ -149,7 +149,6 @@ async function openLandscapeReference() {
   overlay.focus();
   try {
     await overlay.requestFullscreen?.({ navigationUI: 'hide' });
-    await screen.orientation?.lock?.('landscape');
   } catch {}
 }
 

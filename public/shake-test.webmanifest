@@ -7,7 +7,7 @@
   "start_url": "/shake-test",
   "scope": "/shake-test",
   "display": "fullscreen",
-  "orientation": "landscape",
+  "orientation": "portrait",
   "background_color": "#f6f1e8",
   "theme_color": "#f6f1e8",
   "icons": [
