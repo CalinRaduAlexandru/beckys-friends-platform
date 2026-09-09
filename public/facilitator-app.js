@@ -384,6 +384,27 @@ function playPlaylist(id) { const playlist=allPlaylists().find(item=>item.id===i
 function playNextTrack() { if (!state.currentPlaylist) return; let queue=state.playlistQueues[state.currentPlaylist.id]||[]; if(!queue.length){if(state.currentPlaylist.nextPlaylistId){playPlaylist(state.currentPlaylist.nextPlaylistId);return;}if(state.currentPlaylist.shuffle!==false)queue=shuffledTracks(state.currentPlaylist);else return;} const next=queue.shift(); state.playlistQueues[state.currentPlaylist.id]=queue; const duck=state.library?.soundEffects?.find(effect=>effect.id==='duck'); if(next&&duck?.src&&Math.random()<.3)playEffectAudio(duck.src,.75); if(next)playTrack(next,state.currentPlaylist); }
 function toggleAudio() { if(!state.currentTrack)return; if(audio.paused){state.userPausedAudio=false;audio.play().catch(()=>{});}else{state.userPausedAudio=true;audio.pause();} render(); }
 
+// Some Android/TV remotes expose their buttons as media or channel key events.
+// Smart View may forward these to the mirrored page; keep this additive so the
+// normal touch controls and browser scrolling remain unchanged.
+window.addEventListener('keydown', event => {
+  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return;
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) return;
+  const nextTrackKeys = new Set(['ArrowUp', 'PageUp', 'ChannelUp', 'MediaNextTrack', 'MediaTrackNext']);
+  if (nextTrackKeys.has(event.key) || nextTrackKeys.has(event.code) || event.keyCode === 33 || event.keyCode === 427) {
+    if (!state.currentPlaylist) return;
+    event.preventDefault();
+    playNextTrack();
+    toast('Piesa următoare ▶');
+    return;
+  }
+  if (event.key === 'MediaPlayPause' || event.code === 'MediaPlayPause' || event.keyCode === 179) {
+    if (!state.currentTrack) return;
+    event.preventDefault();
+    toggleAudio();
+  }
+});
+
 function savePlaylist(event) {
   event.preventDefault(); const form=new FormData(event.currentTarget); const title=String(form.get('title')||'').trim(); const trackIds=form.getAll('trackIds'); if(!title||!trackIds.length){toast('Alege un nume și cel puțin o piesă.');return;} state.customPlaylists.push({id:`custom-${Date.now()}`,title,occasion:'Playlist personalizat',trackIds}); saveJson(PLAYLIST_KEY,state.customPlaylists); state.sheet=''; render(); toast('Playlist salvat.');
 }
