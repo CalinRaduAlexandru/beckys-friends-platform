@@ -823,13 +823,31 @@ function renderActivityIntro(item, context = {}) {
   const guide = activityGuide(item, context);
   const playerLabel = context.playerCount ? ` · ${context.playerCount >= 10 ? '10+ JUCĂTORI' : `${context.playerCount} JUCĂTORI`}` : '';
   const actionLabel = context.resumed ? 'Continuă activitatea' : 'Începe activitatea';
+  const previewMarkup = item.id === 'arata-mai-departe' ? '<button class="activity-info-preview" type="button" data-activity-preview aria-label="Vezi rapid cum se joacă" title="Vezi rapid cum se joacă">▶</button>' : '';
   track('activity_info_viewed');
-  root.innerHTML = `<main class="activity-info-experience"><button class="question-back" type="button" data-activity-info-back>← Activități</button><section class="activity-info-card"><header>${item.illustration ? `<img src="${esc(item.illustration)}" alt="">` : `<span aria-hidden="true">${esc(item.cardIcon || '✦')}</span>`}<div><small>CUM SE JOACĂ${playerLabel}</small><h1>${esc(item.title)}</h1></div></header><div class="activity-info-rules"><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cine%20raspunde.png" alt=""><div><strong>Cine răspunde</strong><p>${esc(guide.who)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/ce%20puteti%20alege.png" alt=""><div><strong>Ce puteți alege</strong><p>${esc(guide.options)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cum%20jucati.png" alt=""><div><strong>Cum jucați</strong><p>${esc(guide.how)}</p></div></div></div><button class="primary activity-info-start" type="button" data-activity-info-start>${actionLabel}</button></section></main>`;
+  root.innerHTML = `<main class="activity-info-experience"><button class="question-back" type="button" data-activity-info-back>← Activități</button><section class="activity-info-card"><header>${item.illustration ? `<img src="${esc(item.illustration)}" alt="">` : `<span aria-hidden="true">${esc(item.cardIcon || '✦')}</span>`}<div><small>CUM SE JOACĂ${playerLabel}</small><h1>${esc(item.title)}</h1></div></header><div class="activity-info-rules"><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cine%20raspunde.png" alt=""><div><strong>Cine răspunde</strong><p>${esc(guide.who)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/ce%20puteti%20alege.png" alt=""><div><strong>Ce puteți alege</strong><p>${esc(guide.options)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cum%20jucati.png" alt=""><div><strong>Cum jucați</strong><p>${esc(guide.how)}</p></div></div></div><div class="activity-info-actions"><button class="primary activity-info-start" type="button" data-activity-info-start>${actionLabel}</button>${previewMarkup}</div></section></main>`;
   root.querySelector('[data-activity-info-back]').onclick = renderLibrary;
   root.querySelector('[data-activity-info-start]').onclick = () => {
     track('activity_started_from_info');
     startActivity(item, context);
   };
+  root.querySelector('[data-activity-preview]')?.addEventListener('click', () => {
+    const origin = encodeURIComponent(window.location.origin);
+    const modal = document.createElement('div');
+    modal.className = 'activity-preview-modal';
+    modal.innerHTML = `<div class="activity-preview-dialog" role="dialog" aria-modal="true" aria-label="Vezi cum se joacă Dă mai departe"><button class="activity-preview-close" type="button" data-preview-close aria-label="Închide preview-ul">×</button><div class="activity-preview-frame"><iframe src="https://www.youtube-nocookie.com/embed/Ez0jv8oX29k?autoplay=1&controls=1&rel=0&playsinline=1&enablejsapi=1&origin=${origin}" title="Cum se joacă Dă mai departe" allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin"></iframe></div><small>Preview rapid · 2×</small></div>`;
+    const close = () => { modal.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = event => { if (event.key === 'Escape') close(); };
+    modal.addEventListener('click', event => { if (event.target === modal) close(); });
+    modal.querySelector('[data-preview-close]').onclick = close;
+    root.append(modal);
+    document.addEventListener('keydown', onKey);
+    const iframe = modal.querySelector('iframe');
+    const setDoubleSpeed = () => iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'setPlaybackRate', args: [2] }), '*');
+    iframe.addEventListener('load', setDoubleSpeed, { once: true });
+    setTimeout(setDoubleSpeed, 700);
+    setTimeout(setDoubleSpeed, 1600);
+  });
 }
 
 function renderMiniQuizParticipantSelect(item) {
