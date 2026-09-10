@@ -941,6 +941,14 @@
 
 /* Keep the first screen focused on the offer, with the gallery immediately after. */
 .party-hero-grid{min-height:0}
+.party-jump-shell{position:sticky;top:108px;z-index:15;width:min(700px,calc(100% - 32px));margin:32px auto;padding:12px;border:1px solid #dce8e5;border-radius:22px;background:#fffdfa;box-shadow:0 8px 26px #2334480a}
+.party-jump-label{display:block;padding:0 8px 8px;color:#667b85;font-size:11px;font-weight:700;letter-spacing:.06em}
+.party-jump-controls{display:flex;align-items:center;gap:6px}
+.party-jump-shell .party-jumps{position:static;flex:1;min-width:0;max-width:none;width:auto;margin:0;padding:0;border:0;box-shadow:none;border-radius:12px;overflow-x:auto;justify-content:flex-start;scrollbar-width:none}
+.party-jump-controls>button{flex:none;width:32px;height:44px;padding:0;border:0;border-radius:10px;background:#e8f4f1;color:#176575;font-size:28px;cursor:pointer}
+.party-jump-controls>button:disabled{opacity:.25;cursor:default}
+.party-jump-shell .party-jumps a{padding:12px 14px;flex:none}
+@media(max-width:900px){.party-jump-shell{top:88px}.party-page .site-header .whatsapp-link{display:none}.party-section,.party-topic[id],.party-bottom{scroll-margin-top:195px}}
 .party-lead{line-height:1.65}
 @media(max-width:900px){.party-page .site-header{flex-wrap:nowrap}.party-page .site-header .site-nav{display:none}.party-page .site-header .brand-lockup{flex:1;min-width:0}.party-page .site-header .nav-cta{flex:none}.party-page .site-header .whatsapp-link{flex:none;margin-left:auto}}
 @media(max-width:800px){.party-gallery{order:0}.party-title{max-width:560px}}

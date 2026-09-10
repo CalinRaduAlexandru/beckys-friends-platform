@@ -101,6 +101,22 @@
   updatePrice();
 
   const jumps = [...document.querySelectorAll('.party-jumps a')];
+  const jumpNav = document.querySelector('.party-jumps');
+  const jumpShell = document.createElement('div');
+  jumpShell.className = 'party-jump-shell';
+  jumpNav.before(jumpShell);
+  jumpShell.innerHTML = '<span class="party-jump-label">Pe această pagină</span><div class="party-jump-controls"><button type="button" data-jump-prev aria-label="Secțiuni anterioare">‹</button><button type="button" data-jump-next aria-label="Mai multe secțiuni">›</button></div>';
+  jumpShell.querySelector('[data-jump-next]').before(jumpNav);
+  const updateJumpEdges = () => {
+    jumpShell.querySelector('[data-jump-prev]').disabled = jumpNav.scrollLeft < 2;
+    jumpShell.querySelector('[data-jump-next]').disabled = jumpNav.scrollLeft >= jumpNav.scrollWidth - jumpNav.clientWidth - 2;
+  };
+  jumpShell.querySelectorAll('button').forEach(button => button.onclick = () => {
+    jumpNav.scrollBy({ left: (button.hasAttribute('data-jump-prev') ? -1 : 1) * jumpNav.clientWidth * .75, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'instant' : 'smooth' });
+  });
+  jumpNav.addEventListener('scroll', updateJumpEdges, { passive:true });
+  new ResizeObserver(updateJumpEdges).observe(jumpNav);
+  updateJumpEdges();
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;

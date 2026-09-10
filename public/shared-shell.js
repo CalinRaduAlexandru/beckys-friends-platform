@@ -18,13 +18,25 @@
       <span>0752 155 115</span>
     </a>
     <a class="nav-cta primary-cta" href="/#contact">Rezervă <span class="calendar-icon" aria-hidden="true"></span></a>
-    <img class="nav-flags" src="/assets/long_flags.png" alt="">
+    <button class="mobile-menu-toggle" type="button" aria-label="Deschide meniul" aria-expanded="false"><span aria-hidden="true">☰</span><span>Meniu</span></button>
   `;
 
   const headers = document.querySelectorAll('[data-shared-header]');
   headers.forEach(header => {
     header.classList.add('site-header');
     header.innerHTML = headerMarkup;
+    const toggle = header.querySelector('.mobile-menu-toggle');
+    const dialog = document.createElement('dialog');
+    dialog.className = 'public-mobile-menu';
+    dialog.setAttribute('aria-label', 'Navigarea site-ului');
+    dialog.innerHTML = '<div class="public-menu-heading"><strong>Descoperă Becky</strong><button type="button" aria-label="Închide meniul">×</button></div><nav aria-label="Paginile site-ului">' + header.querySelector('.site-nav').innerHTML + '</nav>';
+    document.body.append(dialog);
+    const close = () => dialog.close();
+    toggle.onclick = () => { dialog.showModal(); toggle.setAttribute('aria-expanded', 'true'); };
+    dialog.querySelector('button').onclick = close;
+    dialog.addEventListener('click', event => { if (event.target === dialog || event.target.closest('a')) close(); });
+    dialog.addEventListener('close', () => { toggle.setAttribute('aria-expanded', 'false'); toggle.focus(); });
+    window.matchMedia('(min-width:901px)').addEventListener('change', event => { if (event.matches && dialog.open) close(); });
   });
 
   const syncHeaders = () => {
@@ -38,12 +50,12 @@
     if (path === '/petreceri' || path === '/petreceri.html') activePage = 'parties';
     else if (path === '/evenimente' || path === '/evenimente.html' || hash === '#events') activePage = 'events';
     else if (path === '/comunitate' || hash === '#community') activePage = 'community';
-    headers.forEach(header => header.querySelectorAll('[data-nav-page]').forEach(link => {
+    document.querySelectorAll('[data-nav-page]').forEach(link => {
       const isActive = link.dataset.navPage === activePage;
       link.classList.toggle('is-active', isActive);
       if (isActive) link.setAttribute('aria-current', 'page');
       else link.removeAttribute('aria-current');
-    }));
+    });
   };
 
   syncHeaders();
