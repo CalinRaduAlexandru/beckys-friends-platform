@@ -83,12 +83,20 @@
     balloon(-8,128,p.gold,1.35);balloon(68,165,p.pop,1.15);balloon(108,117,p.gold,.9);
     balloon(765,161,p.accent,1.2);balloon(832,88,p.pop,1.35);balloon(780,72,p.gold,.8);
     text('EȘTI INVITAT LA ZIUA MEA!',420,61,16,p.accent,600,'DynaPuff',600);
+    const childName = d.child.trim() || 'Numele copilului';
+    let childSize = 60;
+    ctx.font = '600 ' + childSize + 'px DynaPuff';
+    while (ctx.measureText(childName).width > 610 && childSize > 34) {
+      childSize -= 1;
+      ctx.font = '600 ' + childSize + 'px DynaPuff';
+    }
+    const childPillWidth = Math.min(690, Math.max(230, ctx.measureText(childName).width + 76));
     ctx.save();
     ctx.translate(420,132);
     ctx.rotate(-0.025);
-    rounded(-210,-36,420,72,24,p.soft);
+    rounded(-childPillWidth / 2,-36,childPillWidth,72,24,p.soft);
     ctx.restore();
-    text(d.child.trim() || 'Numele copilului',420,151,60,p.accent,610,'DynaPuff',600);
+    text(childName,420,151,childSize,p.accent,childPillWidth - 56,'DynaPuff',600);
     rounded(322,177,196,42,21,p.soft);
     text('Împlinesc ' + (d.age || '…') + (d.age === '1' ? ' an!' : ' ani!'),420,205,23,p.accent,180);
     text('Hai să sărbătorim împreună!',420,225,25,'#344c55',640,'DynaPuff',600);
