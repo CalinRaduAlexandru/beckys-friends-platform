@@ -19,6 +19,13 @@
     document.fonts.load('600 24px Nunito', 'Sâmbătă, Constanța')
   ]);
   const data = () => Object.fromEntries(new FormData(form));
+  const timeInput = form.elements.time;
+  function seedTimeOnOpen() {
+    if (timeInput.value) return;
+    const now = new Date();
+    timeInput.value = String(now.getHours()).padStart(2, '0') + ':00';
+    render();
+  }
   function formatDate(value, fallback = 'Ziua petrecerii') {
     if (!value) return fallback;
     const date = new Date(value + 'T12:00:00');
@@ -139,6 +146,7 @@
     form.elements.end.setCustomValidity('');
     status.textContent='';
   });
+  timeInput.addEventListener('focus', seedTimeOnOpen);
   form.addEventListener('submit',async event=>{
     event.preventDefault();
     if(!form.reportValidity())return;
