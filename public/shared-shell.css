@@ -440,8 +440,7 @@ body:has(.public-mobile-menu[open]){overflow:hidden}
  body .site-header{height:72px;min-height:72px;padding:10px 20px!important;flex-wrap:nowrap;gap:12px;transform:none!important;background:#fffdfa;border-bottom:1px solid #deebe7;animation:none!important;translate:none!important;filter:none!important}
  body .site-header .site-nav,body .site-header .whatsapp-link,body .site-header .nav-cta{display:none}
  body .site-header .brand-lockup{flex:1;width:auto;min-width:0;height:48px;min-height:48px}
- body .site-header .nav-logo-full{position:absolute;width:360px;height:150px;object-fit:contain;transform:none!important;pointer-events:none}
- body .site-header:not(.is-scrolled) .nav-logo-full,body .site-header.is-scrolled .nav-logo-full{top:-51px!important;left:-74px!important}
+ body .site-header .nav-logo-full,body .site-header:not(.is-scrolled) .nav-logo-full,body .site-header.is-scrolled .nav-logo-full{position:absolute;top:-51px!important;left:-74px!important;width:360px!important;height:150px!important;object-fit:contain;transform:none!important;transform-origin:left center;transition:none!important;pointer-events:none}
  .mobile-menu-toggle{display:flex;align-items:center;gap:9px;min-height:44px;padding:8px 12px;border:1px solid #d4e6e3;border-radius:12px;background:#fffdfa;color:#233448;font:700 14px Quicksand,sans-serif;cursor:pointer}
  .mobile-menu-toggle>span:first-child{font-size:24px;line-height:1}
 }
