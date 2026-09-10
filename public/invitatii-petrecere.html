@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Invitația lui începe aici · Becky’s Garden</title>
+  <meta name="description" content="Creează invitația aniversară a copilului și descarcă un PDF cu două invitații A5 pe fiecare coală A4.">
+  <link rel="icon" href="/assets/favicon.png">
+  <link rel="stylesheet" href="/invitatii-petrecere.css?v=1">
+  <script src="/invitatii-petrecere.js?v=1" defer></script>
+</head>
+<body>
+  <header class="invite-header"><a href="/petreceri">← Petreceri la Becky</a><span>O bucurie de trimis mai departe</span></header>
+  <main>
+    <div class="intro"><p class="eyebrow">Prieteni, tort și multă joacă</p><h1>O invitație. <em>O zi a lui.</em></h1><p>Câteva detalii de la tine, o invitație gata de oferit prietenilor.</p></div>
+    <div class="workspace">
+      <form id="invitation-form">
+        <section class="form-card"><h2><span>1</span> Cine își serbează ziua?</h2>
+          <div class="fields child-fields"><label>Numele copilului<input name="child" maxlength="36" placeholder="De exemplu: Sofia" autocomplete="off" required></label><label>Împlinește<input name="age" type="number" min="1" max="18" placeholder="6" required><small>ani</small></label></div>
+          <div class="fields"><label>Ziua petrecerii<input name="date" type="date" required></label><label>Ora de început<input name="time" type="time" required></label></div>
+          <details><summary>Adaugă ora de încheiere</summary><label>Până la ora<input name="end" type="time"></label></details>
+        </section>
+        <section class="form-card"><h2><span>2</span> Unde ne întâlnim?</h2>
+          <label>Locul petrecerii<input name="venue" value="Becky’s Garden" maxlength="65" required></label>
+          <label>Adresa<input name="address" value="Strada Baba Novac 26, Constanța" maxlength="110" required></label>
+          <details><summary>Confirmare de participare & mesaj</summary>
+            <p class="hint">Opțional. Completează doar ce vrei să apară pe invitație.</p>
+            <label>Numele părintelui pentru confirmare<input name="parent" maxlength="36" autocomplete="given-name" placeholder="De exemplu: Radu"></label>
+            <label>Telefon pentru confirmare<input name="phone" type="tel" maxlength="24" autocomplete="tel" placeholder="07xx xxx xxx"></label>
+            <label>Confirmare până la<input name="rsvp" type="date"></label>
+            <label>Mesajul copilului<textarea name="message" rows="3" maxlength="140">Te aștept să ne jucăm, să râdem și să sărbătorim împreună!</textarea></label>
+          </details>
+        </section>
+        <section class="form-card"><h2><span>3</span> Un pic de culoare</h2>
+          <fieldset class="themes"><legend class="sr">Stilul invitației</legend>
+            <label style="--swatch:#248b91"><input type="radio" name="theme" value="garden" checked><span class="swatch"></span>Confetti</label>
+            <label style="--swatch:#a66798"><input type="radio" name="theme" value="dream"><span class="swatch"></span>Vis de poveste</label>
+            <label style="--swatch:#c27630"><input type="radio" name="theme" value="sun"><span class="swatch"></span>Raze de soare</label>
+          </fieldset>
+        </section>
+        <section class="form-card download-card"><h2><span>4</span> Câte invitații pregătim?</h2>
+          <label class="quantity">Număr de invitații<input name="quantity" type="number" min="1" max="100" step="1" value="10" required></label>
+          <p id="paper-summary" aria-live="polite">10 invitații · 5 coli A4</p>
+          <p class="hint">Câte două invitații A5 landscape, una sub alta. La un număr impar, adăugăm o copie pentru a completa coala.</p>
+          <button class="download" type="submit">Descarcă invitațiile PDF <span aria-hidden="true">↓</span></button>
+          <p id="download-status" role="status"></p>
+          <p class="privacy">Datele rămân în această pagină. PDF-ul se creează direct pe dispozitivul tău.</p>
+        </section>
+      </form>
+      <aside class="preview-panel" aria-label="Previzualizarea invitației">
+        <div class="preview-heading"><strong>Așa va arăta invitația</strong><span>A5 · landscape</span></div>
+        <canvas id="invitation-preview" width="1680" height="1184" role="img" aria-label="Previzualizare invitație aniversară"></canvas>
+        <p class="preview-note">Se actualizează pe măsură ce completezi. Textele demonstrative vor fi înlocuite cu detaliile tale.</p>
+        <div class="paper-guide"><span aria-hidden="true">▱<br>▱</span><p><strong>Două invitații pe fiecare coală.</strong><br>Descarci PDF-ul, tipărești pe A4 la „Dimensiune reală / 100%” și tai la mijloc.</p></div>
+        <a class="preview-jump" href="#invitation-form">↑ Completează invitația</a>
+      </aside>
+    </div>
+  </main>
+  <noscript>Pentru previzualizare și generarea PDF-ului, activează JavaScript în browser.</noscript>
+</body>
+</html>
