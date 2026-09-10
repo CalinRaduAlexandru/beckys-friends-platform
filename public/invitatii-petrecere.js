@@ -6,12 +6,15 @@
   const imageButton = document.querySelector('[data-download-image]');
   const logo = new Image();
   logo.src = '/assets/logo/new_logo_horizontal.png';
+  const duck = new Image();
+  duck.src = '/assets/duck.png';
   const palettes = {
     garden: { paper:'#fffdf5', accent:'#248b91', soft:'#e2f0df', pop:'#ed8c80', gold:'#f3ca62' },
     dream: { paper:'#fff8fc', accent:'#925985', soft:'#eee2f4', pop:'#dd9bac', gold:'#e4c17c' },
     sun: { paper:'#fffaf0', accent:'#a6642b', soft:'#fbebce', pop:'#df9369', gold:'#eac05c' }
   };
   const fontsReady = Promise.all([
+    document.fonts.load('600 56px DynaPuff', 'Ștefănuț împlinește'),
     document.fonts.load('700 48px Mali', 'Ștefănuț împlinește'),
     document.fonts.load('600 24px Nunito', 'Sâmbătă, Constanța')
   ]);
@@ -46,6 +49,13 @@
   function rounded(x,y,w,h,r,color) {
     ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fillStyle=color; ctx.fill();
   }
+  function drawContained(image, x, y, width, height) {
+    if (!image.complete || !image.naturalWidth || !image.naturalHeight) return;
+    const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
+    const drawnWidth = image.naturalWidth * scale;
+    const drawnHeight = image.naturalHeight * scale;
+    ctx.drawImage(image, x + (width - drawnWidth) / 2, y + (height - drawnHeight) / 2, drawnWidth, drawnHeight);
+  }
   function balloon(x,y,color) {
     ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,22,29,-.15,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle='#abbab1';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x,y+29);ctx.bezierCurveTo(x-12,y+48,x+15,y+72,x,y+96);ctx.stroke();
@@ -64,16 +74,17 @@
       if(i%2)ctx.fillRect(-3,-2,7,4);else{ctx.beginPath();ctx.arc(0,0,3,0,Math.PI*2);ctx.fill();}ctx.restore();
     }
     balloon(68,165,p.pop);balloon(108,117,p.gold);balloon(765,161,p.accent);
-    text('EȘTI INVITAT LA ZIUA MEA!',420,69,18,p.accent,600);
-    text(d.child.trim() || 'Numele copilului',420,151,55,p.accent,610,'Mali',700);
+    text('EȘTI INVITAT LA ZIUA MEA!',420,69,18,p.accent,600,'DynaPuff',600);
+    text(d.child.trim() || 'Numele copilului',420,151,55,p.accent,610,'DynaPuff',600);
     rounded(322,177,196,42,21,p.soft);
     text('Împlinesc ' + (d.age || '…') + (d.age === '1' ? ' an!' : ' ani!'),420,205,23,p.accent,180);
-    text('Hai să sărbătorim împreună!',420,257,26,'#344c55',640,'Mali',700);
+    text('Hai să sărbătorim împreună!',420,257,26,'#344c55',640,'DynaPuff',600);
     rounded(128,282,584,76,18,'#ffffff');
     text(formatDate(d.date),420,313,24,'#344c55',550);
     text(d.time ? 'Ora ' + d.time + (d.end ? ' – ' + d.end : '') : 'Ora petrecerii',420,341,20,p.accent,550);
-    if (logo.complete && logo.naturalWidth) ctx.drawImage(logo,280,330,280,186);
-    else text('Becky’s Garden',420,419,27,p.accent,640);
+    drawContained(duck, 0, 365, 210, 210);
+    if (logo.complete && logo.naturalWidth) drawContained(logo, 620, 410, 210, 125);
+    else text('Becky’s Garden',730,480,15,p.accent,150,'DynaPuff',600);
     lines(d.address.trim() || 'Adresa petrecerii',420,465,650,18,'#53676b');
     lines(d.message.trim(),420,510,640,20,'#53676b');
     const contact = [d.parent.trim(),d.phone.trim()].filter(Boolean).join(' · ');
@@ -163,5 +174,6 @@
   });
   render();
   logo.addEventListener('load', render, { once: true });
+  duck.addEventListener('load', render, { once: true });
   fontsReady.then(render).catch(()=>{status.textContent='Fonturile nu s-au încărcat. Reîncarcă pagina înainte de descărcare.';});
 })();

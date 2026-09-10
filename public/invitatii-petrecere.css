@@ -12,3 +12,7 @@ label{display:grid;gap:7px;font-size:14px;font-weight:800;margin-bottom:16px;min
 :focus-visible{outline:3px solid #d58c5b;outline-offset:3px}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 @media(max-width:800px){.workspace{grid-template-columns:1fr;gap:24px}.preview-panel{position:static;grid-row:1}.preview-note{margin:12px 4px}.paper-guide{display:none}.preview-jump{display:none}main{padding:8px 16px 40px}.intro{margin:10px 0 24px}.intro h1{font-size:30px}.invite-header{padding:18px 16px}.invite-header span{display:none}.form-card{padding:20px}.preview-heading{margin-top:0}.workspace{display:flex;flex-direction:column}.preview-panel{width:100%}form{width:100%}.preview-jump{display:inline-block;margin-top:14px;font-size:14px}.download-actions{grid-template-columns:1fr}.download{text-align:left}}
 @media(prefers-reduced-motion:no-preference){html{scroll-behavior:smooth}input,textarea{transition:border-color .18s,box-shadow .18s}.download{transition:background .18s}.download:hover{background:#176b71}}
+
+/* The invitation's largest moments use the same playful display face as Becky’s public pages. */
+.intro h1,
+.form-card h2 { font-family: DynaPuff, sans-serif; font-weight: 600; }
