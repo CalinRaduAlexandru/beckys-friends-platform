@@ -106,9 +106,9 @@
     text('CÂND?',570,281,12,'#ffffff',100,'DynaPuff',600);
     text(d.time || 'Ora petrecerii',570,314,15,'#ffffff',106,'Nunito',800);
     drawContained(duck, -58, 300, 300, 300);
-    if (logo.complete && logo.naturalWidth) drawContained(logo, 285, 358, 270, 108);
-    else text('Becky’s Garden',420,430,15,p.accent,150,'DynaPuff',600);
-    text('NE VEDEM LA',420,441,11,p.accent,220,'Nunito',900);
+    if (logo.complete && logo.naturalWidth) drawContained(logo, 285, 326, 270, 108);
+    else text('Becky’s Garden',420,398,15,p.accent,150,'DynaPuff',600);
+    text('NE VEDEM LA',420,409,11,p.accent,220,'Nunito',900);
     lines(d.address.trim() || 'Adresa petrecerii',420,465,650,18,'#53676b');
     lines(d.message.trim(),420,510,480,17,'#53676b');
     const contact = [d.parent.trim(),d.phone.trim()].filter(Boolean).join(' · ');
