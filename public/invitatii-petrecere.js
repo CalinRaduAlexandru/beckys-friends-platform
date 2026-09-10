@@ -56,10 +56,10 @@
     const drawnHeight = image.naturalHeight * scale;
     ctx.drawImage(image, x + (width - drawnWidth) / 2, y + (height - drawnHeight) / 2, drawnWidth, drawnHeight);
   }
-  function balloon(x,y,color) {
-    ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,22,29,-.15,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#abbab1';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(x,y+29);ctx.bezierCurveTo(x-12,y+48,x+15,y+72,x,y+96);ctx.stroke();
-    ctx.fillStyle='#ffffff80';ctx.beginPath();ctx.ellipse(x-7,y-9,4,9,.25,0,Math.PI*2);ctx.fill();
+  function balloon(x,y,color,scale=1) {
+    ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,22*scale,29*scale,-.15,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#abbab1';ctx.lineWidth=1.3*scale;ctx.beginPath();ctx.moveTo(x,y+29*scale);ctx.bezierCurveTo(x-12*scale,y+48*scale,x+15*scale,y+72*scale,x,y+96*scale);ctx.stroke();
+    ctx.fillStyle='#ffffff80';ctx.beginPath();ctx.ellipse(x-7*scale,y-9*scale,4*scale,9*scale,.25,0,Math.PI*2);ctx.fill();
   }
   function render() {
     const d = data();
@@ -73,7 +73,8 @@
       ctx.fillStyle=[p.gold,p.pop,p.accent][i%3];ctx.save();ctx.translate(x,y);ctx.rotate(i);
       if(i%2)ctx.fillRect(-3,-2,7,4);else{ctx.beginPath();ctx.arc(0,0,3,0,Math.PI*2);ctx.fill();}ctx.restore();
     }
-    balloon(68,165,p.pop);balloon(108,117,p.gold);balloon(765,161,p.accent);
+    balloon(-8,128,p.gold,1.35);balloon(68,165,p.pop,1.15);balloon(108,117,p.gold,.9);
+    balloon(765,161,p.accent,1.2);balloon(832,88,p.pop,1.35);balloon(780,72,p.gold,.8);
     text('EȘTI INVITAT LA ZIUA MEA!',420,61,16,p.accent,600,'DynaPuff',600);
     ctx.save();
     ctx.translate(420,132);
@@ -91,11 +92,11 @@
     text(formatDate(d.date),482,288,21,'#344c55',260,'DynaPuff',600);
     text(d.end ? 'Până la ' + d.end : 'Te așteptăm cu drag!',482,318,16,p.accent,260,'Nunito',800);
     drawContained(duck, -58, 300, 300, 300);
-    if (logo.complete && logo.naturalWidth) drawContained(logo, 315, 366, 210, 88);
+    if (logo.complete && logo.naturalWidth) drawContained(logo, 285, 358, 270, 108);
     else text('Becky’s Garden',420,430,15,p.accent,150,'DynaPuff',600);
     text('NE VEDEM LA',420,441,11,p.accent,220,'Nunito',900);
     lines(d.address.trim() || 'Adresa petrecerii',420,465,650,18,'#53676b');
-    lines(d.message.trim(),420,510,640,20,'#53676b');
+    lines(d.message.trim(),420,510,480,17,'#53676b');
     const contact = [d.parent.trim(),d.phone.trim()].filter(Boolean).join(' · ');
     const rsvp = [d.rsvp ? 'Confirmă până pe ' + formatDate(d.rsvp,'') : contact ? 'Confirmă participarea' : '',contact].filter(Boolean).join(' · ');
     lines(rsvp,420,563,660,15,p.accent,2);
