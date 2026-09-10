@@ -99,7 +99,6 @@
     text(childName,420,151,childSize,p.accent,childPillWidth - 56,'DynaPuff',600);
     rounded(322,177,196,42,21,p.soft);
     text('Împlinesc ' + (d.age || '…') + (d.age === '1' ? ' an!' : ' ani!'),420,205,23,p.accent,180);
-    text('Hai să sărbătorim împreună!',420,225,25,'#344c55',640,'DynaPuff',600);
     rounded(210,254,420,86,22,'#ffffff');
     rounded(510,254,120,86,22,p.accent);
     text('ZIUA',350,276,11,p.accent,220,'Nunito',900);
