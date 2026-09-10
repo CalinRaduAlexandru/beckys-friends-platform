@@ -82,9 +82,9 @@
     rounded(128,282,584,76,18,'#ffffff');
     text(formatDate(d.date),420,313,24,'#344c55',550);
     text(d.time ? 'Ora ' + d.time + (d.end ? ' – ' + d.end : '') : 'Ora petrecerii',420,341,20,p.accent,550);
-    drawContained(duck, 0, 365, 210, 210);
-    if (logo.complete && logo.naturalWidth) drawContained(logo, 620, 410, 210, 125);
-    else text('Becky’s Garden',730,480,15,p.accent,150,'DynaPuff',600);
+    drawContained(duck, -58, 300, 300, 300);
+    if (logo.complete && logo.naturalWidth) drawContained(logo, 315, 370, 210, 88);
+    else text('Becky’s Garden',420,430,15,p.accent,150,'DynaPuff',600);
     lines(d.address.trim() || 'Adresa petrecerii',420,465,650,18,'#53676b');
     lines(d.message.trim(),420,510,640,20,'#53676b');
     const contact = [d.parent.trim(),d.phone.trim()].filter(Boolean).join(' · ');
