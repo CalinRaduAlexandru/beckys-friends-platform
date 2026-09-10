@@ -20,6 +20,8 @@ const ROUTES = new Map([
   ['/music-for-kids/parent', '/music-for-kids/parent.html'],
   ['/p', '/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf'],
   ['/petreceri', '/petreceri.html'],
+  ['/regulament-petreceri', '/regulament-petreceri.html'],
+  ['/regulament-petreceri/', '/regulament-petreceri.html'],
   ['/invitatii-petrecere', '/invitatii-petrecere.html'],
   ['/invitatii-petrecere/', '/invitatii-petrecere.html'],
   ['/evenimente', '/evenimente.html'],
