@@ -3,6 +3,9 @@
   const canvas = document.getElementById('invitation-preview');
   const ctx = canvas.getContext('2d');
   const status = document.getElementById('download-status');
+  const imageButton = document.querySelector('[data-download-image]');
+  const logo = new Image();
+  logo.src = '/assets/logo/new_logo_horizontal.png';
   const palettes = {
     garden: { paper:'#fffdf5', accent:'#248b91', soft:'#e2f0df', pop:'#ed8c80', gold:'#f3ca62' },
     dream: { paper:'#fff8fc', accent:'#925985', soft:'#eee2f4', pop:'#dd9bac', gold:'#e4c17c' },
@@ -69,12 +72,13 @@
     rounded(128,282,584,76,18,'#ffffff');
     text(formatDate(d.date),420,313,24,'#344c55',550);
     text(d.time ? 'Ora ' + d.time + (d.end ? ' – ' + d.end : '') : 'Ora petrecerii',420,341,20,p.accent,550);
-    text(d.venue.trim() || 'Locul petrecerii',420,401,27,p.accent,640);
-    lines(d.address.trim() || 'Adresa petrecerii',420,432,650,18,'#53676b');
-    lines(d.message.trim(),420,487,640,20,'#53676b');
+    if (logo.complete && logo.naturalWidth) ctx.drawImage(logo,280,330,280,186);
+    else text('Becky’s Garden',420,419,27,p.accent,640);
+    lines(d.address.trim() || 'Adresa petrecerii',420,465,650,18,'#53676b');
+    lines(d.message.trim(),420,510,640,20,'#53676b');
     const contact = [d.parent.trim(),d.phone.trim()].filter(Boolean).join(' · ');
     const rsvp = [d.rsvp ? 'Confirmă până pe ' + formatDate(d.rsvp,'') : contact ? 'Confirmă participarea' : '',contact].filter(Boolean).join(' · ');
-    lines(rsvp,420,548,660,15,p.accent,2);
+    lines(rsvp,420,563,660,15,p.accent,2);
     canvas.setAttribute('aria-label', 'Invitație pentru ' + (d.child || 'copil') + ', ' + (d.age || '…') + ' ani. ' + formatDate(d.date) + ', ' + (d.time || 'ora necompletată') + '. ' + d.venue + ', ' + d.address);
     const requested = Math.max(1,Math.min(100,Math.floor(Number(d.quantity)||1)));
     const copies = Math.ceil(requested/2)*2;
@@ -136,6 +140,28 @@
     } catch(error){status.textContent=error.message || 'Nu am putut genera PDF-ul. Încearcă din nou.';}
     finally{button.disabled=false;}
   });
+  imageButton.addEventListener('click', async () => {
+    if (!form.reportValidity()) return;
+    const d = data();
+    if (d.end && d.end <= d.time) { form.elements.end.setCustomValidity('Ora de încheiere trebuie să fie după ora de început.'); form.elements.end.reportValidity(); return; }
+    imageButton.disabled = true;
+    status.textContent = 'Pregătim imaginea…';
+    try {
+      await fontsReady;
+      render();
+      const imageBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if (!imageBlob) throw Error('Imaginea nu a putut fi pregătită. Încearcă din nou.');
+      const url = URL.createObjectURL(imageBlob), link = document.createElement('a');
+      const name = d.child.trim().replace(/[^\p{L}\p{N}-]+/gu, '-');
+      link.href = url;
+      link.download = 'Invitatie-' + name + '.png';
+      document.body.append(link); link.click(); link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      status.textContent = 'Imaginea invitației este pregătită pentru trimitere digitală.';
+    } catch (error) { status.textContent = error.message || 'Nu am putut genera imaginea. Încearcă din nou.'; }
+    finally { imageButton.disabled = false; }
+  });
   render();
+  logo.addEventListener('load', render, { once: true });
   fontsReady.then(render).catch(()=>{status.textContent='Fonturile nu s-au încărcat. Reîncarcă pagina înainte de descărcare.';});
 })();

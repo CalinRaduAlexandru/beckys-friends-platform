@@ -6,8 +6,8 @@
   <title>Invitația lui începe aici · Becky’s Garden</title>
   <meta name="description" content="Creează invitația aniversară a copilului și descarcă un PDF cu două invitații A5 pe fiecare coală A4.">
   <link rel="icon" href="/assets/favicon.png">
-  <link rel="stylesheet" href="/invitatii-petrecere.css?v=1">
-  <script src="/invitatii-petrecere.js?v=1" defer></script>
+  <link rel="stylesheet" href="/invitatii-petrecere.css?v=4">
+  <script src="/invitatii-petrecere.js?v=4" defer></script>
 </head>
 <body>
   <header class="invite-header"><a href="/petreceri">← Petreceri la Becky</a><span>O bucurie de trimis mai departe</span></header>
@@ -42,7 +42,7 @@
           <label class="quantity">Număr de invitații<input name="quantity" type="number" min="1" max="100" step="1" value="10" required></label>
           <p id="paper-summary" aria-live="polite">10 invitații · 5 coli A4</p>
           <p class="hint">Câte două invitații A5 landscape, una sub alta. La un număr impar, adăugăm o copie pentru a completa coala.</p>
-          <button class="download" type="submit">Descarcă invitațiile PDF <span aria-hidden="true">↓</span></button>
+          <div class="download-actions"><button class="download" type="submit">Descarcă invitațiile PDF <span aria-hidden="true">↓</span></button><button class="download download-image" type="button" data-download-image>Descarcă o invitație ca imagine <span aria-hidden="true">↓</span></button></div>
           <p id="download-status" role="status"></p>
           <p class="privacy">Datele rămân în această pagină. PDF-ul se creează direct pe dispozitivul tău.</p>
         </section>
