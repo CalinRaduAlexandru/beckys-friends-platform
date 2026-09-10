@@ -30,6 +30,13 @@
 .party-at-glance li span,.party-price-note{color:var(--party-muted);font-size:14px;line-height:1.5}
 .party-callout{padding:18px;border-radius:16px;background:#fff8e4;line-height:1.7;font-size:15px}
 .party-callout a,.party-extra-link{color:#176575;font-weight:700;text-underline-offset:4px}
+.party-rules-link{display:grid;grid-template-columns:30px minmax(0,1fr) 18px;align-items:center;gap:10px;margin-top:14px;padding:13px 14px;border:1px solid rgba(35,139,154,.2);border-radius:16px;background:rgba(255,255,255,.72);color:var(--party-ink);text-decoration:none;transition:background .2s ease,border-color .2s ease,transform .2s ease}
+.party-rules-link:hover,.party-rules-link:focus-visible{border-color:var(--party-teal);background:#fff;transform:translateY(-1px)}
+.party-rules-link>span:first-child{display:grid;width:28px;height:28px;place-items:center;border-radius:50%;background:var(--party-teal-soft);color:var(--party-teal);font-size:14px;font-weight:900}
+.party-rules-link strong,.party-rules-link small{display:block}
+.party-rules-link strong{color:var(--party-ink);font-size:13px;line-height:1.25}
+.party-rules-link small{margin-top:3px;color:var(--party-muted);font-size:11px;line-height:1.35}
+.party-rules-link>b{color:var(--party-teal);font-size:20px;line-height:1}
 .party-small-facts{display:flex;gap:28px;margin-top:24px}
 .party-small-facts span{display:grid;gap:4px;color:var(--party-muted);font-size:13px}
 .party-small-facts b{color:var(--party-ink);font-size:19px}
