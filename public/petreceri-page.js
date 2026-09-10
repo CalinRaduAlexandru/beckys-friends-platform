@@ -1,6 +1,7 @@
 (() => {
   const page = document.querySelector('.party-hero');
   if (!page) return;
+  document.querySelectorAll('.party-extra-link[href="/invitatii-petrecere"]').forEach(link => link.remove());
 
   const status = document.querySelector('[data-reservation-status]');
 
@@ -41,6 +42,7 @@
   });
 
   const childInput = document.getElementById('party-children');
+  const reservationDate = document.querySelector('[data-reservation-date]');
   const money = value => new Intl.NumberFormat('ro-RO').format(value);
   const extras = [
     { id: 'animator', label: 'Animator', price: 250 },
@@ -56,6 +58,8 @@
     card.append(label);
   });
   const food = document.getElementById('masa-adultilor');
+  const foodLead = food.querySelector('.party-topic-lead');
+  if (foodLead) foodLead.outerHTML = '<ul class="party-food-bullets"><li>Platou rece <strong>250 lei</strong></li><li>Platou cald <strong>275 lei</strong></li><li>Cafeaua și băuturile se comandă la noi</li></ul>';
   food.insertAdjacentHTML('beforeend', '<div class="party-food-quantities"><label>Platouri reci · 250 lei<input type="number" min="0" step="1" value="0" data-food="rece" aria-label="Număr de platouri reci"></label><label>Platouri calde · 275 lei<input type="number" min="0" step="1" value="0" data-food="cald" aria-label="Număr de platouri calde"></label></div>');
   document.querySelector('.party-price-note').insertAdjacentHTML('afterend', '<a class="party-extra-link" href="#extra">Adaugă animator, temă sau alte surprize ↓</a><details class="party-detail party-calculation"><summary>Vezi calculul costului</summary><div class="party-answer" data-price-breakdown></div></details>');
   const getCount = (input, min) => {
@@ -83,8 +87,13 @@
     selected.forEach(extra => document.getElementById(extra.id).classList.add('is-added'));
     extras.filter(extra => !selected.includes(extra)).forEach(extra => document.getElementById(extra.id).classList.remove('is-added'));
     if (status) status.textContent = `${count} copii · ${exclusive ? 'exclusivitate' : 'fără exclusivitate'} · total estimat ${money(total)} lei`;
-    const message = `Bună! Aș dori să verific disponibilitatea pentru o petrecere la Becky’s Garden.\nData dorită: \n${rows.map(row => `${row.label}: ${money(row.price)} lei`).join('\n')}\nTotal estimat: ${money(total)} lei.\nPutem confirma detaliile?`;
-    document.querySelector('[data-reservation-link]').href = 'https://wa.me/40752155115?text=' + encodeURIComponent(message);
+    const reservationLink = document.querySelector('[data-reservation-link]');
+    const selectedDate = reservationDate?.value || '';
+    const formattedDate = selectedDate ? new Intl.DateTimeFormat('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(selectedDate + 'T12:00:00')) : '';
+    const message = `Bună! Aș dori să verific disponibilitatea pentru o petrecere la Becky’s Garden.\nData dorită: ${formattedDate}\n${rows.map(row => `${row.label}: ${money(row.price)} lei`).join('\n')}\nTotal estimat: ${money(total)} lei.\nPutem confirma detaliile?`;
+    reservationLink.href = selectedDate ? 'https://wa.me/40752155115?text=' + encodeURIComponent(message) : '#reservation-date';
+    reservationLink.classList.toggle('is-disabled', !selectedDate);
+    reservationLink.setAttribute('aria-disabled', String(!selectedDate));
     document.querySelector('.party-mobile-contact span').innerHTML = `<b>${money(total)} lei</b><small>${count} copii${rows.length > 1 ? ' + opțiuni' : ' · pachet'}</small>`;
   };
   document.querySelectorAll('[data-count-step]').forEach(button => button.addEventListener('click', () => {
@@ -97,6 +106,19 @@
       if (input.type === 'number') input.value = getCount(input, input === childInput ? 1 : 0);
       updatePrice();
     });
+  });
+  document.querySelectorAll('[data-food]').forEach(input => input.addEventListener('focus', () => {
+    if (input.value === '0') input.select();
+  }));
+  reservationDate?.addEventListener('input', updatePrice);
+  document.querySelector('[data-reservation-link]')?.addEventListener('click', event => {
+    if (!reservationDate?.value) {
+      event.preventDefault();
+      reservationDate?.focus();
+    }
+  });
+  document.querySelector('[data-mobile-details]')?.addEventListener('click', () => {
+    requestAnimationFrame(() => document.querySelector('.party-calculation')?.setAttribute('open', ''));
   });
   updatePrice();
 

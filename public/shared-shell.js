@@ -18,7 +18,7 @@
       <span>0752 155 115</span>
     </a>
     <a class="nav-cta primary-cta" href="/#contact">Rezervă <span class="calendar-icon" aria-hidden="true"></span></a>
-    <button class="mobile-menu-toggle" type="button" aria-label="Deschide meniul" aria-expanded="false"><span aria-hidden="true">☰</span><span>Meniu</span></button>
+    <button class="mobile-menu-toggle" type="button" aria-label="Deschide meniul" aria-expanded="false"><span aria-hidden="true">☰</span></button>
   `;
 
   const headers = document.querySelectorAll('[data-shared-header]');
