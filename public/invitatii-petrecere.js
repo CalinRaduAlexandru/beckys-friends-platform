@@ -101,11 +101,11 @@
     text('Împlinesc ' + (d.age || '…') + (d.age === '1' ? ' an!' : ' ani!'),420,205,23,p.accent,180);
     text('Hai să sărbătorim împreună!',420,225,25,'#344c55',640,'DynaPuff',600);
     rounded(210,254,420,86,22,'#ffffff');
-    rounded(210,254,124,86,22,p.accent);
-    text('CÂND?',272,281,13,'#ffffff',100,'DynaPuff',600);
-    text(d.time || 'Ora petrecerii',272,314,16,'#ffffff',106,'Nunito',800);
-    text(formatDate(d.date),482,288,21,'#344c55',260,'DynaPuff',600);
-    text(d.end ? 'Până la ' + d.end : 'Te așteptăm cu drag!',482,318,16,p.accent,260,'Nunito',800);
+    rounded(510,254,120,86,22,p.accent);
+    text('ZIUA',350,276,11,p.accent,220,'Nunito',900);
+    text(formatDate(d.date),350,304,20,'#344c55',250,'DynaPuff',600);
+    text('CÂND?',570,281,12,'#ffffff',100,'DynaPuff',600);
+    text(d.time || 'Ora petrecerii',570,314,15,'#ffffff',106,'Nunito',800);
     drawContained(duck, -58, 300, 300, 300);
     if (logo.complete && logo.naturalWidth) drawContained(logo, 285, 358, 270, 108);
     else text('Becky’s Garden',420,430,15,p.accent,150,'DynaPuff',600);
