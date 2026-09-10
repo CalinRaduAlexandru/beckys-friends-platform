@@ -2,7 +2,6 @@
   const page = document.querySelector('.party-hero');
   if (!page) return;
 
-  const cards = [...document.querySelectorAll('[data-package]')];
   const status = document.querySelector('[data-reservation-status]');
 
   const gallery = document.querySelector('[data-party-gallery]');
@@ -31,13 +30,87 @@
     });
   });
 
-  cards.forEach(card => {
-    card.querySelector('.package-cta')?.addEventListener('click', () => {
-      const packageName = card.dataset.package;
-      cards.forEach(item => item.classList.toggle('is-selected', item === card));
-      if (status) status.textContent = `${packageName} selectat. Scrie-ne pe WhatsApp pentru disponibilitate și detalii.`;
+  // Only these descriptions are provisional. Preview them with ?demo=1.
+  const demo = new URLSearchParams(location.search).get('demo') === '1';
+  document.querySelectorAll('[data-food-demo]').forEach(node => { node.hidden = !demo; });
+  document.querySelectorAll('[data-food-confirmed]').forEach(node => { node.hidden = demo; });
+  document.querySelectorAll('.party-art img').forEach(image => {
+    const show = () => { if (image.naturalWidth) image.parentElement.classList.add('has-art'); };
+    image.addEventListener('load', show);
+    show();
+  });
+
+  const childInput = document.getElementById('party-children');
+  const money = value => new Intl.NumberFormat('ro-RO').format(value);
+  const extras = [
+    { id: 'animator', label: 'Animator', price: 250 },
+    { id: 'magician', label: 'Magician', price: 350 },
+    { id: 'tematica', label: 'Tematică personalizată', price: 150 },
+    { id: 'pinata', label: 'Piñata', price: 250 }
+  ];
+  extras.forEach(extra => {
+    const card = document.getElementById(extra.id);
+    const label = document.createElement('label');
+    label.className = 'party-extra-select';
+    label.innerHTML = `<input type="checkbox" data-extra="${extra.id}"><span>Adaugă la petrecere</span><b>+${extra.price} lei</b>`;
+    card.append(label);
+  });
+  const food = document.getElementById('masa-adultilor');
+  food.insertAdjacentHTML('beforeend', '<div class="party-food-quantities"><label>Platouri reci · 250 lei<input type="number" min="0" step="1" value="0" data-food="rece" aria-label="Număr de platouri reci"></label><label>Platouri calde · 275 lei<input type="number" min="0" step="1" value="0" data-food="cald" aria-label="Număr de platouri calde"></label></div>');
+  document.querySelector('.party-price-note').insertAdjacentHTML('afterend', '<a class="party-extra-link" href="#extra">Adaugă animator, temă sau alte surprize ↓</a><details class="party-detail party-calculation"><summary>Vezi calculul costului</summary><div class="party-answer" data-price-breakdown></div></details>');
+  const getCount = (input, min) => {
+    const value = Number(input.value);
+    return Number.isSafeInteger(value) && value >= min ? value : min;
+  };
+  const updatePrice = () => {
+    const count = getCount(childInput, 1);
+    const exclusive = document.querySelector('[name="party-mode"]:checked').value === 'exclusive';
+    const base = exclusive ? 1275 + Math.max(0, count - 10) * 105 : count * 105;
+    const selected = extras.filter(extra => document.querySelector(`[data-extra="${extra.id}"]`).checked);
+    const rows = [{ label: `Pachet · ${count} copii · ${exclusive ? 'exclusivitate' : 'fără exclusivitate'}`, price: base }, ...selected];
+    document.querySelectorAll('[data-food]').forEach(input => {
+      const quantity = getCount(input, 0);
+      if (quantity) rows.push({ label: `${quantity} × platou ${input.dataset.food}`, price: quantity * (input.dataset.food === 'rece' ? 250 : 275) });
+    });
+    const total = rows.reduce((sum, row) => sum + row.price, 0);
+    document.querySelector('[data-party-total]').innerHTML = `${money(total)} <small>lei</small>`;
+    document.querySelector('.party-estimate > span').textContent = rows.length > 1 ? 'Pachet + opțiunile alese' : 'Costul pachetului';
+    document.querySelector('[data-party-formula]').textContent = exclusive
+      ? count <= 10 ? 'Până la 10 copii incluși · apoi 105 lei/copil în plus.' : `1.275 lei + ${count - 10} copii × 105 lei.`
+      : `${count} copii × 105 lei · fără număr minim.`;
+    document.querySelector('[data-price-breakdown]').innerHTML = rows.map(row => `<p class="party-cost-row"><span>${row.label}</span><strong>${money(row.price)} lei</strong></p>`).join('') + '<p>Avans pentru rezervare: 200 lei. Tortul, băuturile adulților și eventualele prelungiri nu intră în acest calcul.</p>';
+    document.querySelector('[data-count-step="-1"]').disabled = count <= 1;
+    selected.forEach(extra => document.getElementById(extra.id).classList.add('is-added'));
+    extras.filter(extra => !selected.includes(extra)).forEach(extra => document.getElementById(extra.id).classList.remove('is-added'));
+    if (status) status.textContent = `${count} copii · ${exclusive ? 'exclusivitate' : 'fără exclusivitate'} · total estimat ${money(total)} lei`;
+    const message = `Bună! Aș dori să verific disponibilitatea pentru o petrecere la Becky’s Garden.\nData dorită: \n${rows.map(row => `${row.label}: ${money(row.price)} lei`).join('\n')}\nTotal estimat: ${money(total)} lei.\nPutem confirma detaliile?`;
+    document.querySelector('[data-reservation-link]').href = 'https://wa.me/40752155115?text=' + encodeURIComponent(message);
+    document.querySelector('.party-mobile-contact span').innerHTML = `<b>${money(total)} lei</b><small>${count} copii${rows.length > 1 ? ' + opțiuni' : ' · pachet'}</small>`;
+  };
+  document.querySelectorAll('[data-count-step]').forEach(button => button.addEventListener('click', () => {
+    childInput.value = Math.max(1, getCount(childInput, 1) + Number(button.dataset.countStep));
+    updatePrice();
+  }));
+  document.querySelectorAll('[name="party-mode"], #party-children, [data-extra], [data-food]').forEach(input => {
+    input.addEventListener('input', updatePrice);
+    input.addEventListener('change', () => {
+      if (input.type === 'number') input.value = getCount(input, input === childInput ? 1 : 0);
+      updatePrice();
     });
   });
+  updatePrice();
+
+  const jumps = [...document.querySelectorAll('.party-jumps a')];
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      jumps.forEach(link => {
+        if (link.hash === '#' + entry.target.id) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    });
+  }, { rootMargin: '-20% 0px -55% 0px' });
+  jumps.forEach(link => observer.observe(document.querySelector(link.hash)));
 
   const headerCta = document.querySelector('.site-header .nav-cta');
   if (headerCta) headerCta.href = '#rezerva';

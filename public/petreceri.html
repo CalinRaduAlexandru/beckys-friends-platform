@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="/site.css?v=20260731-1">
   <link rel="stylesheet" href="/cta.css?v=20260803-1">
   <link rel="stylesheet" href="/shared-shell.css?v=20260803-1">
-  <link rel="stylesheet" href="/petreceri-page.css?v=20260829-1">
+  <link rel="stylesheet" href="/petreceri-page.css?v=20260910-1">
 </head>
 <body class="party-page is-loading">
   <header class="site-header" data-shared-header></header>
@@ -23,10 +23,10 @@
       <div class="party-hero-grid">
         <div class="party-hero-copy">
           <p class="party-eyebrow"><img src="/assets/heart_little.png" alt=""> Aniversări de neuitat</p>
-          <h1 class="party-title" id="party-title">Petreceri create pentru <span class="coral">zâmbete mari</span> și <span class="yellow">amintiri</span> pentru totdeauna</h1>
-          <p class="party-lead">Un pachet aniversar pentru 10 copii, cu 3 ore de joacă liberă, meniu la alegere și toate cele necesare pentru masa celor mici.</p>
+          <h1 class="party-title" id="party-title">O zi doar despre <span class="coral">bucuria lor.</span></h1>
+          <p class="party-lead">Joacă în toate camerele, masă pregătită și prieteni aproape. Descoperă cum organizăm aniversarea, de la primul invitat până la tort.</p>
           <div class="party-actions">
-            <a class="hero-cta" href="#pachete"><span>Vezi pachetul</span><span class="calendar-icon" aria-hidden="true"></span></a>
+            <a class="hero-cta" href="#pachete"><span>Descoperă pachetul</span><span class="calendar-icon" aria-hidden="true"></span></a>
             <a class="party-note" href="https://wa.me/40752155115" target="_blank" rel="noopener noreferrer" aria-label="Detalii și rezervări pe WhatsApp cu Oana, la 0752 155 115"><img src="/assets/heart.png" alt=""><span>Detalii și rezervări pe WhatsApp</span></a>
           </div>
         </div>
@@ -53,46 +53,75 @@
       </div>
     </section>
 
-    <section class="packages" id="pachete" aria-labelledby="packages-title">
-      <div class="section-heading">
-        <p class="section-label">Oferta aniversară Becky</p>
-        <h2 id="packages-title">Un pachet simplu și clar</h2>
-        <p>Tot ce este inclus, plus opțiunile pe care le poți adăuga.</p>
-      </div>
 
-      <div class="package-grid">
-        <article class="package-card featured real-package" data-package="Pachet aniversar pentru 10 copii">
-          <span class="popular-badge">Pachet aniversar</span>
-          <p class="package-kicker">Pentru 10 copii</p>
-          <h3>Petrecere la Becky’s Garden</h3>
-          <p class="package-summary">Joacă, meniu și masa celor mici pregătite într-un singur pachet.</p>
-          <div class="price">1.275 lei</div>
-          <ul><li>Meniu crispy strips sau pizza, la alegere</li><li>Suc și apă la discreție</li><li>Șampanie pentru copii</li><li>3 ore de joacă liberă</li><li>Baloane</li><li>Farfurii, pahare și tacâmuri</li><li>Vouchere pentru invitați și sărbătorit, cu o oră de acces gratuit</li></ul>
-          <p class="package-extra-child"><strong>Copil extra</strong><span>105 lei</span></p>
-          <a class="package-cta" href="#rezerva"><span>Întreabă de disponibilitate</span></a>
-        </article>
-
-        <aside class="offer-side" aria-label="Opțiuni suplimentare pentru petrecere">
-          <section class="offer-group"><p class="package-kicker">Extraopțiuni</p><h3>Mai mult pentru petrecere</h3><ul><li><span>Animator · 1 oră</span><strong>250 lei</strong></li><li><span>Magician · program 45 minute</span><strong>350 lei</strong></li><li><span>Tematică personalizată<small>Pahare, farfurii și baloane</small></span><strong>150 lei</strong></li><li><span>Piñata</span><strong>250 lei</strong></li></ul></section>
-          <section class="offer-group adult-food"><p class="package-kicker">Mâncare pentru adulți</p><h3>Platouri</h3><ul><li><span>Platou rece</span><strong>250 lei</strong></li><li><span>Platou cald</span><strong>275 lei</strong></li></ul></section>
+    <nav class="party-jumps" aria-label="Descoperă petrecerea"><a href="#pachete">Cost & pachet</a><a href="#incluse">Ce este inclus</a><a href="#extra">Extraopțiuni</a><a href="#organizare">Cum rezervi</a></nav>
+    <section class="party-section" id="pachete" aria-labelledby="packages-title">
+      <div class="section-heading"><p class="section-label">Începem cu lucrurile simple</p><h2 id="packages-title">Petrecerea voastră, pe înțeles.</h2><p>3 ore de joacă, meniu pentru copii și o echipă care pregătește totul.</p></div>
+      <div class="party-booking-grid">
+        <div class="party-price-card">
+          <h3>Cum vreți să sărbătoriți?</h3>
+          <fieldset class="party-mode"><legend class="party-sr">Tipul petrecerii</legend>
+            <label><input type="radio" name="party-mode" value="exclusive" checked><span><strong>Doar pentru voi</strong><small>Locație exclusivă</small></span></label>
+            <label><input type="radio" name="party-mode" value="shared"><span><strong>Cu alți copii în jur</strong><small>Fără exclusivitate</small></span></label>
+          </fieldset>
+          <div class="party-count"><label for="party-children">Câți copii sărbătoresc?<small>Include sărbătoritul · doar copiii de la 1 an</small></label><div><button type="button" data-count-step="-1" aria-label="Un copil mai puțin">−</button><input id="party-children" type="number" min="1" step="1" value="10" inputmode="numeric"><button type="button" data-count-step="1" aria-label="Un copil în plus">+</button></div></div>
+          <div class="party-estimate" aria-live="polite"><span>Costul pachetului</span><strong data-party-total>1.275 <small>lei</small></strong><p data-party-formula>Până la 10 copii incluși · apoi 105 lei/copil în plus.</p></div>
+          <p class="party-price-note">3 ore · meniu inclus · extraopțiunile se adaugă separat</p>
+          <a class="party-button" href="#rezerva">Verifică disponibilitatea <span aria-hidden="true">↗</span></a>
+          <details class="party-detail"><summary>Cum se calculează prețul?</summary><div class="party-answer"><p>Cu exclusivitate: 1.275 lei pentru până la 10 copii, apoi 105 lei pentru fiecare copil în plus. Puteți alege exclusivitatea și pentru un grup mai mic, la același tarif de bază.</p><p>Fără exclusivitate: 105 lei pentru fiecare copil, fără număr minim. Beneficiile pachetului sunt aceleași, iar în locație pot fi și alți clienți.</p></div></details>
+          <details class="party-detail"><summary>Frați, bebeluși și adulți</summary><div class="party-answer"><p>Sărbătoritul intră în numărul de copii. Frații și copiii de la 1 an au același tarif; bebelușii sub 1 an nu se taxează.</p><p>Nu avem un număr maxim fix de copii sau adulți. Spuneți-ne câți invitați estimați, ca să pregătim mesele potrivite.</p></div></details>
+        </div>
+        <aside class="party-at-glance"><p class="section-label">Voi aduceți sărbătoritul.</p><h3>Noi pregătim joaca.</h3>
+          <ul><li><b>3 ore împreună</b><span>Sosire, joacă, masă și tort.</span></li><li><b>Meniu & băuturi</b><span>Pizza sau crispy, apă și suc la discreție.</span></li><li><b>Decor & masă pregătită</b><span>Baloane, veselă și invitație digitală.</span></li><li><b>Echipa Becky, alături</b><span>Supraveghere, activități și curățenie.</span></li></ul>
+          <p class="party-callout">De adus: <strong>tortul și lumânarea.</strong><br><a href="#tort">Vezi detaliile pentru tort ↓</a></p>
+          <div class="party-small-facts"><span><b>200 lei</b>avans</span><span><b>2 zile înainte</b>numărul final</span></div>
         </aside>
       </div>
     </section>
-
-    <section class="party-bottom" id="rezerva" aria-labelledby="reservation-title">
-      <div>
-        <p class="party-bottom-kicker">Următorul pas e simplu</p>
-        <h2 id="reservation-title">Să planificăm o aniversare magică!</h2>
-        <p>Scrie-ne pentru disponibilitate și toate detaliile rezervării.</p>
-        <p class="reservation-status" data-reservation-status aria-live="polite">Pachet aniversar pentru 10 copii · 1.275 lei.</p>
+    <section class="party-section" id="incluse" aria-labelledby="included-title">
+      <div class="section-heading"><p class="section-label">Totul la locul lui</p><h2 id="included-title">Ce găsiți pregătit.</h2><p>Esențialul e aici. Apasă pe o întrebare pentru detalii.</p></div>
+      <div class="party-topics">
+      <article class="party-topic" id="meniu"><span class="party-art" aria-hidden="true"><span>🍕</span><img src="/assets/petreceri/pizza-crispy-suc-meniu-copii.webp" alt="" width="96" height="96" loading="lazy"></span><h3>Masa celor mici</h3><p class="party-topic-lead">Pizza sau crispy pentru tot grupul. Apă și suc pe toată durata petrecerii.</p><details class="party-detail"><summary>Ce conține meniul?</summary><div class="party-answer"><p><strong>Pizza:</strong> câte o pizza individuală de 22 cm, din sortimentele meniului.</p><p><strong>Crispy:</strong> două bucăți, cartofi prăjiți și ketchup. Grupul alege aceeași variantă: pizza sau crispy. Desertul nu este inclus.</p></div></details>
+<details class="party-detail"><summary>Ce băuturi sunt incluse?</summary><div class="party-answer"><p>Apă și suc neacidulat de mere, portocale sau piersici, la discreție pe toate cele 3 ore. Șampania pentru copii este suficientă pentru întregul grup.</p></div></details>
+<details class="party-detail"><summary>Alergii sau meniu vegetarian?</summary><div class="party-answer"><p>Spuneți-ne nevoile copiilor când rezervăm. Există variante vegetariene, iar crispy poate fi înlocuit cu piept de pui. Confirmăm împreună adaptarea meniului pentru alergii sau intoleranțe.</p></div></details></article>
+      <article class="party-topic" id="tort"><span class="party-art" aria-hidden="true"><span>🎂</span><img src="/assets/petreceri/tort-aniversar-lumanare-farfurie.webp" alt="" width="96" height="96" loading="lazy"></span><h3>Momentul tortului</h3><p class="party-topic-lead">Voi aduceți tortul și lumânarea. Noi îl păstrăm la rece, îl tăiem și îl servim.</p><details class="party-detail"><summary>Ce trebuie să aibă tortul?</summary><div class="party-answer"><p>Tortul nu este inclus în pachet. Îl puteți aduce din exterior, însoțit de certificatul de conformitate. Avem frigider pentru păstrare.</p></div></details>
+<details class="party-detail"><summary>Pot aduce gustări și băuturi?</summary><div class="party-answer"><p>Puteți aduce gustări: alune, fistic, sărățele, prăjiturele sau saleuri. Băuturile se cumpără de la noi. Pentru alte preparate, lucrăm cu furnizorii cu care avem contract.</p></div></details></article>
+      <article class="party-topic" id="decor"><span class="party-art" aria-hidden="true"><span>🎈</span><img src="/assets/petreceri/baloane-nume-cifra-invitatie-aniversara.webp" alt="" width="96" height="96" loading="lazy"></span><h3>O masă de sărbătoare</h3><p class="party-topic-lead">Numele din baloane, cifra aniversară, baloane de latex și invitații digitale incluse.</p><details class="party-detail"><summary>Ce decor și veselă sunt incluse?</summary><div class="party-answer"><p>Numele sărbătoritului din baloane de folie, cifra aniversară și un covor din baloane de latex. Pregătim mesele copiilor cu farfurii, pahare, tacâmuri și șervețele în varianta aniversară standard.</p><p>Lumânarea pentru tort se aduce separat. Cuțitul și servirea tortului sunt asigurate de noi.</p></div></details>
+<details class="party-detail"><summary>Vreau o temă sau decorul meu</summary><div class="party-answer"><p>Puteți aduce propriile decorațiuni și puteți alege muzica. Pentru decor și veselă într-o temă anume, vedeți opțiunea de tematică personalizată de mai jos.</p><p>Detaliile de personalizare se stabilesc împreună, la rezervare.</p></div></details></article>
+      <article class="party-topic" id="spatiu"><span class="party-art" aria-hidden="true"><span>🏡</span><img src="/assets/petreceri/spatiu-joaca-copii-parinti-relaxare.webp" alt="" width="96" height="96" loading="lazy"></span><h3>Loc pentru fiecare</h3><p class="party-topic-lead">Toate zonele de joacă disponibile, echipa aproape de copii și mese pentru părinți.</p><details class="party-detail"><summary>Cine este alături de copii?</summary><div class="party-answer"><p>O persoană din echipa Becky supraveghează copiii pe durata petrecerii, îi îndrumă să descopere facilitățile și le propune activități interactive. Echipa pregătește masa și se ocupă de curățenie.</p></div></details>
+<details class="party-detail"><summary>Părinții trebuie să rămână?</summary><div class="party-answer"><p>Cel puțin un adult reprezentant al grupului rămâne în locație. Ceilalți părinți pot veni și pleca. Rezervăm mese pentru numărul de adulți anunțat, în interior sau în exterior.</p><p>Din zona meselor puteți urmări spațiul de joacă pe televizoarele conectate la camere.</p></div></details>
+<details class="party-detail"><summary>Dacă plouă?</summary><div class="party-answer"><p>Curtea și gonflabila sunt disponibile când vremea permite. Dacă vremea nu ține cu noi, petrecerea continuă în interior, unde sunt și mese pentru părinți și televizoare pentru urmărirea zonelor de joacă.</p></div></details>
+<details class="party-detail"><summary>Ce facilități practice aveți?</summary><div class="party-answer"><p>Masă de înfășat, loc pentru cărucioare și toalete pentru copii. Nu sunt necesare șosete antiderapante sau încălțăminte specială. Parcarea este pe stradă, în funcție de locurile disponibile.</p></div></details></article>
+      <article class="party-topic" id="vouchere"><span class="party-art" aria-hidden="true"><span>🎟️</span><img src="/assets/petreceri/voucher-cadou-o-ora-joaca.webp" alt="" width="96" height="96" loading="lazy"></span><h3>Joaca mai are un episod</h3><p class="party-topic-lead">Fiecare copil, inclusiv sărbătoritul, primește un voucher pentru o oră de acces.</p><details class="party-detail"><summary>Când și cum se folosesc?</summary><div class="party-answer"><p>Voucherele sunt valabile o lună de la aniversare, în timpul programului de funcționare, fără rezervare. Includ accesul, nu și consumația.</p><p>Nu sunt transferabile și nu se pot cumula mai multe vouchere în aceeași zi.</p></div></details></article>
+      <article class="party-topic" id="masa-adultilor"><span class="party-art" aria-hidden="true"><span>☕</span><img src="/assets/petreceri/platouri-rece-cald-cafea-parinti.webp" alt="" width="96" height="96" loading="lazy"></span><h3>Și părinții au loc la masă</h3><p class="party-topic-lead">Platou rece · 250 lei. Platou cald · 275 lei. Cafeaua și băuturile se comandă la noi.</p><details class="party-detail"><summary>Ce conțin platourile și pentru câți sunt?</summary><div class="party-answer"><div data-food-confirmed><p>Componența, porțiile și variantele potrivite grupului se confirmă la rezervare.</p></div><div data-food-demo hidden><span class="party-demo-label">Conținut demonstrativ · de confirmat</span><p><strong>Platou rece:</strong> selecție de brânzeturi, rulouri, legume proaspete și măsline.</p><p><strong>Platou cald:</strong> minișnițele, chifteluțe, cartofi și legume la cuptor.</p><p>Exemplu de porționare: 4–6 adulți / platou. Se pot combina mai multe platouri; numărul și adaptările vegetariene sau pentru alergii se stabilesc la comandă.</p></div></div></details>
+<details class="party-detail"><summary>Ce putem aduce din exterior?</summary><div class="party-answer"><p>Sunt permise gustări precum alune, fistic, sărățele, prăjiturele și saleuri. Băuturile se comandă exclusiv de la Becky. Alte preparate pot veni doar prin furnizorii cu care avem contract.</p></div></details></article>
       </div>
-      <a class="party-cta" data-reservation-link href="https://wa.me/40752155115" target="_blank" rel="noopener"><span>Scrie-ne pe WhatsApp</span><span aria-hidden="true">↗</span></a>
     </section>
+    <section class="party-section" id="extra" aria-labelledby="extras-title">
+      <div class="section-heading"><p class="section-label">Doar dacă vă doriți</p><h2 id="extras-title">Un strop în plus.</h2><p>Pachetul include deja cele necesare. Aceste opțiuni se plătesc separat.</p></div>
+      <div class="party-extras">
+      <article class="party-topic" id="animator"><span class="party-art" aria-hidden="true"><span>🪄</span><img src="/assets/petreceri/animator-personaj-baloane-modelate.webp" alt="" width="96" height="96" loading="lazy"></span><h3>Animator</h3><p class="party-topic-lead">250 lei · 1 oră</p><details class="party-detail"><summary>Activități, vârste și rezervare</summary><div class="party-answer"><p>Jocuri interactive, modelare de baloane și pictură pe față, pentru copii de 3–10 ani. Puteți alege personajul sau tema.</p><p>Rezervați cu minimum 3 zile înainte. Lucrăm cu animatorii noștri; nu se poate aduce un animator din exterior.</p></div></details></article>
+      <article class="party-topic" id="magician"><span class="party-art" aria-hidden="true"><span>🎩</span><img src="/assets/petreceri/magician-joben-stele-copii.webp" alt="" width="96" height="96" loading="lazy"></span><h3>Magician</h3><p class="party-topic-lead">350 lei · 45 de minute</p><details class="party-detail"><summary>Cum se desfășoară?</summary><div class="party-answer"><p>Un program de magie interactivă în care sunt implicați copiii. Disponibilitatea se confirmă la rezervare.</p></div></details></article>
+      <article class="party-topic" id="tematica"><span class="party-art" aria-hidden="true"><span>🌈</span><img src="/assets/petreceri/decor-masa-tematica-farfurii-baloane.webp" alt="" width="96" height="96" loading="lazy"></span><h3>Tema preferată</h3><p class="party-topic-lead">150 lei · decor & veselă</p><details class="party-detail"><summary>Ce include și când alegem?</summary><div class="party-answer"><p>Decorul mesei, pahare, farfurii și baloane personalizate tematic. Alegeți tema cu cel puțin 10 zile înainte de petrecere.</p></div></details></article>
+      <article class="party-topic" id="pinata"><span class="party-art" aria-hidden="true"><span>🎊</span><img src="/assets/petreceri/pinata-colorata-dulciuri-jucarii.webp" alt="" width="96" height="96" loading="lazy"></span><h3>Piñata</h3><p class="party-topic-lead">250 lei · surprize la alegere</p><details class="party-detail"><summary>Cu ce este umplută?</summary><div class="party-answer"><p>Dulciuri, jucării sau un mix, la alegerea părinților. Rezervați cu minimum 3 zile înainte.</p></div></details></article>
+      </div>
+      <p class="party-inline-note">Aveți un fotograf preferat? Îl puteți aduce.</p>
+    </section>
+    <section class="party-section" id="organizare" aria-labelledby="plan-title">
+      <div class="section-heading"><p class="section-label">De la idee la aniversare</p><h2 id="plan-title">Trei pași. Și începe joaca.</h2></div>
+      <div class="party-steps">
+      <article><span class="party-step-number">01</span><h3>Alegem ziua.</h3><p>Ne scrieți data, numărul de copii și dacă doriți exclusivitate. Confirmăm împreună disponibilitatea.</p><details class="party-detail"><summary>În ce intervale putem veni?</summary><div class="party-answer"><p><strong>Luni–vineri:</strong> de la ora 17:00.</p><p><strong>Weekend:</strong> 11:00–14:00 sau începere între 16:00 și 18:00.</p><p>Fiecare petrecere durează 3 ore, incluzând sosirea, masa și tortul.</p></div></details></article>
+      <article><span class="party-step-number">02</span><h3>Rezervăm cu 200 lei.</h3><p>Avansul fixează rezervarea. Plata se poate face numerar, cu cardul sau prin transfer.</p><details class="party-detail"><summary>Anulare, reprogramare și documente</summary><div class="party-answer"><p>La anulare, avansul nu se restituie, indiferent de momentul anunțului. Reprogramarea este posibilă în limita disponibilității.</p><p>Se emite bon fiscal și, la cerere, factură.</p></div></details></article>
+      <article><span class="party-step-number">03</span><h3>Punem la punct detaliile.</h3><p>Confirmați numărul final de invitați cu două zile înainte. Pentru pregătiri puteți veni cu maximum 15 minute mai devreme.</p><details class="party-detail"><summary>Putem prelungi petrecerea?</summary><div class="party-answer"><p>Da, dacă programul permite: 100 lei pentru 30 de minute sau 200 lei pentru o oră. Disponibilitatea se confirmă cu echipa.</p></div></details></article>
+      </div>
+    </section>
+    <section class="party-bottom" id="rezerva" aria-labelledby="reservation-title"><div><p class="party-bottom-kicker">Aveți deja o zi în minte?</p><h2 id="reservation-title">Hai să-i facem loc în calendar.</h2><p>Scrieți-ne data dorită. Vă răspundem cu disponibilitatea și stabilim detaliile împreună.</p><p class="reservation-status" data-reservation-status aria-live="polite">10 copii · exclusivitate · pachet 1.275 lei</p></div><a class="party-cta" data-reservation-link href="https://wa.me/40752155115" target="_blank" rel="noopener">Întreabă pe WhatsApp ↗</a></section>
+    <a class="party-mobile-contact" href="#rezerva"><span>O aniversare la Becky?<small>Hai să alegem ziua.</small></span><strong>Rezervări ↗</strong></a>
   </main>
 
   <footer class="party-footer"><strong>Becky’s Garden ♥</strong><span>Locul unde copiii cresc în joacă și prietenie.</span><span class="footer-links"><a href="/chestionare">Chestionare</a><a href="/admin">Admin</a></span></footer>
   <script src="/shared-shell.js?v=20260803-1"></script>
   <script src="/site.js?v=20260803-3"></script>
-  <script src="/petreceri-page.js?v=20260828-2"></script>
+  <script src="/petreceri-page.js?v=20260910-1"></script>
 </body>
 </html>
