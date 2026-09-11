@@ -44,6 +44,7 @@
   const childInput = document.getElementById('party-children');
   const reservationDate = document.querySelector('[data-reservation-date]');
   const mobileDetails = document.querySelector('[data-mobile-details]');
+  const mobileDetailsToggle = document.querySelector('[data-mobile-details-toggle]');
   const mobileBreakdown = document.querySelector('[data-mobile-breakdown]');
   const money = value => new Intl.NumberFormat('ro-RO').format(value);
   const extras = [
@@ -73,10 +74,10 @@
     const exclusive = document.querySelector('[name="party-mode"]:checked').value === 'exclusive';
     const base = exclusive ? 1275 + Math.max(0, count - 10) * 105 : count * 105;
     const selected = extras.filter(extra => document.querySelector(`[data-extra="${extra.id}"]`).checked);
-    const rows = [{ label: `Pachet · ${count} copii · ${exclusive ? 'exclusivitate' : 'fără exclusivitate'}`, price: base }, ...selected];
+    const rows = [{ label: `Pachet · ${count} copii · ${exclusive ? 'exclusivitate' : 'fără exclusivitate'}`, price: base, target: '#pachete' }, ...selected.map(extra => ({ ...extra, target: `#${extra.id}` }))];
     document.querySelectorAll('[data-food]').forEach(input => {
       const quantity = getCount(input, 0);
-      if (quantity) rows.push({ label: `${quantity} × platou ${input.dataset.food}`, price: quantity * (input.dataset.food === 'rece' ? 250 : 275) });
+      if (quantity) rows.push({ label: `${quantity} × platou ${input.dataset.food}`, price: quantity * (input.dataset.food === 'rece' ? 250 : 275), target: '#masa-adultilor' });
     });
     const total = rows.reduce((sum, row) => sum + row.price, 0);
     document.querySelector('[data-party-total]').innerHTML = `${money(total)} <small>lei</small>`;
@@ -85,7 +86,7 @@
       ? count <= 10 ? 'Până la 10 copii incluși · apoi 105 lei/copil în plus.' : `1.275 lei + ${count - 10} copii × 105 lei.`
       : `${count} copii × 105 lei · fără număr minim.`;
     document.querySelector('[data-price-breakdown]').innerHTML = rows.map(row => `<p class="party-cost-row"><span>${row.label}</span><strong>${money(row.price)} lei</strong></p>`).join('') + '<p>Avans pentru rezervare: 200 lei. Tortul, băuturile adulților și eventualele prelungiri nu intră în acest calcul.</p>';
-    if (mobileBreakdown) mobileBreakdown.innerHTML = `<span class="party-mobile-breakdown-title">Opțiunile alese</span>${rows.map(row => `<span class="party-mobile-breakdown-row"><span>${row.label}</span><b>${money(row.price)} lei</b></span>`).join('')}<span class="party-mobile-breakdown-total"><span>Total estimat</span><b>${money(total)} lei</b></span>`;
+    if (mobileBreakdown) mobileBreakdown.innerHTML = `<span class="party-mobile-breakdown-title">Opțiunile alese</span>${rows.map(row => `<a class="party-mobile-breakdown-row" href="${row.target}" data-mobile-breakdown-link><span class="party-mobile-eye" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></span><span class="party-mobile-breakdown-label">${row.label}</span><b>${money(row.price)} lei</b></a>`).join('')}<span class="party-mobile-breakdown-total"><span>Total estimat</span><b>${money(total)} lei</b></span>`;
     document.querySelector('[data-count-step="-1"]').disabled = count <= 1;
     selected.forEach(extra => document.getElementById(extra.id).classList.add('is-added'));
     extras.filter(extra => !selected.includes(extra)).forEach(extra => document.getElementById(extra.id).classList.remove('is-added'));
@@ -97,7 +98,8 @@
     reservationLink.href = selectedDate ? 'https://wa.me/40752155115?text=' + encodeURIComponent(message) : '#reservation-date';
     reservationLink.classList.toggle('is-disabled', !selectedDate);
     reservationLink.setAttribute('aria-disabled', String(!selectedDate));
-    document.querySelector('.party-mobile-contact span').innerHTML = `<b>${money(total)} lei</b><small>${count} copii${rows.length > 1 ? ' + opțiuni' : ' · pachet'}</small>`;
+    document.querySelector('[data-mobile-total]').textContent = `${money(total)} lei`;
+    document.querySelector('[data-mobile-details-label]').textContent = `${count} copii${rows.length > 1 ? ' · opțiuni incluse' : ' · pachet'}`;
   };
   document.querySelectorAll('[data-count-step]').forEach(button => button.addEventListener('click', () => {
     childInput.value = Math.max(1, getCount(childInput, 1) + Number(button.dataset.countStep));
@@ -120,11 +122,21 @@
       reservationDate?.focus();
     }
   });
-  mobileDetails?.addEventListener('click', () => {
+  const toggleMobileDetails = () => {
     const expanded = mobileDetails.getAttribute('aria-expanded') === 'true';
     mobileDetails.setAttribute('aria-expanded', String(!expanded));
+    mobileDetailsToggle?.setAttribute('aria-expanded', String(!expanded));
     mobileDetails.classList.toggle('is-expanded', !expanded);
     if (mobileBreakdown) mobileBreakdown.hidden = expanded;
+  };
+  mobileDetailsToggle?.addEventListener('click', toggleMobileDetails);
+  mobileBreakdown?.addEventListener('click', event => {
+    const link = event.target.closest('[data-mobile-breakdown-link]');
+    if (!link) return;
+    mobileDetails?.classList.remove('is-expanded');
+    mobileDetails?.setAttribute('aria-expanded', 'false');
+    mobileDetailsToggle?.setAttribute('aria-expanded', 'false');
+    mobileBreakdown.hidden = true;
   });
   updatePrice();
 
