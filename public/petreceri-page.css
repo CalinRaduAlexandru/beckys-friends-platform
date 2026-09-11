@@ -61,6 +61,7 @@
 .party-estimate p{font-size:14px;line-height:1.6;margin:4px 0}
 .party-price-note{margin:0 0 12px}
 .party-extra-link{display:block;font-size:14px;margin-bottom:14px}
+.party-extra-note{margin:0 0 14px;color:var(--party-teal);font-size:14px;font-weight:700;line-height:1.45}
 .party-button{display:flex;justify-content:space-between;gap:12px;padding:16px 20px;margin:18px 0;border-radius:16px;background:#238b9a;color:#fff;text-decoration:none;font-weight:700;min-height:52px}
 .party-detail{border-top:1px solid #dde7e6}
 .party-detail summary{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:17px 0;color:var(--party-ink);font-size:14px;font-weight:700;line-height:1.5;cursor:pointer;list-style:none}
