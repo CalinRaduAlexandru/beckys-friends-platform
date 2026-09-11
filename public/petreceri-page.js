@@ -157,12 +157,19 @@
   jumpNav.addEventListener('scroll', updateJumpEdges, { passive:true });
   new ResizeObserver(updateJumpEdges).observe(jumpNav);
   updateJumpEdges();
+  let activeJumpHash = '';
   const observer = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
-      jumps.forEach(link => {
-        if (link.hash === '#' + entry.target.id) link.setAttribute('aria-current', 'location');
-        else link.removeAttribute('aria-current');
+      const activeHash = '#' + entry.target.id;
+      if (activeJumpHash === activeHash) return;
+      activeJumpHash = activeHash;
+      const activeLink = jumps.find(link => link.hash === activeHash);
+      jumps.forEach(link => link.toggleAttribute('aria-current', link === activeLink));
+      activeLink?.scrollIntoView({
+        behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth',
+        block: 'nearest',
+        inline: 'center'
       });
     });
   }, { rootMargin: '-20% 0px -55% 0px' });

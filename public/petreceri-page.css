@@ -1004,6 +1004,8 @@
   display: block !important;
   overflow: hidden;
   transition: max-height .42s ease-in-out, box-shadow .3s ease, background-color .3s ease;
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -12px 30px rgba(35, 52, 72, .16);
 }
 .party-mobile-contact:not(.is-expanded) { max-height: 92px; }
 .party-mobile-contact.is-expanded { max-height: min(70vh, 620px); }
@@ -1026,7 +1028,7 @@
 .party-mobile-top>span:first-child>b { font-size: 24px; line-height: 1.05; }
 .party-mobile-top>span:first-child small { font-size: 11px; font-weight: 700; }
 .party-mobile-top>strong { display: inline-flex; align-items: center; gap: 7px; padding: 10px 13px; }
-.party-mobile-top>strong span { display: inline-block; font-size: 20px; line-height: .7; transition: transform .35s ease-in-out; }
+.party-mobile-top>strong span { display: grid; place-items: center; width: 20px; height: 20px; font-size: 20px; line-height: 1; transform-origin: center; transition: transform .35s ease-in-out; }
 .party-mobile-contact.is-expanded .party-mobile-top>strong span { transform: rotate(180deg); }
 .party-mobile-breakdown {
   max-height: 0;

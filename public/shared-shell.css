@@ -351,15 +351,16 @@ body {
 /* The decorative flag line belongs to the spacious desktop navbar only. */
 @media (min-width: 901px) {
   .site-header .nav-logo-full {
-    top: -61px !important;
+    top: -53px !important;
+    transform-origin: left top;
   }
 
   .site-header:not(.is-scrolled) .nav-logo-full {
-    top: -61px !important;
+    top: -53px !important;
   }
 
   .site-header.is-scrolled .nav-logo-full {
-    transform: translate(14px, -61px) scale(.72) !important;
+    transform: translate(14px, 24px) scale(.72) !important;
   }
 }
 
