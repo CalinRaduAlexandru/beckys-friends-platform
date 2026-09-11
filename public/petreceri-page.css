@@ -1073,3 +1073,31 @@
   .party-mobile-contact { left: 16px; right: 16px; width: auto; }
   .party-mobile-contact.is-expanded { max-height: 70vh; overflow: hidden; }
 }
+
+@media(max-width:700px) {
+  .party-extra-select {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 2px;
+    padding: 10px 12px;
+    min-height: 58px;
+  }
+  .party-extra-select input {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+    margin: 0;
+  }
+  .party-extra-select span {
+    grid-column: 2;
+    line-height: 1.3;
+  }
+  .party-extra-select b {
+    grid-column: 2;
+    margin: 0;
+    line-height: 1.25;
+  }
+}
