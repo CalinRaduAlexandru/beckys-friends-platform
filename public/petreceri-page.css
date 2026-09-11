@@ -382,6 +382,27 @@
   filter: saturate(1.04);
 }
 
+.party-gallery-dots {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 12px;
+  margin-top: 9px;
+}
+.party-gallery-dots span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #c8d9d9;
+  transition: width .25s ease, background-color .25s ease, transform .25s ease;
+}
+.party-gallery-dots span.is-active {
+  width: 18px;
+  background: var(--party-teal);
+}
+
 .party-gallery-caption {
   display: flex;
   align-items: baseline;
@@ -1019,6 +1040,7 @@
 @media(max-width:900px){.party-page .site-header{flex-wrap:nowrap}.party-page .site-header .site-nav{display:none}.party-page .site-header .brand-lockup{flex:1;min-width:0}.party-page .site-header .nav-cta{flex:none}.party-page .site-header .whatsapp-link{flex:none;margin-left:auto}}
 @media(max-width:800px){.party-gallery{order:0}.party-title{max-width:560px}}
 @media(max-width:620px){.party-hero-grid{padding:22px;gap:26px}.party-title{font-size:clamp(32px,9vw,43px)}.party-lead{margin-top:16px}.party-actions{margin-top:20px}.party-hero{margin-bottom:24px}.party-gallery-options{max-width:100%}.party-visual{aspect-ratio:3/2}.section-heading{margin-bottom:24px}}
+@media(max-width:620px){.party-gallery-dots{display:flex}.party-visual{touch-action:pan-y;cursor:grab}.party-visual:active{cursor:grabbing}}
 
 .party-mobile-contact{border:0;font:inherit;text-align:left;cursor:pointer}
 .party-mobile-top{display:flex!important;align-items:center;justify-content:space-between;gap:16px;width:100%}

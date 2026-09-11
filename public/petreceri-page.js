@@ -35,26 +35,57 @@
   const galleryTitle = gallery?.querySelector('[data-party-gallery-title]');
   const galleryDetail = gallery?.querySelector('[data-party-gallery-detail]');
   const galleryButtons = [...(gallery?.querySelectorAll('[data-party-gallery-src]') || [])];
+  const galleryVisual = gallery?.querySelector('.party-visual');
+  const galleryDots = gallery && galleryButtons.length ? document.createElement('div') : null;
+  if (galleryDots && galleryVisual) {
+    galleryDots.className = 'party-gallery-dots';
+    galleryDots.setAttribute('aria-hidden', 'true');
+    galleryDots.innerHTML = galleryButtons.map((_, index) => `<span class="${index === 0 ? 'is-active' : ''}"></span>`).join('');
+    galleryVisual.insertAdjacentElement('afterend', galleryDots);
+  }
 
-  galleryButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      if (!galleryMain) return;
-      galleryMain.src = button.dataset.partyGallerySrc;
-      galleryMain.alt = button.dataset.partyGalleryAlt;
-      if (galleryTitle) galleryTitle.textContent = button.dataset.partyGalleryTitle;
-      if (galleryDetail) galleryDetail.textContent = button.dataset.partyGalleryDetail;
-      galleryButtons.forEach(item => {
-        const isActive = item === button;
-        item.classList.toggle('is-active', isActive);
-        item.setAttribute('aria-pressed', String(isActive));
-      });
+  const selectGalleryImage = (button, shouldScrollThumb = true) => {
+    if (!galleryMain) return;
+    galleryMain.src = button.dataset.partyGallerySrc;
+    galleryMain.alt = button.dataset.partyGalleryAlt;
+    if (galleryTitle) galleryTitle.textContent = button.dataset.partyGalleryTitle;
+    if (galleryDetail) galleryDetail.textContent = button.dataset.partyGalleryDetail;
+    galleryButtons.forEach(item => {
+      const isActive = item === button;
+      item.classList.toggle('is-active', isActive);
+      item.setAttribute('aria-pressed', String(isActive));
+    });
+    galleryDots?.querySelectorAll('span').forEach((dot, index) => dot.classList.toggle('is-active', galleryButtons[index] === button));
+    if (shouldScrollThumb) {
       button.scrollIntoView({
         behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
         block: 'nearest',
         inline: 'center'
       });
+    }
+  };
+  galleryButtons.forEach(button => button.addEventListener('click', () => selectGalleryImage(button)));
+  if (galleryVisual && galleryButtons.length > 1) {
+    let pointerStartX = null;
+    let pointerStartY = null;
+    galleryVisual.addEventListener('pointerdown', event => {
+      pointerStartX = event.clientX;
+      pointerStartY = event.clientY;
+      galleryVisual.setPointerCapture?.(event.pointerId);
     });
-  });
+    galleryVisual.addEventListener('pointerup', event => {
+      if (pointerStartX === null) return;
+      const deltaX = event.clientX - pointerStartX;
+      const deltaY = event.clientY - pointerStartY;
+      pointerStartX = null;
+      pointerStartY = null;
+      if (Math.abs(deltaX) < 42 || Math.abs(deltaX) < Math.abs(deltaY)) return;
+      const activeIndex = galleryButtons.findIndex(button => button.classList.contains('is-active'));
+      const nextIndex = Math.max(0, Math.min(galleryButtons.length - 1, activeIndex + (deltaX < 0 ? 1 : -1)));
+      if (nextIndex !== activeIndex) selectGalleryImage(galleryButtons[nextIndex]);
+    });
+    galleryVisual.addEventListener('pointercancel', () => { pointerStartX = null; pointerStartY = null; });
+  }
 
   // Only these descriptions are provisional. Preview them with ?demo=1.
   const demo = new URLSearchParams(location.search).get('demo') === '1';
