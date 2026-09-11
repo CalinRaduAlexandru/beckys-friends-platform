@@ -1106,6 +1106,28 @@
   .party-menu-group-body{padding-right:7px;padding-left:7px}
 }
 
+/* Keep the final content comfortably above the edge of the viewport. */
+.party-page main { padding-bottom: 72px; }
+
+/* Closed cards align as a calm visual system; opened disclosures can grow naturally. */
+.party-topics,
+.party-steps { align-items: stretch; }
+.party-topics > .party-topic,
+.party-steps > article {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+@media(max-width:700px) {
+  .party-extras { align-items: stretch; }
+  .party-extras > .party-topic {
+    min-height: 330px;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 @media(max-width:700px) {
   .party-extra-select {
     display: grid;
