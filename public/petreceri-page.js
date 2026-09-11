@@ -3,6 +3,31 @@
   if (!page) return;
   document.querySelectorAll('.party-extra-link[href="/invitatii-petrecere"]').forEach(link => link.remove());
 
+  const partyReturnKey = 'becky-party-return-scroll';
+  const getNavigationType = () => performance.getEntriesByType?.('navigation')?.[0]?.type || '';
+  const restorePartyScroll = event => {
+    let pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem(partyReturnKey) || 'null'); } catch {}
+    if (!pending) return;
+    const isHistoryReturn = event?.persisted || getNavigationType() === 'back_forward';
+    if (!isHistoryReturn) {
+      try { sessionStorage.removeItem(partyReturnKey); } catch {}
+      return;
+    }
+    const restore = () => {
+      window.scrollTo({ top: Number(pending.top) || 0, behavior: 'auto' });
+      try { sessionStorage.removeItem(partyReturnKey); } catch {}
+    };
+    requestAnimationFrame(() => requestAnimationFrame(restore));
+  };
+  restorePartyScroll();
+  window.addEventListener('pageshow', event => restorePartyScroll(event), { once: true });
+  document.addEventListener('click', event => {
+    const rulesLink = event.target.closest('.party-rules-link');
+    if (!rulesLink) return;
+    try { sessionStorage.setItem(partyReturnKey, JSON.stringify({ top: window.scrollY, at: Date.now() })); } catch {}
+  });
+
   const status = document.querySelector('[data-reservation-status]');
 
   const gallery = document.querySelector('[data-party-gallery]');
