@@ -978,3 +978,20 @@
 @media(max-width:900px){.party-page .site-header{flex-wrap:nowrap}.party-page .site-header .site-nav{display:none}.party-page .site-header .brand-lockup{flex:1;min-width:0}.party-page .site-header .nav-cta{flex:none}.party-page .site-header .whatsapp-link{flex:none;margin-left:auto}}
 @media(max-width:800px){.party-gallery{order:0}.party-title{max-width:560px}}
 @media(max-width:620px){.party-hero-grid{padding:22px;gap:26px}.party-title{font-size:clamp(32px,9vw,43px)}.party-lead{margin-top:16px}.party-actions{margin-top:20px}.party-hero{margin-bottom:24px}.party-gallery-options{max-width:100%}.party-visual{aspect-ratio:3/2}.section-heading{margin-bottom:24px}}
+
+.party-mobile-contact{border:0;font:inherit;text-align:left;cursor:pointer}
+.party-mobile-top{display:flex!important;align-items:center;justify-content:space-between;gap:16px;width:100%}
+.party-mobile-top>span{display:grid!important;min-width:0;font-size:inherit!important;font-weight:inherit!important}
+.party-mobile-top>strong{margin-left:auto!important;white-space:nowrap}
+.party-mobile-breakdown{display:grid!important;gap:7px;width:100%;padding-top:12px;border-top:1px solid #d3e6e7;color:var(--party-muted);font-size:12px;font-weight:700}
+.party-mobile-breakdown-title{color:var(--party-teal);font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.party-mobile-contact .party-mobile-breakdown-row,.party-mobile-contact .party-mobile-breakdown-total{display:flex!important;align-items:baseline;justify-content:space-between;gap:16px}
+.party-mobile-contact .party-mobile-breakdown-row>span,.party-mobile-contact .party-mobile-breakdown-total>span{display:block!important;min-width:0;font-size:12px!important;font-weight:700!important}
+.party-mobile-breakdown-row b,.party-mobile-breakdown-total b{color:var(--party-ink);white-space:nowrap}
+.party-mobile-breakdown-total{margin-top:3px;padding-top:8px;border-top:1px solid #d3e6e7;color:var(--party-ink);font-weight:900}
+@media(min-width:901px){
+  .party-mobile-contact.is-expanded{display:grid;gap:12px;min-width:340px;background:#fffdfa}
+}
+@media(max-width:900px){
+  .party-mobile-contact.is-expanded{display:grid;gap:12px;max-height:70vh;overflow:auto;background:#fffdfa}
+}

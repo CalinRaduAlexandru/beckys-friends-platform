@@ -43,6 +43,8 @@
 
   const childInput = document.getElementById('party-children');
   const reservationDate = document.querySelector('[data-reservation-date]');
+  const mobileDetails = document.querySelector('[data-mobile-details]');
+  const mobileBreakdown = document.querySelector('[data-mobile-breakdown]');
   const money = value => new Intl.NumberFormat('ro-RO').format(value);
   const extras = [
     { id: 'animator', label: 'Animator', price: 250 },
@@ -83,6 +85,7 @@
       ? count <= 10 ? 'Până la 10 copii incluși · apoi 105 lei/copil în plus.' : `1.275 lei + ${count - 10} copii × 105 lei.`
       : `${count} copii × 105 lei · fără număr minim.`;
     document.querySelector('[data-price-breakdown]').innerHTML = rows.map(row => `<p class="party-cost-row"><span>${row.label}</span><strong>${money(row.price)} lei</strong></p>`).join('') + '<p>Avans pentru rezervare: 200 lei. Tortul, băuturile adulților și eventualele prelungiri nu intră în acest calcul.</p>';
+    if (mobileBreakdown) mobileBreakdown.innerHTML = `<span class="party-mobile-breakdown-title">Opțiunile alese</span>${rows.map(row => `<span class="party-mobile-breakdown-row"><span>${row.label}</span><b>${money(row.price)} lei</b></span>`).join('')}<span class="party-mobile-breakdown-total"><span>Total estimat</span><b>${money(total)} lei</b></span>`;
     document.querySelector('[data-count-step="-1"]').disabled = count <= 1;
     selected.forEach(extra => document.getElementById(extra.id).classList.add('is-added'));
     extras.filter(extra => !selected.includes(extra)).forEach(extra => document.getElementById(extra.id).classList.remove('is-added'));
@@ -117,8 +120,11 @@
       reservationDate?.focus();
     }
   });
-  document.querySelector('[data-mobile-details]')?.addEventListener('click', () => {
-    requestAnimationFrame(() => document.querySelector('.party-calculation')?.setAttribute('open', ''));
+  mobileDetails?.addEventListener('click', () => {
+    const expanded = mobileDetails.getAttribute('aria-expanded') === 'true';
+    mobileDetails.setAttribute('aria-expanded', String(!expanded));
+    mobileDetails.classList.toggle('is-expanded', !expanded);
+    if (mobileBreakdown) mobileBreakdown.hidden = expanded;
   });
   updatePrice();
 
