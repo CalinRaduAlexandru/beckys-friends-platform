@@ -295,6 +295,12 @@ function readWorkspaces() {
       }
       if (children && fs.existsSync(FACILITATOR_TOOLS_FILE)) {
         Object.assign(children, JSON.parse(fs.readFileSync(FACILITATOR_TOOLS_FILE, 'utf8')));
+        const birthdayTrackIds = new Set(['birthday-1', 'birthday-2', 'birthday-3']);
+        const kidsTrackIds = (children.musicTracks || [])
+          .filter(track => track?.audience === 'copii' && !birthdayTrackIds.has(track.id))
+          .map(track => track.id);
+        const kidsPlaylist = (children.playlists || []).find(playlist => playlist.id === 'energie-copii');
+        if (kidsPlaylist) kidsPlaylist.trackIds = kidsTrackIds;
       }
     }
     return workspaces;

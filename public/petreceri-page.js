@@ -15,7 +15,14 @@
       return;
     }
     const restore = () => {
-      window.scrollTo({ top: Number(pending.top) || 0, behavior: 'auto' });
+      const target = pending.targetId ? document.getElementById(pending.targetId) : null;
+      if (target && Number.isFinite(Number(pending.targetViewportTop))) {
+        const currentTop = target.getBoundingClientRect().top;
+        const targetScroll = window.scrollY + currentTop - Number(pending.targetViewportTop);
+        window.scrollTo({ top: Math.max(0, targetScroll), behavior: 'auto' });
+      } else {
+        window.scrollTo({ top: Number(pending.top) || 0, behavior: 'auto' });
+      }
       try { sessionStorage.removeItem(partyReturnKey); } catch {}
     };
     requestAnimationFrame(() => requestAnimationFrame(restore));
@@ -25,7 +32,15 @@
   document.addEventListener('click', event => {
     const rulesLink = event.target.closest('.party-rules-link');
     if (!rulesLink) return;
-    try { sessionStorage.setItem(partyReturnKey, JSON.stringify({ top: window.scrollY, at: Date.now() })); } catch {}
+    try {
+      const rect = rulesLink.getBoundingClientRect();
+      sessionStorage.setItem(partyReturnKey, JSON.stringify({
+        top: window.scrollY,
+        targetId: rulesLink.id || '',
+        targetViewportTop: rect.top,
+        at: Date.now()
+      }));
+    } catch {}
   });
 
   const status = document.querySelector('[data-reservation-status]');
@@ -150,28 +165,105 @@
   });
   const food = document.getElementById('masa-adultilor');
   const foodLead = food.querySelector('.party-topic-lead');
-  if (foodLead) foodLead.outerHTML = '<ul class="party-food-bullets"><li>Platouri pentru adulți · recomandare: <strong>5 persoane / platou</strong></li><li>Prețuri între <strong>240 și 310 lei / platou</strong>, în funcție de variantă</li><li>Cafeaua și băuturile se comandă la noi</li></ul>';
-  food.querySelector('details')?.remove();
+  if (foodLead) foodLead.outerHTML = '<div class="party-food-summary"><ul class="party-food-bullets"><li>Platouri pentru adulți · aproximativ <strong>5 persoane / platou</strong></li><li><strong>240–310 lei / platou</strong> · cafeaua și băuturile se comandă la noi</li></ul><button class="party-food-open" type="button" data-party-platter-open>Vezi platourile și alege →</button></div>';
+  food.querySelectorAll('details').forEach(detail => detail.remove());
   const platterCategories = [
-    ['rece', 'Platou rece'],
-    ['cald', 'Platou cald'],
-    ['vegetarian', 'Vegetarian / de post'],
-    ['fructe-de-mare', 'Fructe de mare']
+    ['rece', '<span class="party-menu-emoji" aria-hidden="true">🥗</span><span>Platou rece</span>'],
+    ['cald', '<span class="party-menu-emoji" aria-hidden="true">🍗</span><span>Platou cald</span>'],
+    ['vegetarian', '<span class="party-menu-emoji" aria-hidden="true">🥦</span><span>Vegetarian / de post</span>'],
+    ['fructe-de-mare', '<span class="party-menu-emoji" aria-hidden="true">🦐</span><span>Fructe de mare</span>']
   ];
-  const platterControls = platterCategories.map(([category, label]) => {
-    const options = adultPlatters.filter(platter => platter.category === category).map(platter => `<option value="${platter.id}">${escapeHtml(platter.name)} · ${money(platter.price)} lei</option>`).join('');
-    return `<div class="party-food-choice"><span class="party-food-choice-title">${label}</span><select id="party-platter-${category}" data-platter-category="${category}" aria-label="Alegeți varianta de ${label.toLowerCase()}"><option value="">Selectează platoul</option>${options}</select><label class="party-food-quantity"><span>Câte?</span><input type="number" min="0" step="1" value="0" data-platter-quantity="${category}" aria-label="Câte platouri din varianta aleasă"></label></div>`;
-  }).join('');
   const catalogCategories = platterCategories.map(([category, label]) => {
-    const entries = adultPlatters.filter(platter => platter.category === category).map(platter => `<details class="party-menu-item"><summary><span>${escapeHtml(platter.name)}</span><b>${money(platter.price)} lei</b></summary><div class="party-answer"><p class="party-menu-meta">${escapeHtml(platter.weight)} · recomandat pentru aproximativ 5 persoane</p><ul>${platter.items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul></div></details>`).join('');
+    const entries = adultPlatters.filter(platter => platter.category === category).map(platter => `<details class="party-menu-item" id="party-platter-detail-${platter.id}"><summary><span>${escapeHtml(platter.name)}</span><b>${money(platter.price)} lei</b></summary><div class="party-answer"><p class="party-menu-meta">${escapeHtml(platter.weight)} · recomandat pentru aproximativ 5 persoane</p><ul>${platter.items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul><div class="party-platter-pick"><button type="button" data-platter-add data-platter-id="${platter.id}">Adaugă platoul</button><div class="party-platter-stepper" role="group" aria-label="Număr de ${escapeHtml(platter.name)}"><button type="button" data-platter-step="-1" data-platter-id="${platter.id}" aria-label="Scade un platou">−</button><output data-platter-count="${platter.id}">0</output><button type="button" data-platter-step="1" data-platter-id="${platter.id}" aria-label="Adaugă încă un platou">+</button></div><input class="party-platter-quantity-input" type="number" min="0" step="1" value="0" data-platter-quantity="${platter.id}" aria-label="Număr de ${escapeHtml(platter.name)}"></div></div></details>`).join('');
     return `<details class="party-menu-group"><summary>${label} <small>${adultPlatters.filter(platter => platter.category === category).length} variante</small></summary><div class="party-menu-group-body">${entries}</div></details>`;
   }).join('');
-  const childrenCatalog = `<details class="party-menu-group"><summary>Meniuri pentru copii <small>2 variante de meniu</small></summary><div class="party-menu-group-body"><details class="party-menu-item"><summary>Meniu simplu · alegi preparatul și garnitura</summary><div class="party-answer"><ul>${childrenSimple.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul><p><strong>Garnituri:</strong> cartofi prăjiți, cartofi wedges, cartofi piure, orez sârbesc sau crochete de cartofi.</p></div></details>${childrenMix.map(([name, content]) => `<details class="party-menu-item"><summary>${name}</summary><div class="party-answer"><p>${escapeHtml(content)}</p></div></details>`).join('')}</div></details>`;
-  food.querySelector('.party-food-bullets')?.insertAdjacentHTML('afterend', `<section class="party-platter-card" aria-labelledby="party-platter-title"><div class="party-platter-heading"><span class="party-platter-icon" aria-hidden="true">🍽️</span><div><p class="party-platter-kicker">MASA ADULȚILOR</p><h4 id="party-platter-title">Platouri, pe îndelete</h4><p>Citiți întâi componența. Apoi alegeți varianta și numărul de platouri.</p></div></div><details class="party-menu-catalog"><summary>1. Vezi ce conține fiecare platou</summary><div class="party-answer"><p class="party-menu-note">Oferta de mai jos include gramajele, porțiile și toate ingredientele. Pentru alergii, adaptări și disponibilitatea exactă, confirmăm detaliile la rezervare.</p>${childrenCatalog}${catalogCategories}</div></details><div class="party-platter-select-heading"><span>2. Alegeți platoul</span><small>Varianta · apoi Câte?</small></div><div class="party-platter-controls" data-platter-controls>${platterControls}</div></section>`);
+  const childrenCatalog = `<details class="party-menu-group"><summary><span class="party-menu-emoji" aria-hidden="true">🧒</span><span>Meniuri pentru copii</span><small>2 variante de meniu</small></summary><div class="party-menu-group-body"><details class="party-menu-item"><summary>Meniu simplu · alegi preparatul și garnitura</summary><div class="party-answer"><ul>${childrenSimple.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul><p><strong>Garnituri:</strong> cartofi prăjiți, cartofi wedges, cartofi piure, orez sârbesc sau crochete de cartofi.</p></div></details>${childrenMix.map(([name, content]) => `<details class="party-menu-item"><summary>${name}</summary><div class="party-answer"><p>${escapeHtml(content)}</p></div></details>`).join('')}</div></details>`;
+  const platterModal = document.createElement('div');
+  platterModal.className = 'party-platter-modal';
+  platterModal.hidden = true;
+  platterModal.innerHTML = `<div class="party-platter-backdrop" data-party-platter-close></div><section class="party-platter-panel" role="dialog" aria-modal="true" aria-labelledby="party-platter-title"><div class="party-platter-panel-head"><div class="party-platter-heading"><span class="party-platter-icon" aria-hidden="true">🍽️</span><div><p class="party-platter-kicker">MASA ADULȚILOR</p><h4 id="party-platter-title">Platouri, pe îndelete</h4><p>Descoperiți variantele, apoi alegeți ce vi se potrivește.</p></div></div><button class="party-platter-close" type="button" data-party-platter-close aria-label="Închide platourile">×</button></div><details class="party-menu-catalog" open><summary>Vezi ce conține fiecare platou</summary><div class="party-answer"><p class="party-menu-note">Gramajele și ingredientele sunt afișate pentru fiecare variantă. Detaliile finale se confirmă la rezervare.</p>${childrenCatalog}${catalogCategories}</div></details><section class="party-platter-summary" data-platter-summary aria-live="polite"><h5>Ce ați ales</h5><p>Nu ați ales încă niciun platou.</p></section><button class="party-platter-done" type="button" data-party-platter-close>Salvează și revino la pagina anterioară</button></section>`;
+  document.body.append(platterModal);
+  let platterReturnContext = null;
+  const openPlatterModal = returnContext => {
+    platterReturnContext = returnContext || null;
+    platterModal.hidden = false;
+    document.body.classList.add('party-platter-modal-open');
+    platterModal.querySelector('.party-platter-close')?.focus();
+  };
+  const closePlatterModal = () => {
+    const returnContext = platterReturnContext;
+    platterReturnContext = null;
+    platterModal.hidden = true;
+    document.body.classList.remove('party-platter-modal-open');
+    requestAnimationFrame(() => {
+      if (returnContext) {
+        window.scrollTo({ top: returnContext.top, behavior: 'smooth' });
+        returnContext.focus?.focus();
+      } else {
+        food.querySelector('[data-party-platter-open]')?.focus();
+      }
+    });
+  };
+  const showPlatterDetail = (id, returnContext = null) => {
+    const detail = document.getElementById(`party-platter-detail-${id}`);
+    if (!detail) return;
+    openPlatterModal(returnContext);
+    detail.open = true;
+    requestAnimationFrame(() => detail.scrollIntoView({ behavior: 'smooth', block: 'center' }));
+  };
+  food.querySelector('[data-party-platter-open]')?.addEventListener('click', openPlatterModal);
+  platterModal.querySelectorAll('[data-party-platter-close]').forEach(button => button.addEventListener('click', closePlatterModal));
+  mobileBreakdown?.addEventListener('click', event => {
+    const link = event.target.closest('[data-mobile-breakdown-link][data-platter-revisit]');
+    if (!link) return;
+    event.preventDefault();
+    showPlatterDetail(link.dataset.platterRevisit, { top: window.scrollY, focus: link });
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !platterModal.hidden) closePlatterModal();
+  });
   document.querySelector('.party-price-note').insertAdjacentHTML('afterend', '<p class="party-extra-note">Animatorul, tema și alte surprize pot fi adăugate mai jos, dacă vă doriți.</p><details class="party-detail party-calculation"><summary>Vezi calculul costului</summary><div class="party-answer" data-price-breakdown></div></details>');
   const getCount = (input, min) => {
     const value = Number(input.value);
     return Number.isSafeInteger(value) && value >= min ? value : min;
+  };
+  const partyStateKey = 'becky-party-configuration';
+  const savePartyState = () => {
+    try {
+      localStorage.setItem(partyStateKey, JSON.stringify({
+        children: childInput?.value || '',
+        mode: document.querySelector('[name="party-mode"]:checked')?.value || '',
+        date: reservationDate?.value || '',
+        extras: extras.filter(extra => document.querySelector(`[data-extra="${extra.id}"]`)?.checked).map(extra => extra.id),
+        platters: [...document.querySelectorAll('[data-platter-quantity]')].reduce((state, input) => {
+          state[input.dataset.platterQuantity] = getCount(input, 0);
+          return state;
+        }, {})
+      }));
+    } catch {}
+  };
+  const restorePartyState = () => {
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(partyStateKey) || 'null'); } catch {}
+    if (!saved) return;
+    if (childInput && Number.isSafeInteger(Number(saved.children)) && Number(saved.children) >= 1) childInput.value = saved.children;
+    if (saved.mode) {
+      const mode = document.querySelector(`[name="party-mode"][value="${CSS.escape(saved.mode)}"]`);
+      if (mode) mode.checked = true;
+    }
+    if (reservationDate && saved.date) reservationDate.value = saved.date;
+    const savedExtras = new Set(Array.isArray(saved.extras) ? saved.extras : []);
+    extras.forEach(extra => {
+      const checkbox = document.querySelector(`[data-extra="${extra.id}"]`);
+      if (checkbox) checkbox.checked = savedExtras.has(extra.id);
+    });
+    Object.entries(saved.platters || {}).forEach(([id, value]) => {
+      const input = document.querySelector(`[data-platter-quantity="${id}"]`);
+      const output = document.querySelector(`[data-platter-count="${id}"]`);
+      const quantity = Math.max(0, Math.floor(Number(value) || 0));
+      if (input) input.value = quantity;
+      if (output) output.textContent = String(quantity);
+    });
   };
   const updatePrice = () => {
     const count = getCount(childInput, 1);
@@ -179,12 +271,13 @@
     const base = exclusive ? 1275 + Math.max(0, count - 10) * 105 : count * 105;
     const selected = extras.filter(extra => document.querySelector(`[data-extra="${extra.id}"]`).checked);
     const rows = [{ label: `Pachet · ${count} copii · ${exclusive ? 'exclusivitate' : 'fără exclusivitate'}`, price: base, target: '#pachete' }, ...selected.map(extra => ({ ...extra, target: `#${extra.id}` }))];
-    document.querySelectorAll('[data-platter-category]').forEach(select => {
-      const platter = adultPlatters.find(item => item.id === select.value);
-      const quantityInput = document.querySelector(`[data-platter-quantity="${select.dataset.platterCategory}"]`);
+    const platterRows = [];
+    document.querySelectorAll('[data-platter-quantity]').forEach(quantityInput => {
+      const platter = adultPlatters.find(item => item.id === quantityInput.dataset.platterQuantity);
       const quantity = getCount(quantityInput, 0);
-      if (platter && quantity) rows.push({ label: `${quantity} × ${platter.name}`, price: quantity * platter.price, target: '#masa-adultilor' });
+      if (platter && quantity) platterRows.push({ label: `${quantity} × ${platter.name}`, price: quantity * platter.price, target: `#party-platter-detail-${platter.id}`, id: platter.id });
     });
+    rows.push(...platterRows);
     const total = rows.reduce((sum, row) => sum + row.price, 0);
     document.querySelector('[data-party-total]').innerHTML = `${money(total)} <small>lei</small>`;
     document.querySelector('.party-estimate > span').textContent = rows.length > 1 ? 'Pachet + opțiunile alese' : 'Costul pachetului';
@@ -192,7 +285,11 @@
       ? count <= 10 ? 'Până la 10 copii incluși · apoi 105 lei/copil în plus.' : `1.275 lei + ${count - 10} copii × 105 lei.`
       : `${count} copii × 105 lei · fără număr minim.`;
     document.querySelector('[data-price-breakdown]').innerHTML = rows.map(row => `<p class="party-cost-row"><span>${row.label}</span><strong>${money(row.price)} lei</strong></p>`).join('') + '<p>Avans pentru rezervare: 200 lei. Tortul, băuturile adulților și eventualele prelungiri nu intră în acest calcul.</p>';
-    if (mobileBreakdown) mobileBreakdown.innerHTML = `<span class="party-mobile-breakdown-title">Opțiunile alese</span>${rows.map(row => `<a class="party-mobile-breakdown-row" href="${row.target}" data-mobile-breakdown-link><span class="party-mobile-eye" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></span><span class="party-mobile-breakdown-label">${row.label}</span><b>${money(row.price)} lei</b></a>`).join('')}<span class="party-mobile-breakdown-total"><span>Total estimat</span><b>${money(total)} lei</b></span>`;
+    const platterSummary = document.querySelector('[data-platter-summary]');
+    if (platterSummary) platterSummary.innerHTML = platterRows.length
+      ? `<h5>Ce ați ales</h5>${platterRows.map(row => `<button type="button" class="party-platter-summary-row" data-platter-revisit="${row.id}"><span>${row.label}</span><b>${money(row.price)} lei</b><i aria-hidden="true">↗</i></button>`).join('')}`
+      : '<h5>Ce ați ales</h5><p>Nu ați ales încă niciun platou.</p>';
+    if (mobileBreakdown) mobileBreakdown.innerHTML = `<span class="party-mobile-breakdown-title">Opțiunile alese</span>${rows.map(row => `<a class="party-mobile-breakdown-row" href="${row.target}" data-mobile-breakdown-link${row.id ? ` data-platter-revisit="${row.id}"` : ''}><span class="party-mobile-eye" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></span><span class="party-mobile-breakdown-label">${row.label}</span><b>${money(row.price)} lei</b></a>`).join('')}<span class="party-mobile-breakdown-total"><span>Total estimat</span><b>${money(total)} lei</b></span>`;
     document.querySelector('[data-count-step="-1"]').disabled = count <= 1;
     selected.forEach(extra => document.getElementById(extra.id).classList.add('is-added'));
     extras.filter(extra => !selected.includes(extra)).forEach(extra => document.getElementById(extra.id).classList.remove('is-added'));
@@ -206,12 +303,13 @@
     reservationLink.setAttribute('aria-disabled', String(!selectedDate));
     document.querySelector('[data-mobile-total]').textContent = `${money(total)} lei`;
     document.querySelector('[data-mobile-details-label]').textContent = `${count} copii${rows.length > 1 ? ' · opțiuni incluse' : ' · pachet'}`;
+    savePartyState();
   };
   document.querySelectorAll('[data-count-step]').forEach(button => button.addEventListener('click', () => {
     childInput.value = Math.max(1, getCount(childInput, 1) + Number(button.dataset.countStep));
     updatePrice();
   }));
-  document.querySelectorAll('[name="party-mode"], #party-children, [data-extra], [data-platter-category], [data-platter-quantity]').forEach(input => {
+  document.querySelectorAll('[name="party-mode"], #party-children, [data-extra], [data-platter-quantity]').forEach(input => {
     input.addEventListener('input', updatePrice);
     input.addEventListener('change', () => {
       if (input.type === 'number') input.value = getCount(input, input === childInput ? 1 : 0);
@@ -221,6 +319,34 @@
   document.querySelectorAll('[data-platter-quantity]').forEach(input => input.addEventListener('focus', () => {
     if (input.value === '0') input.select();
   }));
+  const setPlatterQuantity = (id, nextValue) => {
+    const input = document.querySelector(`[data-platter-quantity="${id}"]`);
+    const output = document.querySelector(`[data-platter-count="${id}"]`);
+    if (!input) return;
+    const value = Math.max(0, Math.floor(Number(nextValue) || 0));
+    input.value = value;
+    if (output) output.textContent = String(value);
+    updatePrice();
+  };
+  document.querySelectorAll('[data-platter-add]').forEach(button => button.addEventListener('click', () => {
+    const input = document.querySelector(`[data-platter-quantity="${button.dataset.platterId}"]`);
+    setPlatterQuantity(button.dataset.platterId, getCount(input, 0) + 1);
+  }));
+  document.querySelectorAll('[data-platter-step]').forEach(button => button.addEventListener('click', () => {
+    const input = document.querySelector(`[data-platter-quantity="${button.dataset.platterId}"]`);
+    setPlatterQuantity(button.dataset.platterId, getCount(input, 0) + Number(button.dataset.platterStep));
+  }));
+  document.querySelectorAll('[data-platter-quantity]').forEach(input => input.addEventListener('input', () => {
+    const value = getCount(input, 0);
+    const output = document.querySelector(`[data-platter-count="${input.dataset.platterQuantity}"]`);
+    if (output) output.textContent = String(value);
+    updatePrice();
+  }));
+  document.querySelector('[data-platter-summary]')?.addEventListener('click', event => {
+    const button = event.target.closest('[data-platter-revisit]');
+    if (!button) return;
+    showPlatterDetail(button.dataset.platterRevisit);
+  });
   reservationDate?.addEventListener('input', updatePrice);
   document.querySelector('[data-reservation-link]')?.addEventListener('click', event => {
     if (!reservationDate?.value) {
@@ -244,6 +370,7 @@
     mobileDetailsToggle?.setAttribute('aria-expanded', 'false');
     mobileBreakdown.hidden = true;
   });
+  restorePartyState();
   updatePrice();
 
   const jumps = [...document.querySelectorAll('.party-jumps a')];

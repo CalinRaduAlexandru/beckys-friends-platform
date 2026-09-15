@@ -71,15 +71,15 @@ Document de lucru pentru completarea secțiunii „Un pachet simplu și clar”.
 - [ ] 30. Curtea și gonflabila sunt disponibile permanent sau doar în anumite condiții?
   - Răspuns: permanent dacă condițiile meteorologice o permite
 - [ ] 31. Ce se întâmplă dacă vremea nu permite folosirea exteriorului?
-  - Răspuns: petrecerea se desfășoară doar in interior. Există și zonă de mese pentru părinți în interior. De asemenea au televizor cu camere de supraveghere pentru tot spațiul și în interior cum au afara.
+  - Răspuns: petrecerea se desfășoară doar in interior. Există și zonă de mese pentru părinți în interior. De asemenea au televizor cu camere de supraveghere pentru tot spațiul și în interior, cum au afara.
 - [ ] 32. Există personal Becky care supraveghează sau interacționează cu copiii?
-  - Răspuns: da. Copiii sunt supravegheați în permanență de cel puțin două persoane care asigură atât siguranța copiilor cât și îndrumarea spre folosirea tuturor facilităților din spațiu și propunerea de activități interactive.
+  - Răspuns: da. Copiii sunt supravegheați în permanență de o persoană care asigură atât siguranța copiilor cât și îndrumarea spre folosirea tuturor facilităților din spațiu și propunerea de activități interactive.
 - [ ] 33. Cine se ocupă de pregătirea mesei și de curățenie?
   - Răspuns: Echipa Becky
 - [ ] 34. Părinții trebuie să rămână în locație?
-  - Răspuns: Au mese rezervate pentru numărul de adulți înregistrați dar aceștia pot să vină și să plece după bunul plac
+  - Răspuns: Da, dacă rămâne minim un reprezentant al grupului. Au mese rezervate pentru numărul de adulți înregistrați dar aceștia pot să vină și să plece după bunul plac.
 - [ ] 35. Există un spațiu separat în care adulții pot sta?
-  - Răspuns: atât în exterior cât și în interior
+  - Răspuns: atât în exterior cât și în interior există o zonă de mese.
 - [ ] 36. Se poate pune muzică aleasă de familie?
   - Răspuns: da
 - [ ] 37. Putem aduce propriile decorațiuni?
@@ -96,34 +96,34 @@ Document de lucru pentru completarea secțiunii „Un pachet simplu și clar”.
 ## Ce este inclus efectiv
 
 - [ ] 42. Ce înseamnă concret „baloane”: decor simplu, baloane individuale sau baloane cu heliu?
-  - Răspuns:
+  - Răspuns: Scrierea numeșui din baloane de folie, cifra aniversară si covor din baloane de latex. 
 - [ ] 43. Farfuriile, paharele și tacâmurile sunt tematice sau standard?
-  - Răspuns:
+  - Răspuns: standard in pachetul standard tematica personalizată are cost separat si include si acestea.
 - [ ] 44. Sunt incluse șervețelele, lumânările și cuțitul pentru tort?
-  - Răspuns:
+  - Răspuns: servetele da, lumanarea pentru tort nu, cutit da, taiem noi tortul.
 - [ ] 45. Masa sărbătoritului este decorată diferit?
-  - Răspuns:
+  - Răspuns:Toate mesele copiilor sunt pregătite cu servetele, pahare și farfurii tematice (pentru pachetul tematic) sau normale de happy birthday standard in caz contrar. 
 - [ ] 46. Există invitații digitale incluse?
-  - Răspuns:
+  - Răspuns: DA
 - [ ] 47. Putem personaliza mesajul, culorile sau decorul aniversar?
-  - Răspuns:
+  - Răspuns: depinde, nu inteleg intrebarea
 
 ## Voucherele
 
 - [ ] 48. Câte vouchere sunt oferite?
-  - Răspuns:
+  - Răspuns: fiecare copil un voucher de 1h... cu mențiunea că nu se pot folosi cumulativ vouchere în aceeași zi.
 - [ ] 49. Primește voucher fiecare invitat și sărbătoritul?
-  - Răspuns:
+  - Răspuns:da
 - [ ] 50. Cât timp sunt valabile?
-  - Răspuns:
+  - Răspuns: o lună de la aniversare
 - [ ] 51. În ce zile și intervale pot fi folosite?
-  - Răspuns:
+  - Răspuns: oricand suntem deschisi
 - [ ] 52. Ora gratuită necesită rezervare?
-  - Răspuns:
+  - Răspuns: nu
 - [ ] 53. Voucherul include doar accesul sau și consumație?
   - Răspuns: doar accesul
 - [ ] 54. Poate fi transferat altui copil?
-  - Răspuns: da
+  - Răspuns: nu
 
 ## Extraopțiuni
 
@@ -132,22 +132,22 @@ Document de lucru pentru completarea secțiunii „Un pachet simplu și clar”.
 - [ ] 56. Ce activități face animatorul în ora inclusă?
   - Răspuns: activități interactive, modelare de baloane, pictură pe față
 - [ ] 57. Animatorul este potrivit pentru toate vârstele?
-  - Răspuns: da, copiii de vârstele 3-9 ani se pot bucura de animator
+  - Răspuns: da, copiii de vârstele 3-10 ani se pot bucura de animator
 - [ ] 58. Ce include programul magicianului?
-  - Răspuns:
+  - Răspuns: 45 de minute de magie interactivă cu implicarea copiilor.
 - [ ] 59. Tematica personalizată include doar consumabilele enumerate sau și decorul mesei?
-  - Răspuns:
+  - Răspuns: si decorul
 - [ ] 60. Piñata este umplută? Ce conține?
-  - Răspuns:
+  - Răspuns: pot fi dulciuri/ jucării sau mix intre ele la alegerea părinților.
 - [ ] 61. Extraopțiunile trebuie rezervate cu un anumit număr de zile înainte?
-  - Răspuns:
+  - Răspuns: tematica 10 zile înainte, animator și pinata minim 3 zile.
 - [ ] 62. Putem aduce propriul animator, fotograf sau furnizor?
-  - Răspuns: da
+  - Răspuns: animator nu. fotograf da. furnizor doar cu cei care avem contract se poate aduce mâncare.
 
 ## Mâncarea adulților
 
 - [ ] 63. Ce conține platoul rece?
-  - Răspuns:
+  - Răspuns: 
 - [ ] 64. Ce conține platoul cald?
   - Răspuns:
 - [ ] 65. Pentru câte persoane este recomandat fiecare platou?
@@ -157,9 +157,9 @@ Document de lucru pentru completarea secțiunii „Un pachet simplu și clar”.
 - [ ] 67. Există opțiuni vegetariene sau adaptate alergiilor?
   - Răspuns:
 - [ ] 68. Adulții pot comanda cafea și băuturi separat?
-  - Răspuns:
+  - Răspuns: doar de la noi
 - [ ] 69. Se poate aduce mâncare pentru adulți din exterior?
-  - Răspuns:
+  - Răspuns: am mai răspuns. da, gustări (alune, fistic, sărățele, prăjiturele, saleuri). Băuturi nu.  
 
 ## Prioritate pentru prima versiune a paginii
 

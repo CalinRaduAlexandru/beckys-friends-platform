@@ -41,7 +41,7 @@ Clasificarea confirmată pentru activitățile active: **A / small** — Întreb
 - Ghicește răspunsul prietenei
 - Top 3
 - Povestea dintr-o fotografie
-- Povestea pe rând
+- Povestea pe rândq
 - Completează propoziția
 - Cea mai amuzantă amintire
 - Cea mai proastă idee pe care ai avut-o

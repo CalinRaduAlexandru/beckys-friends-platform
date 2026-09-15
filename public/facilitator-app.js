@@ -126,12 +126,19 @@ async function openLandscapeReference() {
   });
   video.load();
 
-  const close = async () => {
+  const close = () => {
     if (restartTimer) clearTimeout(restartTimer);
+    cancelLongPress?.();
     video.pause();
-    if (document.fullscreenElement === overlay) await document.exitFullscreen?.().catch(() => {});
-    try { screen.orientation?.unlock?.(); } catch {}
+    const wasFullscreen = document.fullscreenElement === overlay;
+    overlay.style.pointerEvents = 'none';
     overlay.remove();
+    document.activeElement?.blur?.();
+    if (wasFullscreen) document.exitFullscreen?.().catch(() => {});
+    try { screen.orientation?.unlock?.(); } catch {}
+    document.body.style.removeProperty('touch-action');
+    document.documentElement.style.removeProperty('touch-action');
+    window.dispatchEvent(new Event('resize'));
   };
   let longPressTimer = null;
   let pressX = 0;

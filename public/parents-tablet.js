@@ -410,11 +410,12 @@ document.addEventListener('fullscreenchange', () => lockParentsLandscape());
 document.addEventListener('visibilitychange', () => { if (!document.hidden) lockParentsLandscape(); });
 window.addEventListener('pageshow', () => lockParentsLandscape());
 
-function activityProgressMarkup() {
-  const progressStages = selectedGroupSize === 'large'
+function activityProgressMarkup(tabletGrid = window.matchMedia(TABLET_ACTIVITY_GRID_QUERY).matches) {
+  const progressStages = selectedGroupSize === 'large' && !tabletGrid
     ? [['Dezlănțuire', '🤩'], ['Provocări', '✨'], ['Relax', '☁️']]
     : [['Relax', '☁️'], ['Provocări', '✨'], ['Dezlănțuire', '🤩']];
-  return `<div class="slider-progress" aria-label="Progres de la relaxare spre distracție"><div class="slider-progress-line" data-slider-progress-line data-stage="0"><span class="slider-progress-fill" data-slider-progress-fill><span class="slider-progress-shimmer"></span></span><span class="slider-progress-sparkles" aria-hidden="true">${Array.from({ length: 12 }, (_, index) => `<i style="--spark:${index}">${index % 3 === 0 ? '✦' : index % 3 === 1 ? '·' : '✧'}</i>`).join('')}</span><span class="slider-progress-avatar" data-slider-progress-avatar>😌</span>${progressStages.map(([label, icon], index) => `<span class="slider-milestone" style="left:${index / (progressStages.length - 1) * 100}%" data-milestone="${index}"><i>${icon}<small>${label}</small></i></span>`).join('')}</div></div>`;
+  const sparkles = `<span class="slider-progress-sparkles" aria-hidden="true">${Array.from({ length: 12 }, (_, index) => `<i style="--spark:${index}">${index % 3 === 0 ? '✦' : index % 3 === 1 ? '·' : '✧'}</i>`).join('')}</span>`;
+  return `<div class="slider-progress" aria-label="Progres de la relaxare spre distracție"><div class="slider-progress-line" data-slider-progress-line data-stage="0"><span class="slider-progress-fill" data-slider-progress-fill><span class="slider-progress-shimmer"></span></span>${sparkles}<span class="slider-progress-avatar" data-slider-progress-avatar>😌</span>${progressStages.map(([label, icon], index) => `<span class="slider-milestone" style="left:${index / (progressStages.length - 1) * 100}%" data-milestone="${index}"><i>${icon}<small>${label}</small></i></span>`).join('')}</div></div>`;
 }
 function resetLocalProfileState() { localStorage.removeItem(COMPLETED_ACTIVITIES_KEY); localStorage.removeItem(ACTIVITY_PROGRESS_KEY); localStorage.removeItem(HIDE_COMPLETED_ACTIVITIES_KEY); localStorage.removeItem(GROUP_SIZE_KEY); localStorage.removeItem('becky-parents-last-activity:v1'); active = null; completionReturnId = null; animalQueueActivityId = null; animalRoundQueue = []; animalScore = { correct: 0, wrong: 0 }; selectedGroupSize = 'small'; }
 function showProfilePicker() {
@@ -490,8 +491,12 @@ function showSessionGate() {
     const begin = mode => {
       const gateLogo = gate.querySelector('.session-gate-logo');
       const openingLogo = opening.querySelector('.opening-logo');
+      const tabletGridOpening = window.matchMedia(TABLET_ACTIVITY_GRID_QUERY).matches;
+      let openingLogoStartRect = null;
+      opening.classList.toggle('is-tablet-grid-opening', tabletGridOpening);
       if (gateLogo && openingLogo) {
         const rect = gateLogo.getBoundingClientRect();
+        openingLogoStartRect = rect;
         openingLogo.getAnimations().forEach(animation => animation.cancel());
         openingLogo.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;max-height:none;animation:none;opacity:1;transform:translate3d(0,0,0) scale(1);will-change:transform,opacity`;
       }
@@ -502,7 +507,24 @@ function showSessionGate() {
         if (!openingLogo) return;
         const rise = Math.min(112, Math.max(48, window.innerHeight * .08));
         const compactLandscape = window.matchMedia('(orientation: landscape) and (min-aspect-ratio: 3/2) and (max-height: 720px)').matches;
-        const keyframes = compactLandscape ? [
+        const tabletGridTranslateX = openingLogoStartRect ? window.innerWidth / 2 - (openingLogoStartRect.left + openingLogoStartRect.width / 2) : 0;
+        const tabletGridTop = Math.max(12, Math.min(28, window.innerHeight * .025));
+        const tabletLogoFinalScale = 1.333;
+        const tabletLogoEarlyScale = 1.08;
+        const tabletGridTranslateY = openingLogoStartRect
+          ? tabletGridTop + (tabletLogoFinalScale - 1) * openingLogoStartRect.height / 2 - openingLogoStartRect.top
+          : -rise * 1.8;
+        const tabletLogoEarlyTranslateY = openingLogoStartRect
+          ? tabletGridTop + (tabletLogoEarlyScale - 1) * openingLogoStartRect.height / 2 - openingLogoStartRect.top
+          : -rise * 2.2;
+        const tabletLogoEase = 'cubic-bezier(.42,0,.58,1)';
+        const tabletGridKeyframes = [
+          { opacity: 1, transform: 'translate3d(0,0,0) scale(1)', offset: 0, easing: 'cubic-bezier(.16,1,.3,1)' },
+          { opacity: 1, transform: `translate3d(${Math.round(tabletGridTranslateX)}px,${Math.round(tabletLogoEarlyTranslateY)}px,0) scale(${tabletLogoEarlyScale})`, offset: .2, easing: tabletLogoEase },
+          { opacity: 1, transform: `translate3d(${Math.round(tabletGridTranslateX)}px,${Math.round(tabletGridTranslateY)}px,0) scale(${tabletLogoFinalScale})`, offset: .42, easing: tabletLogoEase },
+          { opacity: 1, transform: `translate3d(${Math.round(tabletGridTranslateX)}px,${Math.round(tabletGridTranslateY)}px,0) scale(${tabletLogoFinalScale})`, offset: 1 }
+        ];
+        const keyframes = tabletGridOpening ? tabletGridKeyframes : compactLandscape ? [
           { opacity: 1, transform: 'translate3d(0,0,0) scale(1)', offset: 0, easing: 'cubic-bezier(.45,0,.55,1)' },
           { opacity: 1, transform: `translate3d(0,-${rise}px,0) scale(1)`, offset: .58, easing: 'cubic-bezier(.34,1.25,.64,1)' },
           { opacity: 1, transform: `translate3d(0,-${rise}px,0) scale(1.095)`, offset: .70, easing: 'ease-out' },
@@ -516,7 +538,7 @@ function showSessionGate() {
           { transform: `translate3d(0,-${rise}px,0) scale(.985)`, offset: .92, easing: 'ease-in-out' },
           { transform: `translate3d(0,-${rise}px,0) scale(1.035)`, offset: 1 }
         ];
-        openingLogo.animate(keyframes, { duration: compactLandscape ? 1500 : 1380, fill: 'forwards' });
+        openingLogo.animate(keyframes, { duration: tabletGridOpening ? 980 : compactLandscape ? 1500 : 1380, fill: 'forwards' });
       });
       resolve(mode);
     };
@@ -559,15 +581,21 @@ function showProfileNameForm(initialName = '') {
 }
 
 function currentGalleryActivities() {
-  return activities.filter(item => (item.illustration || item.cardIcon) && ACTIVE_ACTIVITY_ORDER.includes(item.id) && supportsGroupSize(item) && (activityIsVisible(item) || item.id === completionReturnId)).sort(compareActivitiesForGroup);
+  const tabletGrid = window.matchMedia(TABLET_ACTIVITY_GRID_QUERY).matches;
+  return activities.filter(item => (item.illustration || item.cardIcon) && ACTIVE_ACTIVITY_ORDER.includes(item.id) && supportsGroupSize(item) && (activityIsVisible(item) || item.id === completionReturnId)).sort(tabletGrid
+    ? (first, second) => ACTIVE_ACTIVITY_ORDER.indexOf(first.id) - ACTIVE_ACTIVITY_ORDER.indexOf(second.id)
+    : compareActivitiesForGroup);
 }
+
+const TABLET_ACTIVITY_GRID_QUERY = '(min-width: 800px) and (min-height: 600px) and (orientation: landscape)';
 
 function renderLibrary() {
   insights.closeVisit();
   stopMusicGame();
+  const tabletGrid = window.matchMedia(TABLET_ACTIVITY_GRID_QUERY).matches;
   const galleryActivities = currentGalleryActivities();
   const progressMarkup = activityProgressMarkup();
-  const progressStages = selectedGroupSize === 'large'
+  const progressStages = selectedGroupSize === 'large' && !tabletGrid
     ? [['Dezlănțuire', '🤩'], ['Provocări', '✨'], ['Relax', '☁️']]
     : [['Relax', '☁️'], ['Provocări', '✨'], ['Dezlănțuire', '🤩']];
   const galleryMarkup = `<section class="activity-slider" aria-label="Alegeți o activitate"><div class="slider-viewport"><div class="slider-track">${galleryActivities.map(item => `<button type="button" class="activity-card${isActivityLocked(item) ? ' is-locked' : ''}" data-id="${esc(item.id)}" ${isActivityLocked(item) ? 'disabled aria-disabled="true"' : ''}>${activityLockMarkup(item)}${activityCompletionBadge(item)}${item.illustration ? `<img class="activity-illustration" src="${esc(item.illustration)}" alt="" loading="lazy">` : `<span class="activity-icon-illustration" aria-hidden="true">${esc(item.cardIcon || '✦')}</span>`}<h2 class="${item.title.trim().includes(' ') ? 'has-multiple-words' : ''}">${cardTitleMarkup(item.title)}</h2></button>`).join('')}</div></div></section>`;
@@ -582,8 +610,13 @@ function renderLibrary() {
     requestAnimationFrame(() => {
       const card = root.querySelector(`.activity-card[data-id="${completedId}"]`);
       if (!card) { completionReturnId = null; return; }
-      const targetScrollLeft = Math.max(0, Math.min(viewport.scrollWidth - viewport.clientWidth, card.offsetLeft - (viewport.clientWidth - card.offsetWidth) / 2));
-      viewport.scrollTo({ left: targetScrollLeft, behavior: 'auto' });
+      if (window.matchMedia(TABLET_ACTIVITY_GRID_QUERY).matches) {
+        const targetScrollTop = Math.max(0, card.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop - (viewport.clientHeight - card.offsetHeight) / 2);
+        viewport.scrollTo({ top: targetScrollTop, behavior: 'auto' });
+      } else {
+        const targetScrollLeft = Math.max(0, Math.min(viewport.scrollWidth - viewport.clientWidth, card.offsetLeft - (viewport.clientWidth - card.offsetWidth) / 2));
+        viewport.scrollTo({ left: targetScrollLeft, behavior: 'auto' });
+      }
       const remaining = [...root.querySelectorAll('.activity-card')].filter(value => value !== card);
       const firstRects = new Map(remaining.map(value => [value, value.getBoundingClientRect()]));
       card.classList.add('is-completing');
@@ -691,6 +724,7 @@ function renderLibrary() {
   let dragStartX = 0;
   let dragStartScroll = 0;
   viewport.addEventListener('pointerdown', event => {
+    if (window.matchMedia(TABLET_ACTIVITY_GRID_QUERY).matches) return;
     if (event.pointerType !== 'mouse' || event.button !== 0) return;
     dragging = true;
     dragMoved = false;
@@ -719,29 +753,46 @@ function renderLibrary() {
   const progressAvatar = root.querySelector('[data-slider-progress-avatar]');
   const progressLine = root.querySelector('[data-slider-progress-line]');
   const milestones = [...root.querySelectorAll('[data-milestone]')];
+  const progressStars = [...root.querySelectorAll('.slider-progress-sparkles i')];
+  let furthestSparkProgress = 0;
   const updateSliderProgress = () => {
-    const maxScroll = Math.max(1, viewport.scrollWidth - viewport.clientWidth);
-    const progress = Math.min(1, viewport.scrollLeft / maxScroll);
-    const vertical = window.matchMedia('(orientation: landscape) and (min-aspect-ratio: 3/2) and (max-height: 720px)').matches;
+    const tabletGrid = window.matchMedia(TABLET_ACTIVITY_GRID_QUERY).matches;
+    const maxScroll = Math.max(1, tabletGrid ? viewport.scrollHeight - viewport.clientHeight : viewport.scrollWidth - viewport.clientWidth);
+    const progress = Math.min(1, (tabletGrid ? viewport.scrollTop : viewport.scrollLeft) / maxScroll);
+    if (tabletGrid) {
+      furthestSparkProgress = Math.max(furthestSparkProgress, progress);
+      progressStars.forEach((star, index) => {
+        const threshold = index / Math.max(1, progressStars.length - 1);
+        star.classList.toggle('is-revealed', threshold <= furthestSparkProgress);
+      });
+    }
+    const vertical = tabletGrid || window.matchMedia('(orientation: landscape) and (min-aspect-ratio: 3/2) and (max-height: 720px)').matches;
     progressFill.style.width = `${progress * 100}%`;
-    const verticalProgress = selectedGroupSize === 'small' ? 1 - progress : progress;
-    progressLine.dataset.direction = selectedGroupSize;
+    const verticalProgress = tabletGrid ? progress : selectedGroupSize === 'small' ? 1 - progress : progress;
+    progressLine.dataset.direction = tabletGrid ? 'small' : selectedGroupSize;
     progressFill.style.height = vertical ? `${progress * 100}%` : '';
-    const activeMilestone = Math.round(progress * (milestones.length - 1));
+    const activeMilestone = tabletGrid
+      ? Math.min(milestones.length - 1, Math.floor(progress * (milestones.length - 1)))
+      : Math.round(progress * (milestones.length - 1));
     progressAvatar.style.left = `${progress * 100}%`;
     progressAvatar.style.top = vertical ? `${verticalProgress * 100}%` : '';
     if (vertical) progressAvatar.style.left = '50%';
-    const visualStage = selectedGroupSize === 'large' ? milestones.length - 1 - activeMilestone : activeMilestone;
+    const visualStage = !tabletGrid && selectedGroupSize === 'large' ? milestones.length - 1 - activeMilestone : activeMilestone;
     progressAvatar.textContent = progressStages[activeMilestone]?.[1] || '✨';
     progressAvatar.dataset.stage = String(visualStage);
     progressLine.dataset.stage = String(visualStage);
     milestones.forEach((milestone, index) => {
       milestone.classList.toggle('is-reached', index <= activeMilestone);
       milestone.classList.toggle('is-current', index === activeMilestone);
-      if (vertical) { milestone.style.left = '50%'; milestone.style.top = `${(selectedGroupSize === 'small' ? 1 - index / (milestones.length - 1) : index / (milestones.length - 1)) * 100}%`; }
+      if (vertical) {
+        milestone.style.left = '50%';
+        const milestoneProgress = tabletGrid ? index / (milestones.length - 1) : selectedGroupSize === 'small' ? 1 - index / (milestones.length - 1) : index / (milestones.length - 1);
+        milestone.style.top = `${milestoneProgress * 100}%`;
+      }
     });
   };
   viewport.addEventListener('scroll', updateSliderProgress, { passive: true });
+  window.addEventListener('resize', updateSliderProgress, { passive: true });
   requestAnimationFrame(updateSliderProgress);
   root.querySelectorAll('[data-id]').forEach(button => button.onclick = () => {
     const item = activities.find(value => value.id === button.dataset.id);
@@ -823,7 +874,7 @@ function renderActivityIntro(item, context = {}) {
   const guide = activityGuide(item, context);
   const playerLabel = context.playerCount ? ` · ${context.playerCount >= 10 ? '10+ JUCĂTORI' : `${context.playerCount} JUCĂTORI`}` : '';
   const actionLabel = context.resumed ? 'Continuă activitatea' : 'Începe activitatea';
-  const previewMarkup = item.id === 'arata-mai-departe' ? '<button class="activity-info-preview" type="button" data-activity-preview aria-label="Vezi rapid cum se joacă" title="Vezi rapid cum se joacă">▶</button>' : '';
+  const previewMarkup = item.id === 'arata-mai-departe' ? '<button class="activity-info-preview" type="button" data-activity-preview aria-label="Exemplu video: vezi rapid cum se joacă" title="Exemplu video: vezi rapid cum se joacă"><span>Exemplu</span><span class="activity-info-preview-icon" aria-hidden="true">▶</span></button>' : '';
   track('activity_info_viewed');
   root.innerHTML = `<main class="activity-info-experience"><button class="question-back" type="button" data-activity-info-back>← Activități</button><section class="activity-info-card"><header>${item.illustration ? `<img src="${esc(item.illustration)}" alt="">` : `<span aria-hidden="true">${esc(item.cardIcon || '✦')}</span>`}<div><small>CUM SE JOACĂ${playerLabel}</small><h1>${esc(item.title)}</h1></div></header><div class="activity-info-rules"><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cine%20raspunde.png" alt=""><div><strong>Cine răspunde</strong><p>${esc(guide.who)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/ce%20puteti%20alege.png" alt=""><div><strong>Ce puteți alege</strong><p>${esc(guide.options)}</p></div></div><div class="activity-info-rule"><img src="/assets/ilustratii_aplicatie_parinti/cum%20jucati.png" alt=""><div><strong>Cum jucați</strong><p>${esc(guide.how)}</p></div></div></div><div class="activity-info-actions"><button class="primary activity-info-start" type="button" data-activity-info-start>${actionLabel}</button>${previewMarkup}</div></section></main>`;
   root.querySelector('[data-activity-info-back]').onclick = renderLibrary;
@@ -1179,7 +1230,7 @@ function renderQuestionExperience(item, questionIndex = 0, transition = null) {
 
 function activityDockMarkup(currentItem) {
   const items = activities.filter(item => (item.illustration || item.cardIcon) && ACTIVE_ACTIVITY_ORDER.includes(item.id) && activityIsVisible(item)).sort(compareActivitiesForGroup);
-  return `<aside class="activity-dock" data-activity-dock><button class="activity-dock-toggle" type="button" data-open-activity-dock aria-expanded="false">Alegeți altă activitate <span>⌃</span></button><div class="activity-dock-panel"><span class="activity-picker-brand"><img src="${MODERN_BRAND_LOGO}" alt="Becky’s Garden"></span>${activityProgressMarkup()}<div class="activity-dock-track">${items.map(item => `<button type="button" class="activity-dock-card${isActivityLocked(item) ? ' is-locked' : ''}" data-dock-id="${esc(item.id)}" data-group-sizes="${esc((item.groupSizes || ['small','large']).join(','))}" ${supportsGroupSize(item) ? '' : 'hidden'} ${isActivityLocked(item) ? 'disabled aria-disabled="true"' : ''}>${activityLockMarkup(item)}${activityCompletionBadge(item)}${item.illustration ? `<img src="${esc(item.illustration)}" alt="" loading="lazy">` : `<span>${esc(item.cardIcon || '✦')}</span>`}<strong class="${item.title.trim().includes(' ') ? 'has-multiple-words' : ''}">${cardTitleMarkup(item.title)}</strong></button>`).join('')}</div>${groupSizeToggleMarkup()}</div></aside>`;
+  return `<aside class="activity-dock" data-activity-dock><button class="activity-dock-toggle" type="button" data-open-activity-dock aria-expanded="false">Alegeți altă activitate <span>⌃</span></button><div class="activity-dock-panel"><span class="activity-picker-brand"><img src="${MODERN_BRAND_LOGO}" alt="Becky’s Garden"></span>${activityProgressMarkup(false)}<div class="activity-dock-track">${items.map(item => `<button type="button" class="activity-dock-card${isActivityLocked(item) ? ' is-locked' : ''}" data-dock-id="${esc(item.id)}" data-group-sizes="${esc((item.groupSizes || ['small','large']).join(','))}" ${supportsGroupSize(item) ? '' : 'hidden'} ${isActivityLocked(item) ? 'disabled aria-disabled="true"' : ''}>${activityLockMarkup(item)}${activityCompletionBadge(item)}${item.illustration ? `<img src="${esc(item.illustration)}" alt="" loading="lazy">` : `<span>${esc(item.cardIcon || '✦')}</span>`}<strong class="${item.title.trim().includes(' ') ? 'has-multiple-words' : ''}">${cardTitleMarkup(item.title)}</strong></button>`).join('')}</div>${groupSizeToggleMarkup()}</div></aside>`;
 }
 
 function bindActivityDock(currentItem) {
@@ -1564,26 +1615,35 @@ window.addEventListener('pagehide', () => track('session_end'));
 async function revealInitialLibrary(sessionMode = 'new') {
   const opening = root.querySelector('.parents-opening');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const openingItems = currentGalleryActivities().slice(0, 3);
+  const tabletGridOpening = window.matchMedia(TABLET_ACTIVITY_GRID_QUERY).matches;
+  const openingItems = currentGalleryActivities().slice(0, tabletGridOpening ? 4 : 3);
   const openingDeck = opening?.querySelector('.opening-deck');
   if (openingDeck) {
+    opening?.classList.toggle('is-tablet-grid-opening', tabletGridOpening);
+    openingDeck.classList.toggle('is-tablet-grid-opening', tabletGridOpening);
     const portrait = window.matchMedia('(orientation: portrait)').matches;
-    const positions = openingItems.length === 1 ? [-50] : openingItems.length === 2 ? [-100, 0] : portrait ? [-108, -50, 8] : [-142, -50, 42];
+    // Keep the familiar layered fan for tablet too; the four source cards then
+    // bridge into the four real grid cards without a separate late entrance.
+    const positions = tabletGridOpening ? [-190, -95, 0, 95] : openingItems.length === 1 ? [-50] : openingItems.length === 2 ? [-100, 0] : portrait ? [-108, -50, 8] : [-142, -50, 42];
     openingItems.forEach((item, index) => {
       const card = document.createElement('article');
       card.className = 'opening-card opening-card-dynamic';
       card.dataset.openingId = item.id;
       card.style.setProperty('--opening-x', `${positions[index]}%`);
       card.style.setProperty('--opening-rotation', `${openingItems.length === 1 ? 0 : (index - (openingItems.length - 1) / 2) * 5}deg`);
-      card.style.setProperty('--opening-delay', `${sessionMode === 'profile' ? 0 : .4 + index * .08}s`);
-      card.style.zIndex = index === Math.floor(openingItems.length / 2) ? '2' : '1';
+      card.style.setProperty('--opening-delay', `${tabletGridOpening || sessionMode === 'profile' ? 0 : .4 + index * .08}s`);
+      card.style.zIndex = tabletGridOpening
+        ? (index === 1 ? '2' : index === 2 ? '3' : '1')
+        : index === Math.floor(openingItems.length / 2) ? '2' : '1';
       card.innerHTML = item.illustration ? `<img src="${esc(item.illustration)}" alt="">` : `<span class="opening-card-icon">${esc(item.cardIcon || '✦')}</span>`;
       openingDeck.append(card);
     });
     opening.classList.add('has-dynamic-cards');
   }
   if (!reduceMotion && sessionMode !== 'profile') await new Promise(resolve => setTimeout(resolve, 1420));
-  opening?.classList.add('is-opening-settled');
+  // Keep the tablet's finished card animation attached to its final keyframe;
+  // swapping it to an equivalent CSS transform causes a visible compositor repaint.
+  if (!tabletGridOpening) opening?.classList.add('is-opening-settled');
   if (!reduceMotion) await new Promise(resolve => setTimeout(resolve, 32));
   const openingCards = opening ? [...opening.querySelectorAll('.opening-card')] : [];
   const sourceCards = openingCards.map(card => {
@@ -1607,6 +1667,11 @@ async function revealInitialLibrary(sessionMode = 'new') {
     return;
   }
   const targetCards = sourceCards.map(source => root.querySelector(`.activity-card[data-id="${CSS.escape(source.id)}"]`));
+  if (tabletGridOpening) {
+    const targetImages = targetCards.flatMap(card => [...card.querySelectorAll('.activity-illustration')]);
+    targetImages.forEach(image => { image.loading = 'eager'; });
+    await Promise.allSettled(targetImages.map(image => image.decode()));
+  }
   const targetLogo = root.querySelector('.parents-top .brand img');
   if (targetLogo && !targetLogo.complete) await targetLogo.decode().catch(() => {});
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
@@ -1627,12 +1692,13 @@ async function revealInitialLibrary(sessionMode = 'new') {
   const openingTitles = targetCards.map(card => card.querySelector('h2')).filter(Boolean);
   const remainingCards = [...shell.querySelectorAll('.activity-card')].filter(card => !targetCardSet.has(card));
   const progressElement = shell.querySelector(':scope > .slider-progress');
-  openingTitles.forEach(title => { title.style.opacity = '0'; });
+  if (!tabletGridOpening) openingTitles.forEach(title => { title.style.opacity = '0'; });
+  if (tabletGridOpening) targetCards.forEach(card => { card.style.opacity = '0'; });
   remainingCards.forEach(card => {
     card.style.opacity = '0';
     card.style.transform = 'translate3d(18px,0,0)';
   });
-  if (progressElement) {
+  if (progressElement && !tabletGridOpening) {
     progressElement.style.opacity = '0';
     progressElement.style.transform = 'translate3d(10px,0,0)';
   }
@@ -1651,8 +1717,9 @@ async function revealInitialLibrary(sessionMode = 'new') {
     ], { duration: 920, easing: 'cubic-bezier(.16,1,.3,1)', fill: 'forwards' }));
     const targetVisual = targetCards[index].querySelector('.activity-illustration, .activity-icon-illustration');
     const targetVisualRect = targetVisual.getBoundingClientRect();
+    const targetVisualStyle = getComputedStyle(targetVisual);
     visual.className = visual.tagName === 'IMG' ? 'opening-bridge-illustration' : 'opening-bridge-illustration is-icon';
-    visual.style.cssText = `left:${visualRect.left}px;top:${visualRect.top}px;width:${visualRect.width}px;height:${visualRect.height}px`;
+    visual.style.cssText = `left:${visualRect.left}px;top:${visualRect.top}px;width:${visualRect.width}px;height:${visualRect.height}px;object-fit:${targetVisualStyle.objectFit};object-position:${targetVisualStyle.objectPosition};filter:${targetVisualStyle.filter}`;
     opening.append(visual);
     bridgeNodes.push(visual.animate([
       { left: `${visualRect.left}px`, top: `${visualRect.top}px`, width: `${visualRect.width}px`, height: `${visualRect.height}px` },
@@ -1677,9 +1744,10 @@ async function revealInitialLibrary(sessionMode = 'new') {
   shell.classList.add('is-opening-handoff-ready');
   shell.classList.remove('is-opening-hidden');
   await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-  opening.querySelectorAll('.opening-bridge-card').forEach(card => { card.style.visibility = 'hidden'; });
+  const bridgeCards = [...opening.querySelectorAll('.opening-bridge-card')];
+  if (!tabletGridOpening) bridgeCards.forEach(card => { card.style.visibility = 'hidden'; });
   const revealAnimations = [];
-  openingTitles.forEach(title => {
+  if (!tabletGridOpening) openingTitles.forEach(title => {
     const animation = title.animate([{ opacity: 0 }, { opacity: 1 }], {
       duration: 300,
       delay: 45,
@@ -1692,6 +1760,24 @@ async function revealInitialLibrary(sessionMode = 'new') {
       animation.cancel();
     });
   });
+  if (tabletGridOpening) {
+    targetCards.forEach(card => {
+      const animation = card.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 360,
+        easing: 'ease-in-out',
+        fill: 'forwards'
+      });
+      revealAnimations.push(animation);
+      animation.finished.then(() => {
+        card.style.opacity = '';
+        animation.cancel();
+      });
+    });
+    bridgeCards.forEach(card => revealAnimations.push(card.animate(
+      [{ opacity: 1 }, { opacity: 0 }],
+      { duration: 360, easing: 'ease-in-out', fill: 'forwards' }
+    )));
+  }
   remainingCards.forEach((card, index) => {
     const animation = card.animate([
       { opacity: 0, transform: 'translate3d(18px,0,0)' },
@@ -1709,7 +1795,7 @@ async function revealInitialLibrary(sessionMode = 'new') {
       animation.cancel();
     });
   });
-  if (progressElement) {
+  if (progressElement && !tabletGridOpening) {
     const animation = progressElement.animate([
       { opacity: 0, transform: 'translate3d(10px,0,0)' },
       { opacity: 1, transform: 'translate3d(0,0,0)' }
@@ -1729,7 +1815,7 @@ async function revealInitialLibrary(sessionMode = 'new') {
   const visualHandoffs = [...opening.querySelectorAll('.opening-bridge-illustration, .opening-bridge-logo')].map(node => node.animate([
     { opacity: 1 },
     { opacity: 0 }
-  ], { duration: 180, easing: 'ease-out', fill: 'forwards' }));
+  ], { duration: tabletGridOpening ? 360 : 180, easing: 'ease-in-out', fill: 'forwards' }));
   await Promise.allSettled(visualHandoffs.map(animation => animation.finished));
   opening.remove();
   shell.classList.remove('is-opening-reveal', 'is-visible', 'is-opening-handoff-ready');

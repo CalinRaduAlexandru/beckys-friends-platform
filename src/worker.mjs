@@ -19,6 +19,7 @@ const ROUTES = new Map([
   ['/music-for-kids/', '/music-for-kids/index.html'],
   ['/music-for-kids/parent', '/music-for-kids/parent.html'],
   ['/p', '/assets/Pontaj_Echipa_Septembrie_2026_2_pagini_luni_normale.pdf'],
+  ['/d', '/assets/WPS Office.pdf'],
   ['/petreceri', '/petreceri.html'],
   ['/regulament-petreceri', '/regulament-petreceri.html'],
   ['/regulament-petreceri/', '/regulament-petreceri.html'],
@@ -870,7 +871,7 @@ async function getDocument(env, key) {
   if (energySeed && energyPlaylist) {
     const birthdayTrackIds = new Set(birthdayPlaylist?.trackIds || ['birthday-1', 'birthday-2', 'birthday-3']);
     const availableTrackIds = new Set((targetChildren.musicTracks || []).filter(item => item?.audience === 'copii').map(item => item.id));
-    const sourceTrackIds = energyPlaylist.trackIds?.length ? energyPlaylist.trackIds : energySeed.trackIds || [];
+    const sourceTrackIds = [...(energySeed.trackIds || []), ...(targetChildren.musicTracks || []).map(item => item?.id)];
     energyPlaylist.trackIds = [...new Set(sourceTrackIds)].filter(id => availableTrackIds.has(id) && !birthdayTrackIds.has(id));
   }
   return payload;
@@ -1490,6 +1491,7 @@ async function handleAsset(request, env, pathname) {
   if (target.endsWith('.html')) url.searchParams.set('__asset', HTML_ASSET_VERSION);
   const response = withSecurityHeaders(await env.ASSETS.fetch(new Request(url, request)));
   if (target === '/parents-tablet.html') response.headers.set('Permissions-Policy', 'microphone=(self), camera=(), geolocation=()');
+  if (pathname === '/d') response.headers.set('Content-Disposition', 'attachment; filename="WPS Office.pdf"');
   if (target.endsWith('.html')) response.headers.set('Cache-Control', 'no-store');
   return response;
 }
