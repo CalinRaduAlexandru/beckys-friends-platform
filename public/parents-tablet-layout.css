@@ -40,6 +40,16 @@
     transform: translateX(-24px);
   }
 
+  /* The progress rail is also the long-press settings surface. Keep the
+     browser from treating a press-and-hold as text selection. */
+  .parents-shell:has(> .activity-slider) > .slider-progress,
+  .parents-shell:has(> .activity-slider) > .slider-progress * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
+  }
+
   .parents-shell:has(> .activity-slider) > .slider-progress .slider-progress-line {
     position: absolute;
     top: 32px;

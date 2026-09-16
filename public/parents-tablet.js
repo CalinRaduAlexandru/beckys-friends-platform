@@ -651,11 +651,13 @@ function renderLibrary() {
   const cancelSettingsPress = () => { if (settingsPressTimer) { clearTimeout(settingsPressTimer); settingsPressTimer = null; } };
   progressSurface?.addEventListener('pointerdown', event => {
     event.preventDefault();
+    progressSurface.setPointerCapture?.(event.pointerId);
     cancelSettingsPress();
     settingsPressTimer = setTimeout(() => { settingsPressTimer = null; setSettingsOpen(true); }, 3000);
   });
   ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => progressSurface?.addEventListener(type, cancelSettingsPress));
   progressSurface?.addEventListener('contextmenu', event => event.preventDefault());
+  progressSurface?.addEventListener('selectstart', event => event.preventDefault());
   root.querySelector('[data-hide-completed]').onchange = event => { localStorage.setItem(HIDE_COMPLETED_ACTIVITIES_KEY, String(event.currentTarget.checked)); queueParentProgressSave(); renderLibrary(); };
   const settingsStatus = root.querySelector('[data-settings-status]');
   root.querySelector('[data-create-profile]')?.addEventListener('click', async () => {
