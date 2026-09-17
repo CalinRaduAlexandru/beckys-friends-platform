@@ -274,7 +274,7 @@ function toolsView() {
 }
 
 function tvView() {
-  return `<main class="tv-screen" data-tv-screen><video class="tv-animation" src="${LANDSCAPE_REFERENCE_VIDEO}" autoplay muted loop playsinline></video><button class="tv-next-zone" type="button" data-tv-next aria-label="Melodia următoare"></button><div class="tv-overlay"><span>BECKY · JOACĂ</span><strong>Joacă – Energie</strong><button type="button" data-tv-start>Pornește muzica</button></div></main>`;
+  return `<main class="tv-screen" data-tv-screen><video class="tv-animation" src="${LANDSCAPE_REFERENCE_VIDEO}" autoplay muted loop playsinline></video><button class="tv-next-zone" type="button" data-tv-next aria-label="Melodia următoare"></button><div class="tv-overlay"><span>BECKY · JOACĂ</span><strong>Joacă – Energie</strong><button type="button" data-tv-start>Pornește experiența TV</button><small>Click pentru fullscreen și sunet</small></div></main>`;
 }
 
 function effectsGrid() {
@@ -399,13 +399,14 @@ function playNextTrack() { if (!state.currentPlaylist) return; let queue=state.p
 function toggleAudio() { if(!state.currentTrack)return; if(audio.paused){state.userPausedAudio=false;audio.play().catch(()=>{});}else{state.userPausedAudio=true;audio.pause();} render(); }
 
 async function startTvPresentation() {
-  root.querySelector('.tv-animation')?.play().catch(() => {});
+  let fullscreenStarted = false;
+  try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); fullscreenStarted = Boolean(document.fullscreenElement); } catch {}
+  try { await screen.orientation?.lock?.('landscape'); } catch {}
   if (state.currentPlaylist?.id !== 'energie-copii') playPlaylist('energie-copii');
   state.userPausedAudio = false;
   audio.play().catch(() => {});
-  try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch {}
-  try { await screen.orientation?.lock?.('landscape'); } catch {}
-  root.querySelector('.tv-overlay')?.classList.add('is-started');
+  root.querySelector('.tv-animation')?.play().catch(() => {});
+  if (fullscreenStarted || !document.documentElement.requestFullscreen) root.querySelector('.tv-overlay')?.classList.add('is-started');
 }
 
 // Some Android/TV remotes expose their buttons as media or channel key events.
@@ -490,7 +491,6 @@ async function init(){
     const payload=await loadLibrary(); const children=payload.workspaces?.find(item=>item.id==='children')||{}; state.library={soundEffects:children.soundEffects||[]}; state.activities=(children.activities||[]).filter(activityComplete); state.challengeDecks=children.challengeDecks||[]; state.musicTracks=children.musicTracks||[]; state.playlists=children.playlists||[]; state.activityPlaylists=children.activityPlaylists||[]; if(!state.activityPlaylists.some(list=>list.id==='today'))state.activityPlaylists=[{id:'today',title:'De încercat azi',activityIds:[]},...state.activityPlaylists]; audio.volume=Number(localStorage.getItem(VOLUME_KEY)||.35);
     const params=new URLSearchParams(location.search); const requested=params.get('activity_id'); const requestedView=params.get('view'); if(['home','games','music','tools'].includes(requestedView))state.view=requestedView; if(requested&&state.activities.some(item=>item.id===requested)){state.selectedActivity=state.activities.find(item=>item.id===requested);state.view='detail';}
     render();
-    if (state.tvMode) { playPlaylist('energie-copii'); setTimeout(startTvPresentation, 80); }
     setTimeout(showInstallPrompt,250);
   }catch(error){if(error.code==='AUTH'){root.innerHTML='<div class="app-loading"><span>✦</span><strong>Biblioteca Becky este protejată.</strong></div>';showLogin();return;}root.innerHTML=`<div class="app-loading"><span>♡</span><strong>${esc(error.message)}</strong></div>`;}
 }
