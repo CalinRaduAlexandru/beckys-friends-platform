@@ -390,7 +390,7 @@ function changeStep(delta) { state.session.step=Math.max(0,Math.min(state.sessio
 
 function playTrack(track, playlist = null) {
   if (!track?.src) { toast('Piesa nu are încă o sursă audio disponibilă.'); return; }
-  state.currentTrack=track; state.currentPlaylist=playlist; state.userPausedAudio=false; audio.pause(); audio.src=track.src; audio.volume=Number(localStorage.getItem(VOLUME_KEY) || .35); audio.load(); const start=audio.play(); if(start?.catch)start.catch(()=>setTimeout(()=>{if(state.currentTrack?.id===track.id)audio.play().catch(()=>recoverPlaylistAudio());},400)); render();
+  state.currentTrack=track; state.currentPlaylist=playlist; state.userPausedAudio=false; audio.pause(); audio.src=track.src; audio.volume=Number(localStorage.getItem(VOLUME_KEY) || .35); audio.load(); const start=audio.play(); if(start?.catch)start.catch(()=>setTimeout(()=>{if(state.currentTrack?.id===track.id)audio.play().catch(()=>recoverPlaylistAudio());},400)); if (!state.tvMode) render();
 }
 function toggleTrack(id) { const track=selectedTrack(id); if (state.currentTrack?.id===id) toggleAudio(); else playTrack(track, allPlaylists().find(playlist => playlist.trackIds?.includes(id)) || null); }
 function shuffledTracks(playlist) { const tracks=(playlist?.trackIds||[]).map(selectedTrack).filter(Boolean); for(let i=tracks.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tracks[i],tracks[j]]=[tracks[j],tracks[i]];} return tracks; }
