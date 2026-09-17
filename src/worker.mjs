@@ -35,6 +35,8 @@ const ROUTES = new Map([
   ['/shake-test/', '/shake-test.html'],
   ['/joaca', '/shake-test.html'],
   ['/joaca/', '/shake-test.html'],
+  ['/tv', '/shake-test.html'],
+  ['/tv/', '/shake-test.html'],
   ['/parinti', '/parents-tablet.html'],
   ['/parinti/', '/parents-tablet.html']
 ]);

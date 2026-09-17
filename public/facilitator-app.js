@@ -29,6 +29,7 @@ const state = {
   musicRatings: readJson(RATINGS_KEY, {}),
   recentIds: readJson(RECENT_KEY, []),
   view: 'home',
+  tvMode: false,
   previousView: 'home',
   selectedActivity: null,
   session: null,
@@ -272,6 +273,10 @@ function toolsView() {
   return shell(`${header('Trusă')}<section class="hero-card"><small>INSTRUMENTE DE FACILITARE</small><h1>Puține gesturi. Efect imediat.</h1><p>Sunetele, timerul și provocările sunt instrumente scurte. Jocul și copiii rămân în centru.</p></section><section class="section"><div class="section-heading"><div><span class="eyebrow">REACȚII RAPIDE</span><h2>O singură atingere</h2></div></div>${effectsGrid()}</section><section class="section"><div class="section-heading"><div><span class="eyebrow">RITM</span><h2>Timer rapid</h2></div></div><div class="timer-options">${[30,60,180,300].map(value => `<button data-set-timer="${value}">${value < 60 ? `${value} sec` : `${value / 60} min`}</button>`).join('')}</div></section><section class="section"><button class="start-game" data-open-color-game type="button">Alege o culoare prin shake</button></section><section class="section"><button class="start-game" data-open-challenge type="button">Deschide provocările</button></section>`);
 }
 
+function tvView() {
+  return `<main class="tv-screen" data-tv-screen><video class="tv-animation" src="${LANDSCAPE_REFERENCE_VIDEO}" autoplay muted loop playsinline></video><div class="tv-overlay"><span>BECKY · JOACĂ</span><strong>Joacă – Energie</strong><button type="button" data-tv-start>Pornește muzica</button></div></main>`;
+}
+
 function effectsGrid() {
   return `<div class="effect-grid">${state.library.soundEffects.map(effect => `<button class="effect-card" type="button" data-effect="${esc(effect.id)}"><span>${esc(effect.icon)}</span>${esc(effect.title)}</button>`).join('')}</div>`;
 }
@@ -294,12 +299,13 @@ function challengeMarkup() {
 function colorGameMarkup(){const game=state.colorGame;if(game.phase==='color')return `<section class="color-overlay color-reveal ${game.effect}" data-color-overlay style="background:${game.color}"><span class="color-surprise">${game.effect==='color-burst'?'✦':''}</span></section>`;if(game.phase==='countdown')return `<section class="color-overlay color-countdown"><strong>${game.count}</strong></section>`;if(game.phase==='waiting')return `<section class="color-overlay color-waiting"><button class="challenge-close" data-close-color>×</button><div><span class="color-shake-icon">🎨</span><h1>${game.ready?'Totul este pregătit':'Pregătim vocea…'}</h1><p>${game.ready?'Apasă Start. După culoare, atinge ecranul pentru o rundă nouă.':'Doar prima rundă are nevoie de câteva clipe.'}</p><button class="start-game color-start-button" data-reveal-color ${game.ready?'':'disabled'}>${game.ready?'Start':'Se încarcă…'}</button></div></section>`;return `<div class="sheet-backdrop" data-close-color><section class="bottom-sheet" data-sheet><div class="sheet-heading"><div><span class="eyebrow">JOC CU CULORI</span><h2>Alege culorile</h2><p>Bifează culorile pentru random show.</p></div><button type="button" data-close-color>×</button></div><div class="color-options">${[['#e53935','Roșu'],['#fb8c00','Portocaliu'],['#fdd835','Galben'],['#43a047','Verde'],['#1e88e5','Albastru'],['#8e24aa','Mov'],['#ec407a','Roz']].map(([color,name])=>`<label><span style="background:${color}"></span>${name}<input type="checkbox" value="${color}" ${state.colorOptions.includes(color)?'checked':''} data-color-option></label>`).join('')}</div><button class="start-game" data-start-color>Go</button></section></div>`;}
 
 function render() {
-  const view = { home:homeView, games:gamesView, detail:detailView, playlist:activityPlaylistView, session:sessionView, music:musicView, tools:toolsView }[state.view] || homeView;
+  const view = state.tvMode ? tvView : ({ home:homeView, games:gamesView, detail:detailView, playlist:activityPlaylistView, session:sessionView, music:musicView, tools:toolsView }[state.view] || homeView);
   root.innerHTML = view();
   bind();
 }
 
 function bind() {
+  root.querySelector('[data-tv-start]')?.addEventListener('click', startTvPresentation);
   root.querySelectorAll('[data-nav]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.nav)));
   bindGameCards();
   root.querySelectorAll('[data-category]').forEach(button => button.addEventListener('click', () => { state.category = button.dataset.category; render(); }));
@@ -388,8 +394,18 @@ function playTrack(track, playlist = null) {
 function toggleTrack(id) { const track=selectedTrack(id); if (state.currentTrack?.id===id) toggleAudio(); else playTrack(track, allPlaylists().find(playlist => playlist.trackIds?.includes(id)) || null); }
 function shuffledTracks(playlist) { const tracks=(playlist?.trackIds||[]).map(selectedTrack).filter(Boolean); for(let i=tracks.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[tracks[i],tracks[j]]=[tracks[j],tracks[i]];} return tracks; }
 function playPlaylist(id) { const playlist=allPlaylists().find(item=>item.id===id); const queue=playlist?.shuffle===false?(playlist.trackIds||[]).map(selectedTrack).filter(Boolean):shuffledTracks(playlist); if(queue.length){state.playlistQueues[playlist.id]=queue.slice(1);playTrack(queue[0],playlist);} else toast('Playlistul nu are încă piese disponibile.'); }
-function playNextTrack() { if (!state.currentPlaylist) return; let queue=state.playlistQueues[state.currentPlaylist.id]||[]; if(!queue.length){if(state.currentPlaylist.nextPlaylistId){playPlaylist(state.currentPlaylist.nextPlaylistId);return;}if(state.currentPlaylist.shuffle!==false)queue=shuffledTracks(state.currentPlaylist);else return;} const next=queue.shift(); state.playlistQueues[state.currentPlaylist.id]=queue; const duck=state.library?.soundEffects?.find(effect=>effect.id==='duck'); if(next&&duck?.src&&Math.random()<.3)playEffectAudio(duck.src,.75); if(next)playTrack(next,state.currentPlaylist); }
+function playNextTrack() { if (!state.currentPlaylist) return; let queue=state.playlistQueues[state.currentPlaylist.id]||[]; if(!queue.length){if(state.currentPlaylist.nextPlaylistId){playPlaylist(state.currentPlaylist.nextPlaylistId);return;}if(state.currentPlaylist.shuffle!==false)queue=shuffledTracks(state.currentPlaylist);else if(state.tvMode){playPlaylist(state.currentPlaylist.id);return;}else return;} const next=queue.shift(); state.playlistQueues[state.currentPlaylist.id]=queue; const duck=state.library?.soundEffects?.find(effect=>effect.id==='duck'); if(next&&duck?.src&&Math.random()<.3)playEffectAudio(duck.src,.75); if(next)playTrack(next,state.currentPlaylist); }
 function toggleAudio() { if(!state.currentTrack)return; if(audio.paused){state.userPausedAudio=false;audio.play().catch(()=>{});}else{state.userPausedAudio=true;audio.pause();} render(); }
+
+async function startTvPresentation() {
+  root.querySelector('.tv-animation')?.play().catch(() => {});
+  if (state.currentPlaylist?.id !== 'energie-copii') playPlaylist('energie-copii');
+  state.userPausedAudio = false;
+  audio.play().catch(() => {});
+  try { await document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }); } catch {}
+  try { await screen.orientation?.lock?.('landscape'); } catch {}
+  root.querySelector('.tv-overlay')?.classList.add('is-started');
+}
 
 // Some Android/TV remotes expose their buttons as media or channel key events.
 // Smart View may forward these to the mirrored page; keep this additive so the
@@ -468,9 +484,12 @@ function showInstallPrompt(){
 
 async function init(){
   try{
+    state.tvMode = location.pathname === '/tv' || location.pathname === '/tv/';
+    if (state.tvMode) state.view = 'tv';
     const payload=await loadLibrary(); const children=payload.workspaces?.find(item=>item.id==='children')||{}; state.library={soundEffects:children.soundEffects||[]}; state.activities=(children.activities||[]).filter(activityComplete); state.challengeDecks=children.challengeDecks||[]; state.musicTracks=children.musicTracks||[]; state.playlists=children.playlists||[]; state.activityPlaylists=children.activityPlaylists||[]; if(!state.activityPlaylists.some(list=>list.id==='today'))state.activityPlaylists=[{id:'today',title:'De încercat azi',activityIds:[]},...state.activityPlaylists]; audio.volume=Number(localStorage.getItem(VOLUME_KEY)||.35);
     const params=new URLSearchParams(location.search); const requested=params.get('activity_id'); const requestedView=params.get('view'); if(['home','games','music','tools'].includes(requestedView))state.view=requestedView; if(requested&&state.activities.some(item=>item.id===requested)){state.selectedActivity=state.activities.find(item=>item.id===requested);state.view='detail';}
     render();
+    if (state.tvMode) { playPlaylist('energie-copii'); setTimeout(startTvPresentation, 80); }
     setTimeout(showInstallPrompt,250);
   }catch(error){if(error.code==='AUTH'){root.innerHTML='<div class="app-loading"><span>✦</span><strong>Biblioteca Becky este protejată.</strong></div>';showLogin();return;}root.innerHTML=`<div class="app-loading"><span>♡</span><strong>${esc(error.message)}</strong></div>`;}
 }
