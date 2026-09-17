@@ -274,7 +274,7 @@ function toolsView() {
 }
 
 function tvView() {
-  return `<main class="tv-screen" data-tv-screen><video class="tv-animation" src="${LANDSCAPE_REFERENCE_VIDEO}" autoplay muted loop playsinline></video><div class="tv-overlay"><span>BECKY · JOACĂ</span><strong>Joacă – Energie</strong><button type="button" data-tv-start>Pornește muzica</button></div></main>`;
+  return `<main class="tv-screen" data-tv-screen><video class="tv-animation" src="${LANDSCAPE_REFERENCE_VIDEO}" autoplay muted loop playsinline></video><button class="tv-next-zone" type="button" data-tv-next aria-label="Melodia următoare"></button><div class="tv-overlay"><span>BECKY · JOACĂ</span><strong>Joacă – Energie</strong><button type="button" data-tv-start>Pornește muzica</button></div></main>`;
 }
 
 function effectsGrid() {
@@ -306,6 +306,7 @@ function render() {
 
 function bind() {
   root.querySelector('[data-tv-start]')?.addEventListener('click', startTvPresentation);
+  root.querySelector('[data-tv-next]')?.addEventListener('click', event => { event.preventDefault(); playNextTrack(); });
   root.querySelectorAll('[data-nav]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.nav)));
   bindGameCards();
   root.querySelectorAll('[data-category]').forEach(button => button.addEventListener('click', () => { state.category = button.dataset.category; render(); }));
