@@ -306,7 +306,7 @@ function render() {
 
 function bind() {
   root.querySelector('[data-tv-start]')?.addEventListener('click', startTvPresentation);
-  root.querySelector('[data-tv-next]')?.addEventListener('click', event => { event.preventDefault(); playNextTrack(); });
+  root.querySelector('[data-tv-next]')?.addEventListener('click', event => { event.preventDefault(); playNextTrack(); root.querySelector('.tv-overlay')?.classList.add('is-started'); });
   root.querySelectorAll('[data-nav]').forEach(button => button.addEventListener('click', () => navigate(button.dataset.nav)));
   bindGameCards();
   root.querySelectorAll('[data-category]').forEach(button => button.addEventListener('click', () => { state.category = button.dataset.category; render(); }));
