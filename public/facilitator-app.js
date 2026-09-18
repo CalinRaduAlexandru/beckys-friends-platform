@@ -208,7 +208,7 @@ function homeView() {
 function gameCard(activity) {
   const ages = (activity.ageCategories || []).join(' · ') || activity.age || '';
   const collection = activity.collection ? `${activity.collection} · ` : '';
-  return `<button type="button" class="game-card" data-game="${esc(activity.id)}"><span class="game-icon">${activityIcon(activity)}</span><span><strong>${esc(activity.title)}</strong><small>${esc(collection)}${esc(activity.category || 'Activitate')} · ${esc(ages)}</small></span><i>→</i></button>`;
+  return `<button type="button" class="game-card" data-game="${esc(activity.id)}"><span class="game-icon">${activityIcon(activity)}</span><span><strong>${esc(activity.title)}</strong>${activity.subtitle ? `<small class="game-card-description">${esc(activity.subtitle)}</small>` : ''}<small class="game-card-meta">${esc(collection)}${esc(activity.category || 'Activitate')} · ${esc(ages)}</small></span><i>→</i></button>`;
 }
 
 function gamesView() {

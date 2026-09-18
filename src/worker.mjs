@@ -860,6 +860,12 @@ async function getDocument(env, key) {
   const existingPlaylists = new Set((targetChildren.activityPlaylists || []).map(item => item?.id).filter(Boolean));
   const seededPlaylists = Array.isArray(seedChildren.activityPlaylists) ? seedChildren.activityPlaylists : [];
   targetChildren.activityPlaylists = [...(targetChildren.activityPlaylists || []), ...seededPlaylists.filter(item => item?.id && !existingPlaylists.has(item.id))];
+  const carlaSeed = seededPlaylists.find(item => item?.id === 'carla-party');
+  const carlaLegacyIds = ['activity-sacul-cu-bile-colorate', 'cup-turn-alternat', 'activity-barele-paralele', 'activity-mingea-peste-cap-printre-picioare', 'activity-123-la-perete-omida-cu-baloane', 'cup-zar-culori', 'activity-baloanele-fugare'];
+  const carlaCurrent = targetChildren.activityPlaylists.find(item => item?.id === 'carla-party');
+  if (carlaSeed && carlaCurrent && JSON.stringify(carlaCurrent.activityIds || []) === JSON.stringify(carlaLegacyIds)) {
+    Object.assign(carlaCurrent, carlaSeed);
+  }
   for (const key of ['challengeDecks', 'musicTracks', 'playlists', 'soundEffects']) {
     const currentItems = Array.isArray(targetChildren[key]) ? targetChildren[key] : [];
     const currentIds = new Set(currentItems.map(item => item?.id).filter(Boolean));
