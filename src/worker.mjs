@@ -857,6 +857,9 @@ async function getDocument(env, key) {
   const existing = new Set((targetChildren.activities || []).map(item => item.id));
   const seededActivities = [...(seedChildren.activities || []), ...cupGamesSeed].filter(item => item?.id && !existing.has(item.id));
   targetChildren.activities = [...(targetChildren.activities || []), ...seededActivities];
+  const existingPlaylists = new Set((targetChildren.activityPlaylists || []).map(item => item?.id).filter(Boolean));
+  const seededPlaylists = Array.isArray(seedChildren.activityPlaylists) ? seedChildren.activityPlaylists : [];
+  targetChildren.activityPlaylists = [...(targetChildren.activityPlaylists || []), ...seededPlaylists.filter(item => item?.id && !existingPlaylists.has(item.id))];
   for (const key of ['challengeDecks', 'musicTracks', 'playlists', 'soundEffects']) {
     const currentItems = Array.isArray(targetChildren[key]) ? targetChildren[key] : [];
     const currentIds = new Set(currentItems.map(item => item?.id).filter(Boolean));

@@ -800,6 +800,22 @@
           "image": ""
         }
       ],
+      "activityPlaylists": [
+        {
+          "id": "carla-party",
+          "title": "Carla PARTY · 10 copii · 9 ani",
+          "activityIds": [
+            "activity-sacul-cu-bile-colorate",
+            "cup-turn-alternat",
+            "activity-barele-paralele",
+            "activity-mingea-peste-cap-printre-picioare",
+            "activity-123-la-perete-omida-cu-baloane",
+            "cup-zar-culori",
+            "activity-baloanele-fugare"
+          ],
+          "completedIds": []
+        }
+      ],
       "physicalInteractions": [
         {
           "id": "physical-balansul-in-doi",
