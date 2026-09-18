@@ -343,7 +343,26 @@ async function handleExperienceRepertoire(request, env) {
 }
 async function handleBeckyThemedActivities(request, env) {
   await requireAdmin(request, env); const url = new URL(request.url);
-  if (request.method === 'GET' && url.pathname === '/api/admin/pedagogic-coverage') { const [workspaces, activitiesResponse, validationsResponse, libraryValidationsResponse] = await Promise.all([getDocument(env, 'workspaces'), supabaseRequest(env, `/rest/v1/admin_becky_themed_activities?select=${BECKY_THEMED_COLUMNS}&status=eq.active`), supabaseRequest(env, '/rest/v1/admin_becky_themed_activity_validations?select=id,activity_id,age_category,participant_category,validation_status'), supabaseRequest(env, '/rest/v1/admin_children_activity_validations?select=id,activity_id,age_category,participant_category,validation_status')]); const activities = await activitiesResponse.json(); const validations = await validationsResponse.json(); const libraryValidations = await libraryValidationsResponse.json(); const byId = new Map(); for (const validation of validations) { if (!byId.has(validation.activity_id)) byId.set(validation.activity_id, []); byId.get(validation.activity_id).push(validation); } for (const item of activities) item.validations = byId.get(item.id) || []; const children = (workspaces.workspaces || []).find(item => item.id === 'children'); for (const item of (children?.activities || [])) item.validations = libraryValidations.filter(value => value.activity_id === item.id); return json(pedagogicCoverage(workspaces, activities)); }
+  if (request.method === 'GET' && url.pathname === '/api/admin/pedagogic-coverage') {
+    const results = await Promise.allSettled([
+      getDocument(env, 'workspaces'),
+      supabaseRequest(env, `/rest/v1/admin_becky_themed_activities?select=${BECKY_THEMED_COLUMNS}&status=eq.active`),
+      supabaseRequest(env, '/rest/v1/admin_becky_themed_activity_validations?select=id,activity_id,age_category,participant_category,validation_status'),
+      supabaseRequest(env, '/rest/v1/admin_children_activity_validations?select=id,activity_id,age_category,participant_category,validation_status')
+    ]);
+    if (results[0].status !== 'fulfilled') return json(pedagogicCoverage({ workspaces: [] }, []));
+    const readArray = async result => result.status === 'fulfilled' ? ((await result.value.json()) || []) : [];
+    const workspaces = results[0].value;
+    const activities = await readArray(results[1]);
+    const validations = await readArray(results[2]);
+    const libraryValidations = await readArray(results[3]);
+    const byId = new Map();
+    for (const validation of validations) { if (!byId.has(validation.activity_id)) byId.set(validation.activity_id, []); byId.get(validation.activity_id).push(validation); }
+    for (const item of activities) item.validations = byId.get(item.id) || [];
+    const children = (workspaces.workspaces || []).find(item => item.id === 'children');
+    for (const item of (children?.activities || [])) item.validations = libraryValidations.filter(value => value.activity_id === item.id);
+    return json(pedagogicCoverage(workspaces, activities));
+  }
   if (request.method === 'POST' && url.pathname === '/api/admin/children-activity-validations') { const body = await readJson(request, 20_000); const activity_id = String(body?.activity_id || '').trim(); const age_category = String(body?.age_category || '').trim(); const participant_category = String(body?.participant_category || '').trim(); const validation_status = String(body?.validation_status || '').trim(); if (!activity_id || !PEDAGOGIC_AGES.includes(age_category) || !PEDAGOGIC_PARTICIPANTS.includes(participant_category) || !['idea','validated'].includes(validation_status)) return json({ error:'Validare invalidă' },400); const id = crypto.randomUUID(); const response = await supabaseRequest(env, '/rest/v1/admin_children_activity_validations?on_conflict=activity_id,age_category,participant_category', { method:'POST', headers:{ Prefer:'resolution=merge-duplicates,return=representation' }, body:JSON.stringify({ id, activity_id, age_category, participant_category, validation_status, updated_at:new Date().toISOString() }) }); return json((await response.json())[0] || { id, activity_id, age_category, participant_category, validation_status }); }
   if (request.method === 'GET' && url.pathname === '/api/admin/becky-themed-activities') { const [activitiesResponse, validationsResponse] = await Promise.all([supabaseRequest(env, `/rest/v1/admin_becky_themed_activities?select=${BECKY_THEMED_COLUMNS}&status=eq.active&order=updated_at.desc`), supabaseRequest(env, '/rest/v1/admin_becky_themed_activity_validations?select=id,activity_id,age_category,participant_category,validation_status')]); const activities = await activitiesResponse.json(); const validations = await validationsResponse.json(); for (const item of activities) item.validations = validations.filter(value => value.activity_id === item.id); return json({ activities }); }
   assertSameOrigin(request); const match = url.pathname.match(/^\/api\/admin\/becky-themed-activities\/([^/?]+)$/);
@@ -857,13 +876,17 @@ async function getDocument(env, key) {
   const existing = new Set((targetChildren.activities || []).map(item => item.id));
   const seededActivities = [...(seedChildren.activities || []), ...cupGamesSeed].filter(item => item?.id && !existing.has(item.id));
   targetChildren.activities = [...(targetChildren.activities || []), ...seededActivities];
+  const scauneCurrent = targetChildren.activities.find(item => item?.id === 'activity-scaunele-muzicale');
+  const scauneSeed = (seedChildren.activities || []).find(item => item?.id === 'activity-scaunele-muzicale');
+  if (scauneCurrent?.rounds?.length && scauneSeed) Object.assign(scauneCurrent, scauneSeed);
   const existingPlaylists = new Set((targetChildren.activityPlaylists || []).map(item => item?.id).filter(Boolean));
   const seededPlaylists = Array.isArray(seedChildren.activityPlaylists) ? seedChildren.activityPlaylists : [];
   targetChildren.activityPlaylists = [...(targetChildren.activityPlaylists || []), ...seededPlaylists.filter(item => item?.id && !existingPlaylists.has(item.id))];
   const carlaSeed = seededPlaylists.find(item => item?.id === 'carla-party');
   const carlaLegacyIds = ['activity-sacul-cu-bile-colorate', 'cup-turn-alternat', 'activity-barele-paralele', 'activity-mingea-peste-cap-printre-picioare', 'activity-123-la-perete-omida-cu-baloane', 'cup-zar-culori', 'activity-baloanele-fugare'];
   const carlaCurrent = targetChildren.activityPlaylists.find(item => item?.id === 'carla-party');
-  if (carlaSeed && carlaCurrent && JSON.stringify(carlaCurrent.activityIds || []) === JSON.stringify(carlaLegacyIds)) {
+  const carlaPreviousExpandedIds = ['activity-scaunele-muzicale', 'activity-traseul-coordonarii', 'activity-sacul-cu-bile-colorate', 'activity-vanatoarea-baloanelor', 'activity-coarda-cu-baloane', 'activity-123-la-perete-omida-cu-baloane', 'activity-baloanele-fugare', 'activity-barele-paralele', 'activity-bastonul-imposibil', 'activity-balonul-fara-maini', 'activity-tunelul-uman', 'activity-mingea-peste-cap-printre-picioare', 'activity-cursa-suflatului', 'cup-stiva-viteza', 'cup-flip-margine', 'cup-flip-minge', 'cup-drop-line', 'cup-bouncing-fill', 'cup-bowling', 'cup-sufla-departe', 'cup-balon-linie', 'cup-balon-transport', 'cup-between-legs', 'cup-prinde-mingea', 'cup-bila-in-cerc', 'cup-turn-alternat', 'cup-carti-suflate', 'cup-zar-culori', 'cup-color-tour', 'cup-turn-cap'];
+  if (carlaSeed && carlaCurrent && (JSON.stringify(carlaCurrent.activityIds || []) === JSON.stringify(carlaLegacyIds) || (carlaCurrent.activityIds || []).length === carlaPreviousExpandedIds.length && !(carlaCurrent.activityIds || []).includes('activity-statuile-muzicale'))) {
     Object.assign(carlaCurrent, carlaSeed);
   }
   for (const key of ['challengeDecks', 'musicTracks', 'playlists', 'soundEffects']) {
