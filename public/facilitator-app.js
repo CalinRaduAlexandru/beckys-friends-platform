@@ -208,7 +208,9 @@ function homeView() {
 function gameCard(activity) {
   const ages = (activity.ageCategories || []).join(' · ') || activity.age || '';
   const collection = activity.collection ? `${activity.collection} · ` : '';
-  return `<button type="button" class="game-card" data-game="${esc(activity.id)}"><span class="game-icon">${activityIcon(activity)}</span><span><strong>${esc(activity.title)}</strong>${activity.subtitle ? `<small class="game-card-description">${esc(activity.subtitle)}</small>` : ''}<small class="game-card-meta">${esc(collection)}${esc(activity.category || 'Activitate')} · ${esc(ages)}</small></span><i>→</i></button>`;
+  const description = String(activity.subtitle || lines(activity.steps)[0] || 'Activitate Becky').replace(/\s+/g, ' ').trim();
+  const shortDescription = description.length > 150 ? `${description.slice(0, 147).replace(/\s+\S*$/, '')}…` : description;
+  return `<button type="button" class="game-card" data-game="${esc(activity.id)}"><span class="game-icon">${activityIcon(activity)}</span><span><strong>${esc(activity.title)}</strong><small class="game-card-description">${esc(shortDescription)}</small><small class="game-card-meta">${esc(collection)}${esc(activity.category || 'Activitate')} · ${esc(ages)}</small></span><i>→</i></button>`;
 }
 
 function gamesView() {
