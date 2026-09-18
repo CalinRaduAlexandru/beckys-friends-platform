@@ -416,7 +416,7 @@
 
   function activityRoundsMarkup(rounds, activityId = '') {
     if (!Array.isArray(rounds) || !rounds.length) return '';
-    return `<section class="library-detail-panel is-rounds"><div><small>8 REPRIZE DE TESTARE</small><h3>Cum testezi statuile</h3><ol>${rounds.map(round => `<li><strong>${safe(round.test)}</strong>${round.punishment ? `<span><b>Pedeapsă:</b> ${safe(round.punishment)}</span>` : ''}</li>`).join('')}</ol><a class="library-rounds-app-link" href="/shake-test?activity_id=${encodeURIComponent(activityId)}">Deschide jocul în aplicația de facilitare →</a></div></section>`;
+    return `<section class="library-detail-panel is-rounds"><div><small>TESTE SURPRIZĂ · ${rounds.length} REPRIZE</small><h3>Cum testăm statuile</h3><p class="rounds-intro">Alege un test scurt și blând după ce muzica se oprește. Copilul poate spune oricând „stop” sau poate alege varianta fără atingere.</p><ol>${rounds.map((round, index) => `<li><strong>Runda ${index + 1}: ${safe(round.test)}</strong>${round.punishment ? `<span><b>După test:</b> ${safe(round.punishment)}</span>` : ''}</li>`).join('')}</ol><a class="library-rounds-app-link" href="/shake-test?activity_id=${encodeURIComponent(activityId)}">Deschide jocul în aplicația de facilitare →</a></div></section>`;
   }
 
   const materialAliases = [['pahare', ['pahar']], ['mingi', ['minge', 'mingiuță', 'mingiuta', 'bilă', 'bila']], ['baloane', ['balon']], ['cărți', ['carte', 'cărți', 'carti']], ['pai', ['pai']], ['zar', ['zar']], ['masă', ['masă', 'masa']], ['bandă adezivă', ['bandă', 'banda']]];
