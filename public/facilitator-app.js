@@ -18,6 +18,7 @@ let facilitatorSession = readJson(SESSION_KEY, null);
 let voiceAudio = null;
 let voiceUrl = '';
 const colorVoiceClips = new Map();
+let timerVoiceQueue = [];
 let deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstallPrompt = event; });
 window.addEventListener('appinstalled', () => localStorage.setItem(INSTALL_ACK_KEY, '1'));
@@ -296,7 +297,6 @@ function timerVoiceVariants(seconds = 120) {
     `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... st... stelele sunt frumoase pe cer! Gata cu privitul la stele... START!`,
     `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... st... stați puțin, oare am numărat toți pantofii? Da! START!`,
     `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... st... stați, un nor tocmai a trecut! Acum chiar: START!`,
-    `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... cine a ascuns energia? Aici era! START!`,
     `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... verificați genunchii, zâmbetele și superputerile... START!`,
     `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... st... stați! Am uitat să spun ceva foarte important: START!`,
     `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... când spun START, pornește distracția! START!`
@@ -305,6 +305,19 @@ function timerVoiceVariants(seconds = 120) {
 
 function timerVoicePreviewMarkup() {
   return `<section class="section timer-voice-preview"><div class="section-heading"><div><span class="eyebrow">PREVIEW VOCE</span><h2>Startul timerului</h2></div><small>Exemplu: 2 minute</small></div><p class="timer-voice-preview-intro">Ascultă variantele înainte să le legăm automat de cronometru.</p><div class="timer-voice-list">${timerVoiceVariants().map((text, index) => `<button type="button" data-preview-timer-voice="${index}"><span>${index + 1}</span><strong>${esc(text)}</strong><i>▶</i></button>`).join('')}</div></section>`;
+}
+
+function timerAnnouncement(seconds) {
+  const variants = timerVoiceVariants(seconds);
+  if (Math.random() < 0.7) return variants[0];
+  if (!timerVoiceQueue.length) {
+    timerVoiceQueue = variants.slice(1).map((_, index) => index + 1);
+    for (let index = timerVoiceQueue.length - 1; index > 0; index -= 1) {
+      const swap = Math.floor(Math.random() * (index + 1));
+      [timerVoiceQueue[index], timerVoiceQueue[swap]] = [timerVoiceQueue[swap], timerVoiceQueue[index]];
+    }
+  }
+  return variants[timerVoiceQueue.shift()];
 }
 
 function tvView() {
@@ -480,7 +493,7 @@ function flash(icon){const element=document.createElement('div');element.classNa
 
 function startTimerInterval(){clearInterval(state.timerId);state.timerId=setInterval(()=>{state.timerSeconds-=1;updateTimerDOM();if(state.timerSeconds<=0){clearTimer(false);playEffect('gong');toast('Timpul s-a terminat.');updateTimerDOM();}},1000);}
 function updateTimerDOM(){root.querySelectorAll('[data-timer-display]').forEach(element=>{element.textContent=formatTime(state.timerSeconds)||'0:00';});root.querySelectorAll('.timer-banner').forEach(element=>{element.classList.toggle('is-running',state.timerRunning);});}
-function setTimer(seconds){clearInterval(state.timerId);state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=true;state.sheet='';state.timerFullscreen=true;startTimerInterval();render();requestTimerFullscreen();}
+function setTimer(seconds){clearInterval(state.timerId);state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=true;state.sheet='';state.timerFullscreen=true;startTimerInterval();render();requestTimerFullscreen();speak(timerAnnouncement(seconds));}
 function toggleTimer(){if(state.timerRunning){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;}else{if(!state.timerSeconds)state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();}render();}
 function resetTimer(){if(!state.timerInitial)return;clearInterval(state.timerId);state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();render();}
 function clearTimer(reset=true){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;if(reset){state.timerSeconds=0;state.timerInitial=0;}}
