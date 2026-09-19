@@ -19,6 +19,8 @@ let voiceAudio = null;
 let voiceUrl = '';
 const colorVoiceClips = new Map();
 let timerVoiceQueue = [];
+const timerVoiceClips = new Map();
+let timerCountdownAudio = null;
 let deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstallPrompt = event; });
 window.addEventListener('appinstalled', () => localStorage.setItem(INSTALL_ACK_KEY, '1'));
@@ -493,17 +495,23 @@ function playEffect(id){const effect=state.library.soundEffects.find(item=>item.
 function playEffectAudio(src,volume){const sound=new Audio(src);sound.volume=volume;sound.play().catch(()=>{});}
 function flash(icon){const element=document.createElement('div');element.className='reaction-flash';element.textContent=icon;document.body.appendChild(element);setTimeout(()=>element.remove(),780);}
 
-function startTimerInterval(){clearInterval(state.timerId);state.timerId=setInterval(()=>{state.timerSeconds-=1;updateTimerDOM();if(state.timerSeconds<=0){clearTimer(false);playEffect('gong');toast('Timpul s-a terminat.');updateTimerDOM();}},1000);}
+function startTimerInterval(){clearInterval(state.timerId);state.timerId=setInterval(()=>{state.timerSeconds-=1;updateTimerDOM();if(state.timerSeconds<=10&&state.timerSeconds>0)playTimerCountdown(String(state.timerSeconds));if(state.timerSeconds<=0){clearTimer(false);playTimerFinish();toast('Timpul s-a terminat.');updateTimerDOM();}},1000);}
 function updateTimerDOM(){root.querySelectorAll('[data-timer-display]').forEach(element=>{element.textContent=formatTime(state.timerSeconds)||'0:00';});root.querySelectorAll('.timer-banner').forEach(element=>{element.classList.toggle('is-running',state.timerRunning);});}
-function setTimer(seconds){clearInterval(state.timerId);state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=false;state.timerAnnouncing=true;state.sheet='';state.timerFullscreen=true;render();requestTimerFullscreen();announceAndStartTimer(seconds);}
-async function announceAndStartTimer(seconds){await speak(timerAnnouncement(seconds));if(!state.timerFullscreen||state.timerInitial!==seconds||state.timerSeconds!==seconds)return;state.timerAnnouncing=false;state.timerRunning=true;startTimerInterval();render();}
+function setTimer(seconds){clearInterval(state.timerId);clearTimerVoiceClips();state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=false;state.timerAnnouncing=true;state.sheet='';state.timerFullscreen=true;render();requestTimerFullscreen();announceAndStartTimer(seconds);}
+async function announceAndStartTimer(seconds){const preparation=prepareTimerVoiceClips();await Promise.allSettled([speak(timerAnnouncement(seconds)),preparation]);if(!state.timerFullscreen||state.timerInitial!==seconds||state.timerSeconds!==seconds)return;state.timerAnnouncing=false;state.timerRunning=true;startTimerInterval();render();}
 function toggleTimer(){if(state.timerRunning){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;}else{if(!state.timerSeconds)state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();}render();}
 function resetTimer(){if(!state.timerInitial)return;clearInterval(state.timerId);state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();render();}
-function clearTimer(reset=true){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;state.timerAnnouncing=false;if(reset){state.timerSeconds=0;state.timerInitial=0;}}
+function clearTimer(reset=true){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;state.timerAnnouncing=false;timerCountdownAudio?.pause();timerCountdownAudio=null;if(reset){state.timerSeconds=0;state.timerInitial=0;}}
 function openTimerFullscreen(){state.sheet='';state.timerFullscreen=true;render();requestTimerFullscreen();}
 function requestTimerFullscreen(){const overlay=root.querySelector('[data-timer-fullscreen]');const request=overlay?.requestFullscreen?.({navigationUI:'hide'});request?.catch?.(()=>{});const lock=screen.orientation?.lock?.('landscape');lock?.catch?.(()=>{});}
 function closeTimerFullscreen(){state.timerFullscreen=false;clearTimer(true);const exit=document.fullscreenElement?document.exitFullscreen?.():null;exit?.catch?.(()=>{});render();}
 function bindTimerFullscreen(){const overlay=root.querySelector('[data-timer-fullscreen]');if(!overlay)return;let startX=0;let startY=0;overlay.addEventListener('pointerdown',event=>{startX=event.clientX;startY=event.clientY;});overlay.addEventListener('pointerup',event=>{if(Math.hypot(event.clientX-startX,event.clientY-startY)>80)closeTimerFullscreen();});overlay.addEventListener('keydown',event=>{if(event.key==='Escape')closeTimerFullscreen();});}
+function timerVoiceTexts(){return ['zece','nouă','opt','șapte','șase','cinci','patru','trei','doi','unu','GATAA! STOP JOC!'];}
+async function prepareTimerVoiceClips(){await Promise.all(timerVoiceTexts().map(async text=>{if(timerVoiceClips.has(text))return;try{const response=await fetch('/api/tts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text})});if(!response.ok)throw new Error('TTS');timerVoiceClips.set(text,URL.createObjectURL(await response.blob()));}catch{}}));}
+function clearTimerVoiceClips(){timerVoiceClips.forEach(url=>URL.revokeObjectURL(url));timerVoiceClips.clear();}
+function playTimerCountdown(number){const index=10-Number(number);const src=timerVoiceClips.get(timerVoiceTexts()[index]);if(!src)return;timerCountdownAudio?.pause();timerCountdownAudio=new Audio(src);timerCountdownAudio.volume=1;timerCountdownAudio.play().catch(()=>{});}
+function playTimerFinish(){playTimerBuzz();const src=timerVoiceClips.get('GATAA! STOP JOC!');if(src){setTimeout(()=>{timerCountdownAudio=new Audio(src);timerCountdownAudio.volume=1;timerCountdownAudio.play().catch(()=>{});},500);}}
+function playTimerBuzz(){const context=getAudioContext();const oscillator=context.createOscillator();const gain=context.createGain();oscillator.type='sawtooth';oscillator.frequency.setValueAtTime(150,context.currentTime);oscillator.frequency.linearRampToValueAtTime(75,context.currentTime+.75);gain.gain.setValueAtTime(.0001,context.currentTime);gain.gain.exponentialRampToValueAtTime(.55,context.currentTime+.025);gain.gain.setValueAtTime(.55,context.currentTime+.58);gain.gain.exponentialRampToValueAtTime(.0001,context.currentTime+.85);oscillator.connect(gain).connect(context.destination);oscillator.start();oscillator.stop(context.currentTime+.9);}
 function formatTime(seconds){if(!seconds)return'';return`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;}
 
 async function openChallenge(){state.sheet='';await requestMotionPermission();nextChallenge();}
