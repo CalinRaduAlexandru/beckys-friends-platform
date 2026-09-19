@@ -48,6 +48,7 @@ const state = {
   timerInitial: 0,
   timerRunning: false,
   timerId: null,
+  timerFullscreen: false,
   challenge: null,
   shownChallenges: new Set(),
   colorGame: null,
@@ -195,12 +196,17 @@ function nowPlaying() {
 
 function shell(content, options = {}) {
   const player = nowPlaying();
-  return `<main class="app-shell ${player ? 'has-player' : ''}">${content}</main>${player}${timerBanner()}${options.nav === false ? '' : bottomNav()}${state.sheet ? sheetMarkup(state.sheet) : ''}${state.challenge ? challengeMarkup() : ''}${state.colorGame ? colorGameMarkup() : ''}`;
+  return `<main class="app-shell ${player ? 'has-player' : ''}">${content}</main>${player}${timerBanner()}${state.timerFullscreen ? timerFullscreenMarkup() : ''}${options.nav === false ? '' : bottomNav()}${state.sheet ? sheetMarkup(state.sheet) : ''}${state.challenge ? challengeMarkup() : ''}${state.colorGame ? colorGameMarkup() : ''}`;
 }
 
 function timerBanner() {
   if (!state.timerInitial) return '';
   return `<button class="timer-banner ${state.timerRunning ? 'is-running' : ''}" type="button" data-open-sheet="timer"><span class="timer-banner-icon">◷</span><span><small>${state.timerRunning ? 'TIMER ÎN DESFĂȘURARE' : 'TIMER PUS PE PAUZĂ'}</small><strong data-timer-display>${formatTime(state.timerSeconds) || '0:00'}</strong></span><i>${state.timerRunning ? 'Pauză / schimbă' : 'Continuă'}</i></button>`;
+}
+
+function timerFullscreenMarkup() {
+  const finished = state.timerInitial && state.timerSeconds <= 0;
+  return `<section class="timer-fullscreen" data-timer-fullscreen role="dialog" aria-modal="true" aria-label="Timer"><div class="timer-fullscreen-top"><span class="eyebrow">TIMER</span><button type="button" class="timer-close" data-close-timer aria-label="Închide timerul">×</button></div><div class="timer-fullscreen-body"><small>${finished ? 'TIMPUL S-A TERMINAT' : state.timerRunning ? 'ÎN DESFĂȘURARE' : 'PUS PE PAUZĂ'}</small><strong data-timer-display>${formatTime(state.timerSeconds) || '0:00'}</strong><div class="timer-fullscreen-controls"><button type="button" data-toggle-timer>${state.timerRunning ? 'Ⅱ  Pauză' : state.timerSeconds ? '▶  Reia' : '↻  Repornește'}</button><button type="button" class="timer-secondary" data-reset-timer>↻  Repornește</button><button type="button" class="timer-secondary" data-close-timer>Închide</button></div></div><small class="timer-swipe-hint">Glisează în orice direcție pentru a închide</small></section>`;
 }
 
 function homeView() {
@@ -325,12 +331,15 @@ function bind() {
   root.querySelector('[data-previous-step]')?.addEventListener('click', () => changeStep(-1));
   root.querySelector('[data-next-step]')?.addEventListener('click', () => state.session.step === state.session.steps.length - 1 ? endSession() : changeStep(1));
   root.querySelector('[data-read-step]')?.addEventListener('click', () => speak(state.session?.steps[state.session.step] || ''));
-  root.querySelectorAll('[data-open-sheet]').forEach(button => button.addEventListener('click', () => { state.sheet = button.dataset.openSheet; render(); }));
+  root.querySelectorAll('[data-open-sheet]').forEach(button => button.addEventListener('click', () => { if (button.dataset.openSheet === 'timer' && state.timerInitial) { openTimerFullscreen(); return; } state.sheet = button.dataset.openSheet; render(); }));
   root.querySelectorAll('[data-open-landscape-reference]').forEach(button => button.addEventListener('click', openLandscapeReference));
   root.querySelectorAll('[data-close-sheet]').forEach(element => element.addEventListener('click', event => { if (event.target.closest('[data-sheet]') && !event.target.matches('[data-close-sheet]')) return; state.sheet = ''; render(); }));
   root.querySelectorAll('[data-effect]').forEach(button => button.addEventListener('click', () => playEffect(button.dataset.effect)));
   root.querySelectorAll('[data-set-timer]').forEach(button => button.addEventListener('click', () => setTimer(Number(button.dataset.setTimer))));
   root.querySelector('[data-toggle-timer]')?.addEventListener('click', toggleTimer);
+  root.querySelector('[data-reset-timer]')?.addEventListener('click', resetTimer);
+  root.querySelectorAll('[data-close-timer]').forEach(button => button.addEventListener('click', closeTimerFullscreen));
+  bindTimerFullscreen();
   root.querySelectorAll('[data-track]').forEach(button => button.addEventListener('click', () => toggleTrack(button.dataset.track)));
   root.querySelector('[data-next-track]')?.addEventListener('click', playNextTrack);
   root.querySelectorAll('[data-rate-track]').forEach(button => button.addEventListener('click', () => rateTrack(button.dataset.rateTrack, Number(button.dataset.rating))));
@@ -448,9 +457,14 @@ function flash(icon){const element=document.createElement('div');element.classNa
 
 function startTimerInterval(){clearInterval(state.timerId);state.timerId=setInterval(()=>{state.timerSeconds-=1;updateTimerDOM();if(state.timerSeconds<=0){clearTimer(false);playEffect('gong');toast('Timpul s-a terminat.');updateTimerDOM();}},1000);}
 function updateTimerDOM(){root.querySelectorAll('[data-timer-display]').forEach(element=>{element.textContent=formatTime(state.timerSeconds)||'0:00';});root.querySelectorAll('.timer-banner').forEach(element=>{element.classList.toggle('is-running',state.timerRunning);});}
-function setTimer(seconds){clearInterval(state.timerId);state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=true;state.sheet='';startTimerInterval();render();}
+function setTimer(seconds){clearInterval(state.timerId);state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=true;state.sheet='';state.timerFullscreen=true;startTimerInterval();render();requestTimerFullscreen();}
 function toggleTimer(){if(state.timerRunning){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;}else{if(!state.timerSeconds)state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();}render();}
+function resetTimer(){if(!state.timerInitial)return;clearInterval(state.timerId);state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();render();}
 function clearTimer(reset=true){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;if(reset){state.timerSeconds=0;state.timerInitial=0;}}
+function openTimerFullscreen(){state.sheet='';state.timerFullscreen=true;render();requestTimerFullscreen();}
+function requestTimerFullscreen(){const overlay=root.querySelector('[data-timer-fullscreen]');const request=overlay?.requestFullscreen?.({navigationUI:'hide'});request?.catch?.(()=>{});const lock=screen.orientation?.lock?.('landscape');lock?.catch?.(()=>{});}
+function closeTimerFullscreen(){state.timerFullscreen=false;clearTimer(true);const exit=document.fullscreenElement?document.exitFullscreen?.():null;exit?.catch?.(()=>{});render();}
+function bindTimerFullscreen(){const overlay=root.querySelector('[data-timer-fullscreen]');if(!overlay)return;let startX=0;let startY=0;overlay.addEventListener('pointerdown',event=>{startX=event.clientX;startY=event.clientY;});overlay.addEventListener('pointerup',event=>{if(Math.hypot(event.clientX-startX,event.clientY-startY)>80)closeTimerFullscreen();});overlay.addEventListener('keydown',event=>{if(event.key==='Escape')closeTimerFullscreen();});}
 function formatTime(seconds){if(!seconds)return'';return`${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;}
 
 async function openChallenge(){state.sheet='';await requestMotionPermission();nextChallenge();}
