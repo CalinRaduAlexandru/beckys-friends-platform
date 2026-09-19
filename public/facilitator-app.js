@@ -286,7 +286,11 @@ function toolsView() {
 }
 
 function timerVoiceVariants(seconds = 120) {
-  const duration = seconds < 60 ? `${seconds} de secunde` : `${Math.floor(seconds / 60)} minute${seconds % 60 ? ` și ${seconds % 60} de secunde` : ''}`;
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  const minuteText = minutes === 1 ? 'un minut' : minutes === 2 ? 'două minute' : `${minutes} minute`;
+  const secondText = remainingSeconds === 1 ? 'o secundă' : remainingSeconds === 2 ? 'două secunde' : `${remainingSeconds} de secunde`;
+  const duration = seconds < 60 ? secondText : `${minuteText}${remainingSeconds ? ` și ${secondText}` : ''}`;
   return [
     `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... START!`,
     `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... st... stelele sunt frumoase pe cer! Gata cu privitul la stele... START!`,
