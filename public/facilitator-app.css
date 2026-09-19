@@ -31,3 +31,4 @@
 .tv-overlay{top:50%;right:auto;bottom:auto;left:50%;width:min(520px,calc(100vw - 48px));padding:30px;border-radius:28px;text-align:center;transform:translate(-50%,-50%)}.tv-overlay strong{font-size:clamp(25px,4vw,42px)}.tv-overlay button{min-height:72px;margin-top:12px;font-size:clamp(17px,2.3vw,24px)}.tv-overlay small{color:#d9e5e8;font-size:12px;font-weight:700}.tv-overlay.is-started{transform:translate(-50%,-45%)}
 @media (orientation:portrait){.tv-animation{object-fit:contain}.tv-overlay{right:18px;bottom:18px;left:18px}}
 .music-game-toggle.is-changing .music-game-toggle-icon,.music-game-toggle.is-changing strong,.music-game-toggle.is-changing small{animation:music-label-swap .42s cubic-bezier(.2,.8,.25,1)}@keyframes music-label-swap{0%{opacity:.2;transform:translateY(8px) scale(.92)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.music-game-center h1{margin-bottom:40px}
