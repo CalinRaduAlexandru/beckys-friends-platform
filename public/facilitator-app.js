@@ -282,7 +282,25 @@ function trackCard(track) {
 }
 
 function toolsView() {
-  return shell(`${header('Trusă')}<section class="hero-card"><small>INSTRUMENTE DE FACILITARE</small><h1>Puține gesturi. Efect imediat.</h1><p>Sunetele, timerul și provocările sunt instrumente scurte. Jocul și copiii rămân în centru.</p></section><section class="section"><div class="section-heading"><div><span class="eyebrow">REACȚII RAPIDE</span><h2>O singură atingere</h2></div></div>${effectsGrid()}</section><section class="section"><div class="section-heading"><div><span class="eyebrow">RITM</span><h2>Timer rapid</h2></div></div><div class="timer-options">${[30,60,180,300].map(value => `<button data-set-timer="${value}">${value < 60 ? `${value} sec` : `${value / 60} min`}</button>`).join('')}</div></section><section class="section"><button class="start-game" data-open-color-game type="button">Alege o culoare prin shake</button></section><section class="section"><button class="start-game" data-open-challenge type="button">Deschide provocările</button></section>`);
+  return shell(`${header('Trusă')}<section class="hero-card"><small>INSTRUMENTE DE FACILITARE</small><h1>Puține gesturi. Efect imediat.</h1><p>Sunetele, timerul și provocările sunt instrumente scurte. Jocul și copiii rămân în centru.</p></section><section class="section"><div class="section-heading"><div><span class="eyebrow">REACȚII RAPIDE</span><h2>O singură atingere</h2></div></div>${effectsGrid()}</section><section class="section"><div class="section-heading"><div><span class="eyebrow">RITM</span><h2>Timer rapid</h2></div></div><div class="timer-options">${[30,60,180,300].map(value => `<button data-set-timer="${value}">${value < 60 ? `${value} sec` : `${value / 60} min`}</button>`).join('')}</div></section>${timerVoicePreviewMarkup()}<section class="section"><button class="start-game" data-open-color-game type="button">Alege o culoare prin shake</button></section><section class="section"><button class="start-game" data-open-challenge type="button">Deschide provocările</button></section>`);
+}
+
+function timerVoiceVariants(seconds = 120) {
+  const duration = seconds < 60 ? `${seconds} de secunde` : `${Math.floor(seconds / 60)} minute${seconds % 60 ? ` și ${seconds % 60} de secunde` : ''}`;
+  return [
+    `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... START!`,
+    `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... st... stelele sunt frumoase pe cer! Gata cu privitul la stele... START!`,
+    `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... st... stați puțin, oare am numărat toți pantofii? Da! START!`,
+    `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... st... stați, un nor tocmai a trecut! Acum chiar: START!`,
+    `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... cine a ascuns energia? Aici era! START!`,
+    `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... verificați genunchii, zâmbetele și superputerile... START!`,
+    `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... st... stați! Am uitat să spun ceva foarte important: START!`,
+    `Sunteți gata? Aveți ${duration} pentru acest joc! Hai să începem! Pe locuri... fiți gata... când spun START, pornește distracția! START!`
+  ];
+}
+
+function timerVoicePreviewMarkup() {
+  return `<section class="section timer-voice-preview"><div class="section-heading"><div><span class="eyebrow">PREVIEW VOCE</span><h2>Startul timerului</h2></div><small>Exemplu: 2 minute</small></div><p class="timer-voice-preview-intro">Ascultă variantele înainte să le legăm automat de cronometru.</p><div class="timer-voice-list">${timerVoiceVariants().map((text, index) => `<button type="button" data-preview-timer-voice="${index}"><span>${index + 1}</span><strong>${esc(text)}</strong><i>▶</i></button>`).join('')}</div></section>`;
 }
 
 function tvView() {
@@ -335,6 +353,7 @@ function bind() {
   root.querySelectorAll('[data-open-landscape-reference]').forEach(button => button.addEventListener('click', openLandscapeReference));
   root.querySelectorAll('[data-close-sheet]').forEach(element => element.addEventListener('click', event => { if (event.target.closest('[data-sheet]') && !event.target.matches('[data-close-sheet]')) return; state.sheet = ''; render(); }));
   root.querySelectorAll('[data-effect]').forEach(button => button.addEventListener('click', () => playEffect(button.dataset.effect)));
+  root.querySelectorAll('[data-preview-timer-voice]').forEach(button => button.addEventListener('click', () => speak(timerVoiceVariants()[Number(button.dataset.previewTimerVoice)])));
   root.querySelectorAll('[data-set-timer]').forEach(button => button.addEventListener('click', () => setTimer(Number(button.dataset.setTimer))));
   root.querySelector('[data-toggle-timer]')?.addEventListener('click', toggleTimer);
   root.querySelector('[data-reset-timer]')?.addEventListener('click', resetTimer);
