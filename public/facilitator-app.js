@@ -1,6 +1,10 @@
 const root = document.getElementById('facilitator-app');
 const audio = document.getElementById('facilitator-audio');
-const CACHE_KEY = 'becky-facilitator:library:v1';
+// Bump this whenever the shape/content of the library cache changes. The old
+// cache could make an installed PWA keep showing a stale activity list.
+const CACHE_KEY = 'becky-facilitator:library:v2';
+
+function freshUrl(path) { return `${path}${path.includes('?') ? '&' : '?'}_=${Date.now()}`; }
 const PLAYLIST_KEY = 'becky-facilitator:playlists:v1';
 const RECENT_KEY = 'becky-facilitator:recent:v1';
 const VOLUME_KEY = 'becky-facilitator:volume:v1';
@@ -76,13 +80,13 @@ async function refreshSession() {
 async function loadLibrary() {
   try {
     if (facilitatorSession?.access_code) {
-      const response = await fetch('/api/facilitator/library', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code:facilitatorSession.access_code}) });
+      const response = await fetch(freshUrl('/api/facilitator/library'), { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({code:facilitatorSession.access_code}) });
       if (response.status === 401) { saveSession(null); throw Object.assign(new Error('Cod invalid'), { code:'AUTH' }); }
       if (!response.ok) throw new Error('library');
       const payload = await response.json(); saveJson(CACHE_KEY, payload); return payload;
     }
-    let response = await fetch('/api/workspaces', { headers:authHeaders() });
-    if (response.status === 401 && await refreshSession()) response = await fetch('/api/workspaces', { headers:authHeaders() });
+    let response = await fetch(freshUrl('/api/workspaces'), { headers:authHeaders() });
+    if (response.status === 401 && await refreshSession()) response = await fetch(freshUrl('/api/workspaces'), { headers:authHeaders() });
     if (response.status === 401) throw Object.assign(new Error('Este nevoie de autentificare pentru a deschide Biblioteca.'), { code:'AUTH' });
     if (!response.ok) throw new Error('library');
     const payload = await response.json();
@@ -100,7 +104,7 @@ function showLogin() {
   document.querySelector('.facilitator-login')?.remove();
   const style = document.createElement('style'); style.textContent = `.facilitator-login{position:fixed;z-index:200;inset:0;display:grid;place-items:center;padding:20px;background:rgba(35,52,72,.42);backdrop-filter:blur(6px)}.facilitator-login-card{width:min(420px,100%);padding:26px;border-radius:28px;background:#fffdf9;box-shadow:0 25px 70px rgba(24,39,55,.25)}.facilitator-login-card .brand-mark{margin-bottom:16px}.facilitator-login-card h1{margin:7px 0;font:600 28px/1.08 DynaPuff,sans-serif}.facilitator-login-card p{margin:0 0 20px;color:#6f7f8f;font-size:13px;font-weight:650;line-height:1.4}.facilitator-login-card label{display:grid;gap:6px;margin-top:12px;color:#6f7f8f;font-size:11px;font-weight:900}.facilitator-login-card input{min-height:50px;padding:0 13px;border:1px solid #ccdadd;border-radius:15px;outline:0;background:white;color:#233448}.facilitator-login-card input:focus{border-color:#2399a6;box-shadow:0 0 0 4px rgba(35,153,166,.12)}.facilitator-login-card button{width:100%;margin-top:18px;min-height:54px;border:0;border-radius:17px;background:#233448;color:white;font-weight:900}.facilitator-login-error{min-height:18px;margin-top:12px;color:#c45468;font-size:11px;font-weight:800}`; document.head.appendChild(style);
   const overlay=document.createElement('div'); overlay.className='facilitator-login'; overlay.innerHTML=`<form class="facilitator-login-card"><div class="brand-mark">✦</div><span class="eyebrow">BECKY · FACILITATOR</span><h1>Intră în Biblioteca Becky</h1><p>Scrie codul comun al echipei pentru a deschide jocurile și instrumentele Becky.</p><label>Cod de acces<input type="password" name="code" inputmode="text" autocomplete="current-password" autocapitalize="none" required></label><div class="facilitator-login-error" aria-live="polite"></div><button type="submit">Intră în aplicație</button></form>`; document.body.appendChild(overlay);
-  overlay.querySelector('form').addEventListener('submit',async event=>{event.preventDefault();const form=event.currentTarget;const button=form.querySelector('button');const error=overlay.querySelector('.facilitator-login-error');button.disabled=true;button.textContent='Se verifică…';error.textContent='';try{const code=form.code.value.trim();const response=await fetch('/api/facilitator/library',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});if(!response.ok)throw new Error((await response.json().catch(()=>({}))).error||'Codul nu este corect.');saveSession({access_code:code});const payload=await response.json();saveJson(CACHE_KEY,payload);overlay.remove();await init();}catch(loginError){error.textContent=loginError.message;button.disabled=false;button.textContent='Intră în aplicație';}}); overlay.querySelector('input')?.focus();
+  overlay.querySelector('form').addEventListener('submit',async event=>{event.preventDefault();const form=event.currentTarget;const button=form.querySelector('button');const error=overlay.querySelector('.facilitator-login-error');button.disabled=true;button.textContent='Se verifică…';error.textContent='';try{const code=form.code.value.trim();const response=await fetch(freshUrl('/api/facilitator/library'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code})});if(!response.ok)throw new Error((await response.json().catch(()=>({}))).error||'Codul nu este corect.');saveSession({access_code:code});const payload=await response.json();saveJson(CACHE_KEY,payload);overlay.remove();await init();}catch(loginError){error.textContent=loginError.message;button.disabled=false;button.textContent='Intră în aplicație';}}); overlay.querySelector('input')?.focus();
 }
 
 function header(title = 'Activități Becky') {
