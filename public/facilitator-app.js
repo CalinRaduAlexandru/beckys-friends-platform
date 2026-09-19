@@ -51,6 +51,8 @@ const state = {
   timerInitial: 0,
   timerRunning: false,
   timerAnnouncing: false,
+  timerVoiceError: false,
+  timerAnnouncementText: '',
   timerId: null,
   timerFullscreen: false,
   challenge: null,
@@ -211,7 +213,8 @@ function timerBanner() {
 function timerFullscreenMarkup() {
   const finished = state.timerInitial && state.timerSeconds <= 0;
   const announcing = state.timerAnnouncing && !finished;
-  return `<section class="timer-fullscreen" data-timer-fullscreen role="dialog" aria-modal="true" aria-label="Timer"><div class="timer-fullscreen-top"><span class="eyebrow">TIMER</span><button type="button" class="timer-close" data-close-timer aria-label="Închide timerul">×</button></div><div class="timer-fullscreen-body"><small>${finished ? 'TIMPUL S-A TERMINAT' : announcing ? 'ASCULTĂ INSTRUCȚIUNILE' : state.timerRunning ? 'ÎN DESFĂȘURARE' : 'PUS PE PAUZĂ'}</small><strong data-timer-display>${formatTime(state.timerSeconds) || '0:00'}</strong><div class="timer-fullscreen-controls">${announcing ? '<button type="button" disabled>Se pregătește START…</button>' : `<button type="button" data-toggle-timer>${state.timerRunning ? 'Ⅱ  Pauză' : state.timerSeconds ? '▶  Reia' : '↻  Repornește'}</button><button type="button" class="timer-secondary" data-reset-timer>↻  Repornește</button>`}<button type="button" class="timer-secondary" data-close-timer>Închide</button></div></div><small class="timer-swipe-hint">Glisează în orice direcție pentru a închide</small></section>`;
+  const voiceError = state.timerVoiceError && announcing;
+  return `<section class="timer-fullscreen" data-timer-fullscreen role="dialog" aria-modal="true" aria-label="Timer"><div class="timer-fullscreen-top"><span class="eyebrow">TIMER</span><button type="button" class="timer-close" data-close-timer aria-label="Închide timerul">×</button></div><div class="timer-fullscreen-body"><small>${finished ? 'TIMPUL S-A TERMINAT' : voiceError ? 'VOCEA NU A PORNIT' : announcing ? 'ASCULTĂ INSTRUCȚIUNILE' : state.timerRunning ? 'ÎN DESFĂȘURARE' : 'PUS PE PAUZĂ'}</small><strong data-timer-display>${formatTime(state.timerSeconds) || '0:00'}</strong><div class="timer-fullscreen-controls">${voiceError ? '<button type="button" data-retry-timer-voice>▶  Reia anunțul</button>' : announcing ? '<button type="button" disabled>Se pregătește START…</button>' : `<button type="button" data-toggle-timer>${state.timerRunning ? 'Ⅱ  Pauză' : state.timerSeconds ? '▶  Reia' : '↻  Repornește'}</button><button type="button" class="timer-secondary" data-reset-timer>↻  Repornește</button>`}<button type="button" class="timer-secondary" data-close-timer>Închide</button></div></div><small class="timer-swipe-hint">Glisează în orice direcție pentru a închide</small></section>`;
 }
 
 function homeView() {
@@ -378,6 +381,7 @@ function bind() {
   root.querySelectorAll('[data-set-timer]').forEach(button => button.addEventListener('click', () => setTimer(Number(button.dataset.setTimer))));
   root.querySelector('[data-toggle-timer]')?.addEventListener('click', toggleTimer);
   root.querySelector('[data-reset-timer]')?.addEventListener('click', resetTimer);
+  root.querySelector('[data-retry-timer-voice]')?.addEventListener('click', retryTimerVoice);
   root.querySelectorAll('[data-close-timer]').forEach(button => button.addEventListener('click', closeTimerFullscreen));
   bindTimerFullscreen();
   root.querySelectorAll('[data-track]').forEach(button => button.addEventListener('click', () => toggleTrack(button.dataset.track)));
@@ -497,11 +501,12 @@ function flash(icon){const element=document.createElement('div');element.classNa
 
 function startTimerInterval(){clearInterval(state.timerId);state.timerId=setInterval(()=>{state.timerSeconds-=1;updateTimerDOM();if(state.timerSeconds<=10&&state.timerSeconds>0)playTimerCountdown(String(state.timerSeconds));if(state.timerSeconds<=0){clearTimer(false);playTimerFinish();toast('Timpul s-a terminat.');updateTimerDOM();}},1000);}
 function updateTimerDOM(){root.querySelectorAll('[data-timer-display]').forEach(element=>{element.textContent=formatTime(state.timerSeconds)||'0:00';});root.querySelectorAll('.timer-banner').forEach(element=>{element.classList.toggle('is-running',state.timerRunning);});}
-function setTimer(seconds){clearInterval(state.timerId);clearTimerVoiceClips();state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=false;state.timerAnnouncing=true;state.sheet='';state.timerFullscreen=true;render();requestTimerFullscreen();announceAndStartTimer(seconds);}
-async function announceAndStartTimer(seconds){const preparation=prepareTimerVoiceClips();await Promise.allSettled([speak(timerAnnouncement(seconds)),preparation]);if(!state.timerFullscreen||state.timerInitial!==seconds||state.timerSeconds!==seconds)return;state.timerAnnouncing=false;state.timerRunning=true;startTimerInterval();render();}
+function setTimer(seconds){clearInterval(state.timerId);clearTimerVoiceClips();state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=false;state.timerAnnouncing=true;state.timerVoiceError=false;state.timerAnnouncementText=timerAnnouncement(seconds);state.sheet='';state.timerFullscreen=true;render();requestTimerFullscreen();announceAndStartTimer(seconds);}
+async function announceAndStartTimer(seconds){prepareTimerVoiceClips();const voiceFinished=await speak(state.timerAnnouncementText);if(!state.timerFullscreen||state.timerInitial!==seconds||state.timerSeconds!==seconds)return;if(!voiceFinished){state.timerVoiceError=true;render();return;}state.timerAnnouncing=false;state.timerRunning=true;startTimerInterval();render();}
+async function retryTimerVoice(){if(!state.timerAnnouncementText)return;state.timerVoiceError=false;render();const voiceFinished=await speak(state.timerAnnouncementText);if(!state.timerFullscreen||!state.timerAnnouncing)return;if(!voiceFinished){state.timerVoiceError=true;render();return;}state.timerAnnouncing=false;state.timerRunning=true;startTimerInterval();render();}
 function toggleTimer(){if(state.timerRunning){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;}else{if(!state.timerSeconds)state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();}render();}
 function resetTimer(){if(!state.timerInitial)return;clearInterval(state.timerId);state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();render();}
-function clearTimer(reset=true){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;state.timerAnnouncing=false;timerCountdownAudio?.pause();timerCountdownAudio=null;if(reset){state.timerSeconds=0;state.timerInitial=0;}}
+function clearTimer(reset=true){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;state.timerAnnouncing=false;state.timerVoiceError=false;timerCountdownAudio?.pause();timerCountdownAudio=null;if(reset){state.timerSeconds=0;state.timerInitial=0;state.timerAnnouncementText='';}}
 function openTimerFullscreen(){state.sheet='';state.timerFullscreen=true;render();requestTimerFullscreen();}
 function requestTimerFullscreen(){const overlay=root.querySelector('[data-timer-fullscreen]');const request=overlay?.requestFullscreen?.({navigationUI:'hide'});request?.catch?.(()=>{});const lock=screen.orientation?.lock?.('landscape');lock?.catch?.(()=>{});}
 function closeTimerFullscreen(){state.timerFullscreen=false;clearTimer(true);const exit=document.fullscreenElement?document.exitFullscreen?.():null;exit?.catch?.(()=>{});render();}
