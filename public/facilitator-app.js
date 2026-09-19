@@ -48,6 +48,7 @@ const state = {
   timerSeconds: 0,
   timerInitial: 0,
   timerRunning: false,
+  timerAnnouncing: false,
   timerId: null,
   timerFullscreen: false,
   challenge: null,
@@ -207,7 +208,8 @@ function timerBanner() {
 
 function timerFullscreenMarkup() {
   const finished = state.timerInitial && state.timerSeconds <= 0;
-  return `<section class="timer-fullscreen" data-timer-fullscreen role="dialog" aria-modal="true" aria-label="Timer"><div class="timer-fullscreen-top"><span class="eyebrow">TIMER</span><button type="button" class="timer-close" data-close-timer aria-label="Închide timerul">×</button></div><div class="timer-fullscreen-body"><small>${finished ? 'TIMPUL S-A TERMINAT' : state.timerRunning ? 'ÎN DESFĂȘURARE' : 'PUS PE PAUZĂ'}</small><strong data-timer-display>${formatTime(state.timerSeconds) || '0:00'}</strong><div class="timer-fullscreen-controls"><button type="button" data-toggle-timer>${state.timerRunning ? 'Ⅱ  Pauză' : state.timerSeconds ? '▶  Reia' : '↻  Repornește'}</button><button type="button" class="timer-secondary" data-reset-timer>↻  Repornește</button><button type="button" class="timer-secondary" data-close-timer>Închide</button></div></div><small class="timer-swipe-hint">Glisează în orice direcție pentru a închide</small></section>`;
+  const announcing = state.timerAnnouncing && !finished;
+  return `<section class="timer-fullscreen" data-timer-fullscreen role="dialog" aria-modal="true" aria-label="Timer"><div class="timer-fullscreen-top"><span class="eyebrow">TIMER</span><button type="button" class="timer-close" data-close-timer aria-label="Închide timerul">×</button></div><div class="timer-fullscreen-body"><small>${finished ? 'TIMPUL S-A TERMINAT' : announcing ? 'ASCULTĂ INSTRUCȚIUNILE' : state.timerRunning ? 'ÎN DESFĂȘURARE' : 'PUS PE PAUZĂ'}</small><strong data-timer-display>${formatTime(state.timerSeconds) || '0:00'}</strong><div class="timer-fullscreen-controls">${announcing ? '<button type="button" disabled>Se pregătește START…</button>' : `<button type="button" data-toggle-timer>${state.timerRunning ? 'Ⅱ  Pauză' : state.timerSeconds ? '▶  Reia' : '↻  Repornește'}</button><button type="button" class="timer-secondary" data-reset-timer>↻  Repornește</button>`}<button type="button" class="timer-secondary" data-close-timer>Închide</button></div></div><small class="timer-swipe-hint">Glisează în orice direcție pentru a închide</small></section>`;
 }
 
 function homeView() {
@@ -493,10 +495,11 @@ function flash(icon){const element=document.createElement('div');element.classNa
 
 function startTimerInterval(){clearInterval(state.timerId);state.timerId=setInterval(()=>{state.timerSeconds-=1;updateTimerDOM();if(state.timerSeconds<=0){clearTimer(false);playEffect('gong');toast('Timpul s-a terminat.');updateTimerDOM();}},1000);}
 function updateTimerDOM(){root.querySelectorAll('[data-timer-display]').forEach(element=>{element.textContent=formatTime(state.timerSeconds)||'0:00';});root.querySelectorAll('.timer-banner').forEach(element=>{element.classList.toggle('is-running',state.timerRunning);});}
-function setTimer(seconds){clearInterval(state.timerId);state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=true;state.sheet='';state.timerFullscreen=true;startTimerInterval();render();requestTimerFullscreen();speak(timerAnnouncement(seconds));}
+function setTimer(seconds){clearInterval(state.timerId);state.timerInitial=seconds;state.timerSeconds=seconds;state.timerRunning=false;state.timerAnnouncing=true;state.sheet='';state.timerFullscreen=true;render();requestTimerFullscreen();announceAndStartTimer(seconds);}
+async function announceAndStartTimer(seconds){await speak(timerAnnouncement(seconds));if(!state.timerFullscreen||state.timerInitial!==seconds||state.timerSeconds!==seconds)return;state.timerAnnouncing=false;state.timerRunning=true;startTimerInterval();render();}
 function toggleTimer(){if(state.timerRunning){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;}else{if(!state.timerSeconds)state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();}render();}
 function resetTimer(){if(!state.timerInitial)return;clearInterval(state.timerId);state.timerSeconds=state.timerInitial;state.timerRunning=true;startTimerInterval();render();}
-function clearTimer(reset=true){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;if(reset){state.timerSeconds=0;state.timerInitial=0;}}
+function clearTimer(reset=true){clearInterval(state.timerId);state.timerId=null;state.timerRunning=false;state.timerAnnouncing=false;if(reset){state.timerSeconds=0;state.timerInitial=0;}}
 function openTimerFullscreen(){state.sheet='';state.timerFullscreen=true;render();requestTimerFullscreen();}
 function requestTimerFullscreen(){const overlay=root.querySelector('[data-timer-fullscreen]');const request=overlay?.requestFullscreen?.({navigationUI:'hide'});request?.catch?.(()=>{});const lock=screen.orientation?.lock?.('landscape');lock?.catch?.(()=>{});}
 function closeTimerFullscreen(){state.timerFullscreen=false;clearTimer(true);const exit=document.fullscreenElement?document.exitFullscreen?.():null;exit?.catch?.(()=>{});render();}
@@ -517,7 +520,7 @@ async function requestMotionPermission(){try{if(typeof window.DeviceMotionEvent?
 let lastShake=0;window.addEventListener('devicemotion',event=>{if(!state.challenge)return;const a=event.accelerationIncludingGravity;if(!a)return;const force=Math.hypot(a.x||0,a.y||0,a.z||0);if(force>18&&Date.now()-lastShake>1200){lastShake=Date.now();nextChallenge();}});
 
 async function speak(value){
-  if(!value)return;
+  if(!value)return false;
   voiceAudio?.pause();
   if(voiceUrl){URL.revokeObjectURL(voiceUrl);voiceUrl='';}
   try{
@@ -525,9 +528,14 @@ async function speak(value){
     if(!response.ok)throw new Error('TTS');
     voiceUrl=URL.createObjectURL(await response.blob());
     voiceAudio=new Audio(voiceUrl);
-    voiceAudio.addEventListener('ended',()=>{if(voiceUrl){URL.revokeObjectURL(voiceUrl);voiceUrl='';}} ,{once:true});
-    await voiceAudio.play();
-  }catch{toast('Vocea ElevenLabs nu a putut porni.');}
+    const finished=await new Promise(resolve=>{
+      voiceAudio.addEventListener('ended',()=>{if(voiceUrl){URL.revokeObjectURL(voiceUrl);voiceUrl='';}resolve(true);},{once:true});
+      voiceAudio.addEventListener('error',()=>resolve(false),{once:true});
+      voiceAudio.play().catch(()=>resolve(false));
+    });
+    if(!finished)throw new Error('TTS playback');
+    return true;
+  }catch{toast('Vocea ElevenLabs nu a putut porni.');return false;}
 }
 function toast(message, action){document.querySelector('.toast')?.remove();const element=document.createElement(action?'button':'div');element.className='toast';element.type='button';element.innerHTML=`<span>${esc(message)}</span>${action?'<b>Adăugată ✓</b>':''}`;if(action)element.addEventListener('click',()=>{element.remove();action();});document.body.appendChild(element);setTimeout(()=>element.remove(),4500);}
 
