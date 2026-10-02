@@ -375,11 +375,15 @@
     $('story-dots').replaceChildren(...storySlides.map((slide, index) => { const dot = document.createElement('button'); dot.className = 'photo-dot'; dot.type = 'button'; dot.setAttribute('aria-label', 'Slide-ul ' + (index + 1)); dot.addEventListener('click', () => { storyIndex = index; renderStory(); }); return dot; }));
     renderStory(); $('story-dialog').showModal();
   }
+  async function openStoryPresentation() {
+    await enterPresentation();
+    openStory();
+  }
   function stepStory(direction) { storyIndex = (storyIndex + direction + storySlides.length) % storySlides.length; renderStory(); }
   function followURL() { const room = rooms.find(r => '#' + r.id === location.hash); if (room) openRoom(room, false); else home(false); }
   $('home')?.addEventListener('click', () => home());
   $('explore-house').addEventListener('click', () => $('overview-rooms').scrollIntoView({ behavior: reduced.matches ? 'auto' : 'smooth', block: 'start' }));
-  $('story-house').addEventListener('click', openStory);
+  $('story-house').addEventListener('click', openStoryPresentation);
   let choosingPath = false;
   function showChoices() {
     document.body.classList.add('entry-ready');
@@ -391,7 +395,10 @@
     if (choosingPath) return;
     choosingPath = true;
     // Request during the tap, before animation awaits consume user activation.
-    const fullscreenReady = Math.min(screen.width, screen.height) >= 700
+    // Presentation is intentionally a kiosk-style experience on phones too.
+    // Both calls are made from the original tap so mobile browsers can keep
+    // the user activation required by Fullscreen API and orientation lock.
+    const fullscreenReady = path === 'story'
       ? enterPresentation()
       : Promise.resolve();
     if (path === 'story') document.body.classList.add('story-transitioning');
@@ -478,20 +485,33 @@
   $('photo').addEventListener('error', () => { $('photo-error').hidden = false; $('photo-loading').hidden = true; $('photo-stage').setAttribute('aria-busy', 'false'); });
   $('photo').addEventListener('load', () => { $('photo-error').hidden = true; $('photo-loading').hidden = true; $('photo').hidden = false; $('photo-stage').setAttribute('aria-busy', 'false'); });
   $('retry').addEventListener('click', () => { $('photo').src = selected.photos[currentPhotoIndex] + '?retry=' + Date.now(); });
+  async function lockPresentationOrientation() {
+    if (!screen.orientation?.lock) return;
+    try { await screen.orientation.lock('landscape'); } catch {}
+  }
   async function enterPresentation() {
-    if (document.fullscreenElement || !document.fullscreenEnabled) return;
     if (presentationPromise) return presentationPromise;
     presentationPromise = (async () => {
       try {
-        await document.documentElement.requestFullscreen();
-        const tabletLayout = Math.min(screen.width, screen.height) >= 700;
-        if (tabletLayout && screen.orientation?.lock) await screen.orientation.lock('landscape').catch(() => {});
+        if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+          try {
+            await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+          } catch {
+            // Some mobile browsers reject the options object but accept the
+            // plain Fullscreen API call.
+            try { await document.documentElement.requestFullscreen(); } catch {}
+          }
+        }
+        await lockPresentationOrientation();
       } catch {}
     })().finally(() => { presentationPromise = null; });
     return presentationPromise;
   }
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) lockPresentationOrientation();
+  });
   $('fullscreen').addEventListener('click', async () => {
-    if (!$('story-dialog').open) { openStory(); return; }
+    if (!$('story-dialog').open) { await openStoryPresentation(); return; }
     $('story-dialog').close();
   });
   window.addEventListener('popstate', followURL);

@@ -6,8 +6,8 @@
   "lang": "ro",
   "start_url": "/view",
   "scope": "/view",
-  "display": "standalone",
-  "orientation": "any",
+  "display": "fullscreen",
+  "orientation": "landscape",
   "background_color": "#f5f3ec",
   "theme_color": "#176d69",
   "icons": [
