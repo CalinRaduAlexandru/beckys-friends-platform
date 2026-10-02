@@ -38,11 +38,12 @@
   const floorFor = room => floors.find(f => f.id === room.floor);
   let selected = null, currentPhotoIndex = 0, touch = null, lightboxTouch = null, lightboxItems = [], lightboxItemIndex = 0, animationToken = 0, presentationPromise = null, storyTouch = null, storyIndex = 0;
   const storySlides = [
-    { image: '/assets/Poarta_cu_banner.png', kicker: 'DE AICI ÎNCEPE POVESTEA', title: 'Un loc pentru după școală.', description: 'Intrăm prin poarta Becky’s Garden într-un spațiu gândit pentru joacă, descoperire și timp bun după ore.' },
+    { image: '/assets/Poarta_cu_banner.png', kicker: 'Un alt fel de after school', title: 'Locul unde timpul de după școală prinde viață.', description: 'Un spațiu pentru conectare, activități cu sens și dezvoltare naturală.' },
     { image: '/assets/Imagini-local/WhatsApp Image 2026-08-08 at 16.17.01 (2).jpeg', kicker: 'SPAȚII MULTIFUNCȚIONALE', title: 'Un singur spațiu, multiple posibilități', description: 'Toate zonele pot găzdui activități didactice, activități distractive, ateliere și opționale.' },
     { image: '/assets/Imagini-local/WhatsApp Image 2026-08-08 at 16.16.55 (4).jpeg', kicker: 'SPAȚII CARE SE TRANSFORMĂ', title: 'Fiecare colț este gândit pentru ceva nou.', description: 'De la joacă liberă la activități de grup, spațiul se poate adapta în funcție de zi, copii și idee.' },
     { images: [photo('16.16.59', 1), photo('16.16.59', 3)], kicker: 'DE LA UN NIVEL LA ALTUL', title: 'Loc pentru aventuri mari', description: 'Casa se desfășoară pe mai multe niveluri, fiecare cu o atmosferă și un ritm propriu.' },
-    { images: ['/assets/Imagini-local/zona%20de%20catarat.jpg', photo('16.18.38')], kicker: 'ȘI PENTRU MOMENTE MAI LINIȘTITE', title: 'Joacă, descoperire și relaxare', description: 'Unele momente au multă energie. Altele au nevoie de o pauză, o conversație sau o activitate în ritm mai calm.' }
+    { images: ['/assets/Imagini-local/zona%20de%20catarat.jpg', photo('16.18.38')], kicker: 'ȘI PENTRU MOMENTE MAI LINIȘTITE', title: 'Joacă, descoperire și relaxare', description: 'Unele momente au multă energie. Altele au nevoie de o pauză, o conversație sau o activitate în ritm mai calm.' },
+    { image: '/assets/final_prezentare_view.png', final: true }
   ];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const imageCache = new Map();
@@ -325,10 +326,12 @@
       { position: '50% 62%', mobile: '50% 50%', text: 'bottom' },
       { position: '50% 50%', mobile: '65% 50%', text: 'bottom' },
       { position: '50% 50%', mobile: '50% 45%', text: 'bottom' },
-      { position: '50% 50%', mobile: '58% 50%', text: 'top' }
+      { position: '50% 50%', mobile: '58% 50%', text: 'top' },
+      { position: '50% 50%', mobile: '50% 50%', text: 'bottom' }
     ];
     const composition = compositions[storyIndex];
     $('story-stage').dataset.textPosition = composition.text;
+    $('story-stage').classList.toggle('is-final-slide', Boolean(slide.final));
     $('story-stage').style.setProperty('--photo-position', composition.position);
     $('story-stage').style.setProperty('--photo-position-mobile', composition.mobile);
     $('story-photo').hidden = isGrid;
@@ -337,7 +340,7 @@
     $('story-loading').hidden = false;
     $('story-retry').hidden = true;
     $('story-stage').setAttribute('aria-busy', 'true');
-    $('story-kicker').textContent = slide.kicker; $('story-title').textContent = slide.title; $('story-description').textContent = slide.description;
+    $('story-kicker').textContent = slide.kicker || ''; $('story-title').textContent = slide.title || ''; $('story-description').textContent = slide.description || '';
     $('story-counter').textContent = (storyIndex + 1) + ' / ' + storySlides.length;
     [...$('story-dots').children].forEach((dot, index) => { dot.classList.toggle('is-active', index === storyIndex); dot.setAttribute('aria-selected', String(index === storyIndex)); });
     if (!reduced.matches) {
