@@ -41,7 +41,7 @@ const ROUTES = new Map([
   ['/parinti/', '/parents-tablet.html']
 ]);
 
-const HTML_ASSET_VERSION = '20260807-3';
+const HTML_ASSET_VERSION = '20261002-2';
 
 const DOCUMENT_KEYS = {
   '/api/manual': 'manual',
