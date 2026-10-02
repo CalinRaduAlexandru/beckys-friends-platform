@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5f3ec">
+  <link rel="icon" type="image/png" href="/assets/duck.png?v=1">
+  <link rel="apple-touch-icon" href="/assets/duck-192.png?v=1">
+  <link rel="manifest" href="/view.webmanifest?v=3">
+  <title>Casa Becky · Explorează spațiile</title>
+  <link rel="stylesheet" href="/view.css?v=20261001-22">
+  <link rel="stylesheet" href="/view-entry.css?v=5">
+  <script src="/view.js?v=20261001-56" defer></script>
+</head>
+<body>
+  <dialog id="entry-dialog" open aria-labelledby="entry-title">
+    <div class="entry-panel">
+      <img src="/assets/logo/new_logo_horizontal.png" alt="Becky’s Garden" class="entry-logo">
+      <h1 id="entry-title" tabindex="-1">O casă. Multe posibilități.</h1>
+      <p class="entry-subtitle">Tu alegi de unde începe descoperirea.</p>
+      <div class="entry-paths">
+        <button id="entry-explore" class="path-card path-explore" type="button">
+          <span class="path-art house-art" aria-hidden="true"><i></i><i></i><i></i><i></i><b>✦</b></span>
+          <strong>Explorează liber</strong><span class="path-description">Descoperă camerele pe zone.</span>
+          <span class="path-next" aria-hidden="true">↗</span>
+        </button>
+        <button id="entry-story" class="path-card path-story" type="button">
+          <span class="path-art slides-art" aria-hidden="true"><i></i><i></i><i>✦</i></span>
+          <strong>Vezi prezentarea</strong><span class="path-description">Casa și posibilitățile ei, pas cu pas.</span>
+          <span class="path-next" aria-hidden="true">→</span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+  <div class="rotate-notice" role="status"><span class="rotate-icon" aria-hidden="true">▯ ↻</span><h1>Întoarce tableta</h1><p>Casa se vede mai bine pe orizontală.</p><small>Rotește dispozitivul pentru a continua explorarea.</small></div>
+  <div class="landscape-app">
+    <header class="topbar">
+      <button id="choose-path" class="brand-lockup" type="button" aria-label="Revino la cele două opțiuni"><img class="brand" src="/assets/logo-mark-sun.png" alt=""><span>Becky’s<br><strong>Garden</strong></span></button>
+      <button id="fullscreen" class="fullscreen" type="button">⤢ Vezi prezentarea</button>
+    </header>
+    <main id="explorer" class="explorer">
+      <aside class="navigator" aria-label="Casa pe niveluri">
+        <button id="nav-toggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="house" aria-label="Deschide navigatorul casei" title="Deschide navigatorul casei"><span class="nav-toggle-chevron" aria-hidden="true">›</span><span class="nav-toggle-label">Navigator</span></button>
+        <nav id="house" aria-label="Alege direct orice cameră"></nav>
+      </aside>
+      <section id="overview" class="overview" aria-labelledby="overview-title">
+        <div class="overview-intro">
+          <div>
+            <p class="eyebrow">CASA BECKY</p>
+            <h1 id="overview-title">Explorează casa</h1>
+            <p>Alege un nivel pentru a vedea spațiile sau descoperă povestea casei.</p>
+          </div>
+          <div class="overview-actions" aria-label="Moduri de explorare">
+            <button id="explore-house" class="overview-action overview-action-primary" type="button"><span class="overview-action-icon">⌂</span><span><strong>Explorează liber</strong><small>Vezi layoutul și fotografiile camerelor</small></span><b>›</b></button>
+            <button id="story-house" class="overview-action overview-action-story" type="button"><span class="overview-action-icon">✦</span><span><strong>Vezi prezentarea</strong><small>O privire generală asupra casei</small></span><b>›</b></button>
+          </div>
+        </div>
+        <div id="overview-rooms"></div>
+      </section>
+      <section id="gallery" class="gallery" hidden aria-labelledby="room-title">
+      <header class="room-heading"><div><p id="location" class="eyebrow"></p><h1 id="room-title"></h1></div></header>
+        <div class="photo-stage" id="photo-stage" tabindex="0" role="region" aria-roledescription="carusel" aria-label="Fotografiile camerei" aria-describedby="photo-help">
+          <img id="photo" alt="" draggable="false">
+          <span id="photo-loading" class="photo-loading" hidden>Se încarcă fotografia…</span>
+          <p id="photo-error" hidden>Fotografia nu s-a încărcat. <button id="retry">Reîncearcă</button></p>
+          <button id="previous" class="arrow previous" aria-label="Fotografia anterioară">‹</button>
+          <button id="next" class="arrow next" aria-label="Fotografia următoare">›</button>
+          <button id="enlarge" class="enlarge" aria-label="Mărește fotografia">⤢ Mărește</button>
+        </div>
+        <div class="photo-meta"><p id="photo-help">Glisează spre stânga pentru fotografia următoare</p><span id="counter"></span></div>
+        <div id="photo-dots" class="photo-dots" role="tablist" aria-label="Poziția în galeria camerei"></div>
+        <div id="thumbnails" class="thumbnails" role="group" aria-label="Alege fotografia"></div>
+      </section>
+    </main>
+    <dialog id="lightbox" aria-label="Fotografiile mărite">
+      <button id="close-lightbox" autofocus>Închide ✕</button>
+      <div id="lightbox-stage" class="lightbox-stage" role="region" aria-roledescription="carusel" aria-label="Carusel fullscreen">
+        <img id="large-photo" alt="" draggable="false">
+        <button id="lightbox-previous" class="lightbox-arrow lightbox-previous" aria-label="Fotografia anterioară">‹</button>
+        <button id="lightbox-next" class="lightbox-arrow lightbox-next" aria-label="Fotografia următoare">›</button>
+        <div id="lightbox-dots" class="lightbox-dots" role="tablist" aria-label="Poziția în carusel"></div>
+        <span id="lightbox-counter" class="lightbox-counter"></span>
+        <div id="lightbox-levels" class="lightbox-levels" aria-label="Nivelul casei"></div>
+      </div>
+    </dialog>
+  </div>
+    <dialog id="story-dialog" aria-label="Prezentarea casei">
+      <button id="close-story" class="story-close" type="button">Hartă ✕</button>
+      <div id="story-stage" class="story-stage" role="region" aria-roledescription="carusel" aria-label="Povestea generală a casei">
+        <img id="story-photo" alt="">
+        <div id="story-grid" class="story-grid" hidden aria-label="Două imagini ale spațiului"></div>
+        <div id="story-loading" class="image-skeleton" role="status" hidden><span class="sr-only">Se încarcă imaginea</span></div>
+        <button id="story-retry" type="button" hidden>Reîncearcă încărcarea imaginii</button>
+        <div class="story-wash"></div>
+        <div class="story-copy"><p id="story-kicker" class="eyebrow"></p><h1 id="story-title"></h1><p id="story-description"></p></div>
+        <button id="story-previous" class="story-arrow story-previous" type="button" aria-label="Slide-ul anterior">‹</button>
+        <button id="story-next" class="story-arrow story-next" type="button" aria-label="Slide-ul următor">›</button>
+        <div id="story-dots" class="story-dots" role="tablist" aria-label="Poziția în poveste"></div>
+        <span id="story-counter" class="story-counter"></span>
+      </div>
+    </dialog>
+  <p id="viewer-status" class="sr-only" role="status" aria-live="polite"></p>
+  <noscript>Activează JavaScript pentru a explora casa.</noscript>
+</body>
+</html>
