@@ -10,6 +10,8 @@ import parentQuestionPoolsSeed from '../data/parent-question-pools.json';
 import { normalizeEvents, buildInsights } from './parent-insights.mjs';
 
 const ROUTES = new Map([
+  ['/view', '/view.html'],
+  ['/view/', '/view.html'],
   ['/', '/coming-soon.html'],
   ['/admin', '/admin/index.html'],
   ['/admin/', '/admin/index.html'],
