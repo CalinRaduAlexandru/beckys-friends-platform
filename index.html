@@ -6,8 +6,8 @@
     <meta name="theme-color" content="#f8f3e8" />
     <meta name="description" content="Pune monstrulețul desenat în camera ta, cu WebAR gratuit." />
     <title>Monstrulețul tău — WebAR</title>
-    <script type="module" crossorigin src="/beckys-friends-platform/assets/index-BUo0zAyj.js"></script>
-    <link rel="stylesheet" crossorigin href="/beckys-friends-platform/assets/index-CQsJ6CES.css">
+    <script type="module" crossorigin src="/beckys-friends-platform/assets/index-nc3aSpAx.js"></script>
+    <link rel="stylesheet" crossorigin href="/beckys-friends-platform/assets/index-CAfHinl3.css">
   </head>
   <body>
     <main class="app-shell">
@@ -34,9 +34,17 @@
           <div class="step"><span class="step-number">3</span><span>Atinge pentru a-l așeza</span></div>
         </div>
         <div class="action-row">
+          <fieldset class="character-picker">
+            <legend>Alege personajul pentru AR</legend>
+            <button type="button" class="character-choice is-selected" id="monsterChoice" aria-pressed="true">
+              <span class="choice-mark monster-mark" aria-hidden="true">✦</span><span><strong>Monstrulețul</strong><small>Personajul tău desenat</small></span>
+            </button>
+            <button type="button" class="character-choice" id="saiyanChoice" aria-pressed="false">
+              <span class="choice-mark saiyan-mark" aria-hidden="true">⚡</span><span><strong>Super Saiyan</strong><small>Un luptător auriu</small></span>
+            </button>
+          </fieldset>
           <label class="upload-button" for="modelInput"><span aria-hidden="true">＋</span> Încarcă un personaj GLB</label>
           <input id="modelInput" type="file" accept=".glb,model/gltf-binary" />
-          <button class="secondary-button" id="demoButton">Personajul demonstrativ</button>
         </div>
         <div class="compat-note" id="compatNote"><span class="compat-icon">✦</span><span>Verificăm compatibilitatea AR…<small>Nu încarcă nimic până nu apeși „Începe în AR”.</small></span></div>
         <footer><span>Gratuit · fără cont · personajul rămâne pe dispozitivul tău</span><button id="helpButton">Ajutor</button></footer>
